@@ -1,0 +1,27 @@
+import { Injectable } from '@nestjs/common';
+import { DataSource, Repository } from 'typeorm';
+import { PostMusic } from './entities/post-music.entity';
+import { MusicResponseDto } from '@repo/dto';
+
+@Injectable()
+export class PostMusicRepository extends Repository<PostMusic> {
+  constructor(private readonly ds: DataSource) {
+    super(PostMusic, ds.createEntityManager());
+  }
+
+  async findMusicsByPostId(postId: string): Promise<MusicResponseDto[]> {
+    return this.createQueryBuilder('pm')
+      .innerJoin('pm.music', 'm')
+      .where('pm.post = :postId', { postId })
+      .select([
+        'm.id AS id',
+        'm.title AS title',
+        'm.artistName AS artistName',
+        'm.albumCoverUrl AS albumCoverUrl',
+        'm.trackUri AS trackUri',
+        'm.provider AS provider',
+        'm.durationMs As durationMs',
+      ])
+      .getRawMany<MusicResponseDto>();
+  }
+}

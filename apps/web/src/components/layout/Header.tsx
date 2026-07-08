@@ -1,0 +1,47 @@
+'use client';
+
+import { usePathname, useRouter } from 'next/navigation';
+import { Bell } from 'lucide-react';
+
+import { useNotiStore } from '@/stores/useNotiStore';
+import { useNotiOverlayStore } from '@/stores/useNotiOverlayStore';
+import { useFeedRefreshStore } from '@/stores';
+
+export default function Header() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const unreadNotiCount = useNotiStore((s) => s.unreadCount);
+  const openNoti = useNotiOverlayStore((s) => s.open);
+  const bumpFeed = useFeedRefreshStore((s) => s.bump);
+
+  const handleLogoClick = () => {
+    if (pathname === '/') {
+      bumpFeed();
+    } else {
+      router.push('/');
+    }
+  };
+
+  return (
+    <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b-2 border-primary px-6 h-16 flex items-center justify-between">
+      <button type="button" onClick={handleLogoClick} className="text-2xl font-black italic tracking-tighter text-primary uppercase">
+        VIBR
+      </button>
+
+      {/* 모바일 전용 알림 버튼 */}
+      <button
+        type="button"
+        onClick={openNoti}
+        className="lg:hidden relative p-2 rounded-xl border-2 border-transparent hover:bg-gray-4 hover:border-primary transition-all duration-150"
+        title="알림"
+      >
+        <Bell className="w-6 h-6 text-primary" />
+        {unreadNotiCount > 0 && (
+          <span className="absolute top-1 right-1 min-w-4 h-4 px-0.5 rounded-full bg-accent-pink text-white text-[9px] flex items-center justify-center">
+            {unreadNotiCount > 99 ? '99+' : unreadNotiCount}
+          </span>
+        )}
+      </button>
+    </header>
+  );
+}

@@ -1,0 +1,59 @@
+name: Deploy to Each Account ECR
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # --- Account A: Frontend 배포 ---
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (Account A)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_A }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_A }}
+          aws-region: ap-northeast-2
+
+      - name: Login to ECR (Account A)
+        id: login-ecr-a
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Fetch SSL Certificates from SSM
+        run: |
+          aws ssm get-parameter --name "/vibr/ssl/fullchain" --with-decryption --query "Parameter.Value" --output text > server.crt
+          aws ssm get-parameter --name "/vibr/ssl/privkey" --with-decryption --query "Parameter.Value" --output text > server.key
+      
+      - name: Build and Push FE Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-a.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/busy-fe:latest -f apps/web/Dockerfile .
+          docker push $ECR_REGISTRY/busy-fe:latest
+
+  # --- Account B: Backend 배포 ---
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (Account B)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_B }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_B }}
+          aws-region: ap-northeast-2
+
+      - name: Login to ECR (Account B)
+        id: login-ecr-b
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push BE Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-b.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/busy-be:latest -f apps/api/Dockerfile .
+          docker push $ECR_REGISTRY/busy-be:latest

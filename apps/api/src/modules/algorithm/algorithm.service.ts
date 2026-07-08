@@ -1,0 +1,261 @@
+import { Injectable, Inject } from '@nestjs/common';
+import neo4j, { Session, Driver } from 'neo4j-driver';
+import { GraphRelation } from './algorithm-stream.consumer';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
+import { REDIS_KEYS } from 'src/infra/redis/redis-keys';
+import { Cron, CronExpression } from '@nestjs/schedule';
+
+@Injectable()
+export class AlgorithmService {
+  private isGroupingRunning = false;
+
+  constructor(
+    @Inject('NEO4J_DRIVER') private readonly driver: Driver,
+    @InjectRedis() private readonly redis: Redis,
+  ) {}
+
+  // 관계를 배치로 추가
+  async addRelationshipsBatch(batch: GraphRelation[]) {
+    if (batch.length === 0) return;
+
+    const session = this.driver.session();
+    try {
+      await session.executeWrite((tx) =>
+        tx.run(
+          `
+          UNWIND $batch AS log
+          MERGE (u:User {id: log.userId})
+
+          FOREACH (_ IN CASE WHEN log.targetLabel = 'User' THEN [1] ELSE [] END |
+            MERGE (t:User {id: log.targetId})
+            MERGE (u)-[r:INTERACTED {type: log.relationType}]->(t)
+            ON CREATE SET 
+              r.weight = log.weight, 
+              r.created_at = datetime(log.props.timestamp),
+              r.last_interacted_at = datetime(),
+              r.expired_at = datetime() + duration({days: 10})
+            ON MATCH SET 
+              r.weight = r.weight + log.weight,
+              r.last_interacted_at = datetime(),
+              r.expired_at = datetime() + duration({days: 10})
+            SET r += log.props
+          )
+
+          FOREACH (_ IN CASE WHEN log.targetLabel = 'Content' THEN [1] ELSE [] END |
+            MERGE (t:Content {id: log.targetId})
+            MERGE (u)-[r:INTERACTED {type: log.relationType}]->(t)
+            ON CREATE SET 
+              r.weight = log.weight, 
+              r.created_at = datetime(log.props.timestamp),
+              r.last_interacted_at = datetime(),
+              r.expired_at = datetime() + duration({days: 10})
+            ON MATCH SET 
+              r.weight = r.weight + log.weight,
+              r.last_interacted_at = datetime(),
+              r.expired_at = datetime() + duration({days: 10})
+            SET r += log.props
+          )
+          `,
+          { batch },
+        ),
+      );
+    } finally {
+      await session.close();
+    }
+  }
+
+  // 관계 삭제
+  async removeRelationshipsBatch(batch: GraphRelation[]) {
+    if (batch.length === 0) return;
+
+    const session = this.driver.session();
+    try {
+      await session.executeWrite((tx) =>
+        tx.run(
+          `
+          UNWIND $batch AS log
+          MATCH (u:User {id: log.userId})
+          MATCH (u)-[r:INTERACTED {type: log.relationType}]->(t)
+          WHERE t.id = log.targetId
+          DELETE r
+          `,
+          { batch },
+        ),
+      );
+    } finally {
+      await session.close();
+    }
+  }
+
+  // neo4j 그룹핑
+  async runUnifiedGrouping() {
+    const session = this.driver.session();
+    try {
+      // 1. 기존에 남아있는 프로젝션 그래프가 있다면 초기화
+      await session.executeWrite((tx) =>
+        tx.run(`
+        CALL gds.graph.exists('interactionGraph') YIELD exists
+        WITH exists WHERE exists
+        CALL gds.graph.drop('interactionGraph') YIELD graphName
+        RETURN graphName
+      `),
+      );
+
+      await session.executeWrite((tx) =>
+        tx.run(`
+        CALL gds.graph.project.cypher(
+          'interactionGraph',
+          'MATCH (n) WHERE n:User OR n:Content RETURN id(n) AS id',
+          
+          'MATCH (s)-[r:INTERACTED]->(t) 
+           WHERE r.expired_at IS NULL OR r.expired_at >= datetime()
+           WITH s, t, r, 
+                CASE 
+                  WHEN s.partition IS NOT NULL AND s.partition = t.partition 
+                  THEN 0.3 
+                  ELSE 0.0 
+                END AS bonusWeight
+           RETURN id(s) AS source, id(t) AS target, (r.weight + bonusWeight) AS weight'
+        )
+        YIELD graphName, nodeCount, relationshipCount
+      `),
+      );
+
+      // 3. Louvain 알고리즘 실행 및 DB 기록
+      await session.executeWrite((tx) =>
+        tx.run(`
+        CALL gds.louvain.write('interactionGraph', {
+          writeProperty: 'partition',
+          relationshipWeightProperty: 'weight'
+        })
+      `),
+      );
+
+      // 4. 인메모리 그래프 해제
+      await session.executeWrite((tx) =>
+        tx.run(`CALL gds.graph.drop('interactionGraph')`),
+      );
+    } catch (error) {
+      console.error('GDS 루벵 알고리즘 실행 오류:', error);
+      throw error;
+    } finally {
+      await session.close();
+    }
+  }
+
+  // 그룹핑 결과 반환 2000배치 skip만큼 이어서
+  async fetchGroupingBatch(skip: number = 0, batchSize: number = 2000) {
+    const session = this.driver.session();
+    try {
+      const result = await session.executeRead((tx) =>
+        tx.run(
+          `
+          MATCH (n)
+          WHERE (n:User OR n:Content) AND n.partition IS NOT NULL
+          RETURN n.id AS id, labels(n)[0] AS label, n.partition AS groupId
+          ORDER BY n.id
+          SKIP $skip
+          LIMIT $limit
+          `,
+          {
+            skip: neo4j.int(skip),
+            limit: neo4j.int(batchSize),
+          },
+        ),
+      );
+      const records = result.records;
+      const batch = records.map((r) => ({
+        id: r.get('id'),
+        label: r.get('label'),
+        groupId: r.get('groupId').toString(),
+      }));
+
+      // 가져온 데이터가 마지막이면 null or 0 반환
+      const nextSkip = records.length === batchSize ? skip + batchSize : null;
+
+      return { batch, nextSkip };
+    } finally {
+      await session.close();
+    }
+  }
+
+  // 컨텐츠 아이디 기반 그룹id 탐색
+  async getContentGroupIds(contentIds: string[]) {
+    const session = this.driver.session();
+    try {
+      const result = await session.executeRead((tx) =>
+        tx.run(
+          `
+          MATCH (c:Content)
+          WHERE c.id IN $contentIds
+          RETURN c.id AS contentId, c.partition AS groupId
+          `,
+          { contentIds },
+        ),
+      );
+
+      return result.records.map((record) => ({
+        contentId: record.get('contentId'),
+        groupId: record.get('groupId')?.toString() || 'default',
+      }));
+    } finally {
+      await session.close();
+    }
+  }
+
+  private async updateGroupInfoToRedis(
+    users: { id: string; groupId: string }[],
+    posts: { id: string; groupId: string }[],
+  ) {
+    const pipeline = this.redis.pipeline();
+
+    users.forEach((u) => pipeline.set(REDIS_KEYS.USER_GROUP(u.id), u.groupId));
+
+    posts.forEach((p) => pipeline.set(REDIS_KEYS.POST_GROUP(p.id), p.groupId));
+
+    await pipeline.exec();
+  }
+
+  async syncAllGroupsToRedis() {
+    let currentSkip: number | null = 0;
+
+    const users: { id: string; groupId: string }[] = [];
+    const posts: { id: string; groupId: string }[] = [];
+    while (currentSkip !== null) {
+      const { batch, nextSkip } = await this.fetchGroupingBatch(currentSkip);
+
+      if (batch.length === 0) break;
+      users.length = 0;
+      posts.length = 0;
+
+      batch.forEach((item) => {
+        if (item.label === 'User') {
+          users.push({ id: item.id, groupId: item.groupId });
+        } else {
+          posts.push({ id: item.id, groupId: item.groupId });
+        }
+      });
+      await this.updateGroupInfoToRedis(users, posts);
+      currentSkip = nextSkip;
+    }
+  }
+
+  @Cron(CronExpression.EVERY_HOUR, { waitForCompletion: true })
+  async scheduledGroupingTask() {
+    if (this.isGroupingRunning) {
+      return;
+    }
+
+    this.isGroupingRunning = true;
+
+    try {
+      await this.runUnifiedGrouping();
+      await this.syncAllGroupsToRedis();
+    } catch (error) {
+      throw error;
+    } finally {
+      this.isGroupingRunning = false;
+    }
+  }
+}
