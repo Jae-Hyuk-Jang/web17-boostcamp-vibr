@@ -1,7 +1,7 @@
 import { ConfirmOverlay } from '@/components';
 import { useModalStore, usePlayerStore, usePlaylistRefreshStore } from '@/stores';
 import type { MusicRequestDto as UnsavedMusic, MusicResponseDto as SavedMusic, GetPlaylistDetailResDto } from '@repo/dto';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DEFAULT_IMAGES, MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
 import { Header, SearchDropdown, SongList, Toolbar } from './components';
 import { addMusicsToPlaylist, changeMusicOrderOfPlaylist, deletePlaylist, editTitleOfPlaylist, getPlaylistDetail } from '@/api';
@@ -24,7 +24,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
 
   const [isInvalidTitle, setIsInvalidTitle] = useState(false);
 
-  const initialFetchPlaylist = async () => {
+  const initialFetchPlaylist = useCallback(async () => {
     try {
       const fetched = await getPlaylistDetail(playlistId);
       setPlaylist(fetched);
@@ -33,11 +33,11 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
       toast.error('플레이리스트 정보를 불러오지 못했습니다.');
       console.error(e);
     }
-  };
+  }, [playlistId]);
 
   useEffect(() => {
     initialFetchPlaylist();
-  }, [playlistId]);
+  }, [initialFetchPlaylist]);
 
   const onPlayTotalSongs = () => {
     if (songs.length > 0) {
@@ -152,7 +152,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   useEffect(() => {
     const isInValid = !validateRename(draftTitle);
     if (isInvalidTitle !== isInValid) setIsInvalidTitle(isInValid);
-  }, [draftTitle]);
+  }, [draftTitle, isInvalidTitle]);
 
   return (
     playlist && (

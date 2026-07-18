@@ -33,12 +33,16 @@ export const useItunesHook = (): Playback => {
 
   const [progress, setProgress] = useState<PlayerProgress>({ positionMs: 0, durationMs: 0 });
 
+  // 최초 마운트 시점의 volume만 필요(이후 변경은 별도 effect가 담당) — ref로 고정해
+  // Audio 생성 effect가 volume 변경 때마다 재실행되지 않도록 함
+  const initialVolumeRef = useRef(volume);
+
   // Audio 객체는 effect에서 1회 생성
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const audio = new Audio();
-    audio.volume = Number.isFinite(volume) ? clamp01(volume) : DEFAULT_VOLUME;
+    audio.volume = Number.isFinite(initialVolumeRef.current) ? clamp01(initialVolumeRef.current) : DEFAULT_VOLUME;
 
     audioRef.current = audio;
     setVolume(audio.volume); // store 기본값 동기화
@@ -48,7 +52,7 @@ export const useItunesHook = (): Playback => {
       audio.src = '';
       audioRef.current = null;
     };
-  }, []); // 1회만
+  }, [setVolume]);
 
   // volume 동기화 (UI에서 바꿀 때 반영)
   useEffect(() => {

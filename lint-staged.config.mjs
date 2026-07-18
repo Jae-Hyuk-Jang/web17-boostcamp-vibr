@@ -9,10 +9,10 @@ import path from 'node:path';
  * 상속 등)은 무시된다. pnpm -C로 해당 워크스페이스 디렉터리에서 실행해야
  * 워크스페이스 자체 eslint.config를 올바르게 탄다.
  */
-function eslintInWorkspace(workspaceDir) {
+function eslintInWorkspace(workspaceDir, extraArgs = '') {
   return (files) => {
     const relativeFiles = files.map((f) => path.relative(workspaceDir, f));
-    return `pnpm -C ${workspaceDir} exec eslint --fix ${relativeFiles.map((f) => JSON.stringify(f)).join(' ')}`;
+    return `pnpm -C ${workspaceDir} exec eslint --fix ${extraArgs} ${relativeFiles.map((f) => JSON.stringify(f)).join(' ')}`;
   };
 }
 
@@ -21,7 +21,8 @@ export default {
   '**/*.{js,jsx,ts,tsx,mjs}': ['prettier --write'],
 
   'apps/api/**/*.{js,ts}': eslintInWorkspace('apps/api'),
-  'apps/web/**/*.{js,jsx,ts,tsx,mjs}': eslintInWorkspace('apps/web'),
+  // apps/web은 #9에서 경고 0건까지 정리 완료 — 회귀 방지를 위해 --max-warnings 0으로 강제
+  'apps/web/**/*.{js,jsx,ts,tsx,mjs}': eslintInWorkspace('apps/web', '--max-warnings 0'),
   'packages/ui/**/*.{js,jsx,ts,tsx}': eslintInWorkspace('packages/ui'),
   'packages/dto/**/*.ts': eslintInWorkspace('packages/dto'),
 

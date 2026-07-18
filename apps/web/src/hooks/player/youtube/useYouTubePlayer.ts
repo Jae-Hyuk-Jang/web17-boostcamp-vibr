@@ -3,7 +3,7 @@
 import { YOUTUBE_IFRAME_ID, YOUTUBE_IFRAME_SCRIPT_SRC } from '@/constants';
 import { usePlayerStore } from '@/stores';
 import { PlayerProgress } from '@/types';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
@@ -44,11 +44,14 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
       tag.id = YOUTUBE_IFRAME_ID;
       tag.src = YOUTUBE_IFRAME_SCRIPT_SRC;
 
+      // YouTube IFrame API 자체가 요구하는 전역 콜백 계약(정해진 이름의 window
+      // 프로퍼티)이라 구조를 바꿔도 피할 수 없는 전역 쓰기 — effect 내부에서만 호출됨
+      // eslint-disable-next-line react-compiler/react-compiler
       window.onYouTubeIframeAPIReady = () => resolve();
       document.body.appendChild(tag);
     });
 
-  const loadScript = async () => {
+  const loadScript = useCallback(async () => {
     if (window.YT?.Player) return;
 
     const existing = document.getElementById(YOUTUBE_IFRAME_ID);
@@ -58,7 +61,7 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
     }
 
     await appendYouTubeScript();
-  };
+  }, []);
 
   useEffect(() => {
     queueLengthRef.current = queueLength;
@@ -150,7 +153,11 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
       playerRef.current?.destroy();
       playerRef.current = null;
     };
-  }, []);
+    // queueLength 변화는 queueLengthRef로 우회하므로 deps에서 제외.
+    // loadScript/playNext/togglePlay/setPlayError/setProgress/setIsTicking은
+    // 전부 안정적 참조(useCallback([])/zustand action/useState setter)라
+    // 실질적으로 값이 바뀌지 않아 마운트 시 1회만 실행되는 동작은 그대로 유지됨
+  }, [loadScript, playNext, togglePlay, setPlayError, setProgress, setIsTicking]);
 
   return {
     containerRef,

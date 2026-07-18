@@ -59,8 +59,8 @@ export default function useYoutubeSearch({
 
     const run = async () => {
       // 캐시에 데이터 있으면 추가 요청 없이 사용
-      if (cache.current.has(query)) {
-        const cachedItems = cache.current.get(query) ?? [];
+      if (cache.current.has(trimmedQuery)) {
+        const cachedItems = cache.current.get(trimmedQuery) ?? [];
         setResults(cachedItems);
         setStatus(cachedItems.length > 0 ? 'success' : 'empty');
         return;
@@ -77,7 +77,7 @@ export default function useYoutubeSearch({
         if (!isAlive) return;
 
         // 캐시 업데이트
-        cache.current.set(query, mapped);
+        cache.current.set(trimmedQuery, mapped);
 
         // 상태 업데이트
         setResults(mapped);

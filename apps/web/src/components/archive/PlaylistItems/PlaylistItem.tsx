@@ -4,7 +4,7 @@ import { MODAL_TYPES, useModalStore } from '@/stores';
 import type { PlaylistBriefResDto as Playlist } from '@repo/dto';
 import { Library, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 type Props = Playlist & {
@@ -46,20 +46,26 @@ export default function PlaylistItem(playlist: Props) {
     playlist.setOpenMenuId(playlist.id);
   };
 
-  const onRename: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    e.stopPropagation();
-    playlist.setOpenMenuId(null);
+  const onRename: React.MouseEventHandler<HTMLButtonElement> = useCallback(
+    (e) => {
+      e.stopPropagation();
+      playlist.setOpenMenuId(null);
 
-    setDraftTitle(playlist.title);
-    setIsEditingTitle(true);
-  };
+      setDraftTitle(playlist.title);
+      setIsEditingTitle(true);
+    },
+    [playlist],
+  );
 
-  const onDelete: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    e.stopPropagation();
-    playlist.setOpenMenuId(null);
+  const onDelete: React.MouseEventHandler<HTMLButtonElement> = useCallback(
+    (e) => {
+      e.stopPropagation();
+      playlist.setOpenMenuId(null);
 
-    setIsConfirmOpen(true);
-  };
+      setIsConfirmOpen(true);
+    },
+    [playlist],
+  );
 
   const validateRename = (title: string) => {
     return title.trim().length <= MAX_PLAYLIST_TITLE_LENGTH;
@@ -89,7 +95,7 @@ export default function PlaylistItem(playlist: Props) {
   useEffect(() => {
     const isInValid = !validateRename(draftTitle);
     if (isInvalidTitle !== isInValid) setIsInvalidTitle(isInValid);
-  }, [draftTitle]);
+  }, [draftTitle, isInvalidTitle]);
 
   useEffect(() => {
     const onDocMouseDown = (e: MouseEvent) => {
@@ -125,7 +131,7 @@ export default function PlaylistItem(playlist: Props) {
         </button>
       </div>
     );
-  }, [isMenuOpen, menuPos]);
+  }, [isMenuOpen, menuPos, onRename, onDelete]);
 
   return (
     <div
