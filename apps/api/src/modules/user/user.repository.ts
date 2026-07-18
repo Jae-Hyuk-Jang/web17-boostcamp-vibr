@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, ILike } from 'typeorm';
+import { Repository, LessThan, ILike, FindOptionsWhere } from 'typeorm';
 import { User } from './entities/user.entity';
 import { AuthProvider } from '../auth/types';
 
@@ -46,7 +46,7 @@ export class UserRepository {
     take: number,
     cursorId?: string,
   ): Promise<User[]> {
-    const whereOption: any = {
+    const whereOption: FindOptionsWhere<User> = {
       nickname: ILike(`${keyword}%`),
     };
 

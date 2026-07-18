@@ -37,7 +37,7 @@ export class PlaylistService {
       id: row.id,
       title: row.title,
       tracksCount: Number(row.tracksCount ?? 0),
-      firstAlbumCoverUrl: row.firstAlbumCoverUrl,
+      firstAlbumCoverUrl: row.firstAlbumCoverUrl ?? '',
     };
   }
 

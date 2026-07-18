@@ -14,12 +14,6 @@ type ProviderProfile = {
   refreshToken?: string;
 };
 
-type UserWithFollowInfo = User & {
-  followerCount: number;
-  followingCount: number;
-  isFollowing?: number | string;
-};
-
 @Injectable()
 export class UserService {
   private readonly NICKNAME_MAX_LEN = 12;

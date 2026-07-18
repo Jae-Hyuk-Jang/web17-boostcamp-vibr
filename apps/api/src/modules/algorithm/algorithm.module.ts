@@ -11,7 +11,7 @@ import { AlgorithmStreamConsumer } from './algorithm-stream.consumer';
     AlgorithmStreamConsumer,
     {
       provide: 'NEO4J_DRIVER',
-      useFactory: async (configService: ConfigService) => {
+      useFactory: (configService: ConfigService) => {
         const uri = configService.getOrThrow<string>('NEO4J_URI');
         const username = configService.getOrThrow<string>('NEO4J_USERNAME');
         const password = configService.getOrThrow<string>('NEO4J_PASSWORD');

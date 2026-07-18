@@ -34,7 +34,11 @@ export class LikeService {
         await this.likeRepository.createLike(manager, userId, postId);
         await this.postRepository.incrementLikeCount(postId, manager);
       } catch (error) {
-        if (error.code === '23505') {
+        if (
+          error instanceof Error &&
+          'code' in error &&
+          error.code === '23505'
+        ) {
           throw new ConflictException('이미 좋아요를 누른 게시물입니다.');
         }
         throw new InternalServerErrorException('좋아요 처리에 실패했습니다.');
