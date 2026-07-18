@@ -20,7 +20,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const [isInvalidTitle, setIsInvalidTitle] = useState(false);
 
@@ -146,7 +146,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   };
 
   const requestDeletePlaylist = () => {
-    setConfirmOpen(true);
+    setIsConfirmOpen(true);
   };
 
   useEffect(() => {
@@ -190,14 +190,14 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
         </div>
 
         <ConfirmOverlay
-          open={confirmOpen}
+          open={isConfirmOpen}
           title="플레이리스트를 삭제할까요?"
           confirmLabel="삭제"
           cancelLabel="취소"
-          onCancel={() => setConfirmOpen(false)}
+          onCancel={() => setIsConfirmOpen(false)}
           onConfirm={async () => {
             try {
-              setConfirmOpen(false);
+              setIsConfirmOpen(false);
               await deletePlaylist(playlistId);
               bumpPlaylistRefresh();
               closeModal();

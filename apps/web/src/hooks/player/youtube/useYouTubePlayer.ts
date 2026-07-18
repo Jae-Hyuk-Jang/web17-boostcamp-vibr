@@ -22,7 +22,7 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
   const togglePlay = usePlayerStore((s) => s.togglePlay);
   const setPlayError = usePlayerStore((s) => s.setPlayError);
 
-  const [ready, setReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YT.Player | null>(null);
@@ -65,12 +65,12 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
   }, [queueLength]);
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
     const waitForContainer = () =>
       new Promise<HTMLDivElement>((resolve) => {
         const tick = () => {
-          if (!mounted) return;
+          if (!isMounted) return;
           const el = containerRef.current;
           if (el) return resolve(el);
           requestAnimationFrame(tick);
@@ -81,14 +81,14 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
     const init = async () => {
       await loadScript();
       const el = await waitForContainer();
-      if (!mounted || playerRef.current) return;
+      if (!isMounted || playerRef.current) return;
 
       playerRef.current = new window.YT.Player(el, {
         playerVars: { autoplay: 0, controls: 1 },
         events: {
           onReady: (e) => {
             playerRef.current = e.target;
-            setReady(true);
+            setIsReady(true);
           },
           onError: (e) => {
             setPlayError(`Youtube error: ${e.data}`);
@@ -146,7 +146,7 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
     init();
 
     return () => {
-      mounted = false;
+      isMounted = false;
       playerRef.current?.destroy();
       playerRef.current = null;
     };
@@ -155,6 +155,6 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
   return {
     containerRef,
     playerRef,
-    ready,
+    ready: isReady,
   };
 }

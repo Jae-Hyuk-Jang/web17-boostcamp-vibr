@@ -19,8 +19,8 @@ export default function TickerText({ text, className = '', title, durationSec = 
   const measureRef = useRef<HTMLSpanElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
 
-  const [overflowed, setOverflowed] = useState(false);
-  const [mobileRunning, setMobileRunning] = useState(false);
+  const [isOverflowed, setIsOverflowed] = useState(false);
+  const [isMobileRunning, setIsMobileRunning] = useState(false);
 
   const isTouchLike = useMemo(() => {
     if (typeof window === 'undefined') return false;
@@ -37,7 +37,7 @@ export default function TickerText({ text, className = '', title, durationSec = 
     requestAnimationFrame(() => {
       el.style.animation = `vibr-ticker ${Math.max(2, durationSec)}s linear infinite`;
       // 데스크탑 hover 모드면 paused 기본, 모바일은 상태에 따라
-      el.style.animationPlayState = isTouchLike ? (mobileRunning ? 'running' : 'paused') : playOnHover ? 'paused' : 'running';
+      el.style.animationPlayState = isTouchLike ? (isMobileRunning ? 'running' : 'paused') : playOnHover ? 'paused' : 'running';
     });
   };
 
@@ -48,10 +48,10 @@ export default function TickerText({ text, className = '', title, durationSec = 
       if (!wrap || !span) return;
 
       const isOverflow = span.scrollWidth > wrap.clientWidth + 4;
-      setOverflowed(isOverflow);
+      setIsOverflowed(isOverflow);
 
       // overflow가 아니면 모바일 토글 상태도 꺼줌
-      if (!isOverflow) setMobileRunning(false);
+      if (!isOverflow) setIsMobileRunning(false);
     };
 
     measure();
@@ -67,7 +67,7 @@ export default function TickerText({ text, className = '', title, durationSec = 
   }, [text]);
 
   // overflow 아니면 그냥 truncate
-  if (!overflowed) {
+  if (!isOverflowed) {
     return (
       <div ref={wrapRef} className={`overflow-hidden whitespace-nowrap ${className}`} title={title ?? text}>
         <span ref={measureRef} className="block truncate">
@@ -85,7 +85,7 @@ export default function TickerText({ text, className = '', title, durationSec = 
       // 모바일: 탭으로 토글
       onClick={() => {
         if (!isTouchLike) return;
-        setMobileRunning((prev) => !prev);
+        setIsMobileRunning((prev) => !prev);
       }}
     >
       <style>{`
@@ -103,8 +103,8 @@ export default function TickerText({ text, className = '', title, durationSec = 
           animationDuration: `${Math.max(2, durationSec)}s`,
           animationTimingFunction: 'linear',
           animationIterationCount: 'infinite',
-          // 데스크탑: hover 전용이면 paused 기본 / 모바일: mobileRunning 따라감
-          animationPlayState: isTouchLike ? (mobileRunning ? 'running' : 'paused') : playOnHover ? 'paused' : 'running',
+          // 데스크탑: hover 전용이면 paused 기본 / 모바일: isMobileRunning 따라감
+          animationPlayState: isTouchLike ? (isMobileRunning ? 'running' : 'paused') : playOnHover ? 'paused' : 'running',
           cursor: isTouchLike ? 'pointer' : 'default',
         }}
         // 데스크탑 hover
@@ -137,7 +137,7 @@ export default function TickerText({ text, className = '', title, durationSec = 
       </div>
 
       {/* 모바일에서 토글 시, 멈추면 즉시 시작 위치로 리셋 */}
-      <MobileResetEffect enabled={isTouchLike} running={mobileRunning} onStop={resetToStart} />
+      <MobileResetEffect enabled={isTouchLike} running={isMobileRunning} onStop={resetToStart} />
     </div>
   );
 }
@@ -149,10 +149,10 @@ function MobileResetEffect({ enabled, running, onStop }: { enabled: boolean; run
   useEffect(() => {
     if (!enabled) return;
 
-    const prev = prevRef.current;
+    const isPreviouslyRunning = prevRef.current;
     prevRef.current = running;
 
-    if (prev === true && running === false) {
+    if (isPreviouslyRunning === true && running === false) {
       onStop();
     }
   }, [enabled, running, onStop]);

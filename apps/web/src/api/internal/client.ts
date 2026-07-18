@@ -58,7 +58,7 @@ const getSessionToken = (): string | null => {
   return sessionStorage.getItem(APP_ACCESS_TOKEN_STORAGE_KEY);
 };
 
-let handling401 = false;
+let isHandling401 = false;
 
 export const internalClient = axios.create({
   baseURL: '/api',
@@ -119,8 +119,8 @@ internalClient.interceptors.response.use(
     const requestSig = cfg.__authMeta.authSig ?? '';
     if (!requestSig || currentSig !== requestSig) throw error;
 
-    if (handling401) throw error;
-    handling401 = true;
+    if (isHandling401) throw error;
+    isHandling401 = true;
 
     clearAuthState();
 
@@ -129,7 +129,7 @@ internalClient.interceptors.response.use(
     }
 
     window.setTimeout(() => {
-      handling401 = false;
+      isHandling401 = false;
     }, 1000);
 
     throw error;

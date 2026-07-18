@@ -19,7 +19,7 @@ export default function NotiDrawerContent({ onNavigate }: { onNavigate?: () => v
   const readNoti = useNotiStore((s) => s.readNoti);
   const readAllNotis = useNotiStore((s) => s.readAllNotis);
   const deleteAllNotis = useNotiStore((s) => s.deleteAllNotis);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const errorMessage = useNotiStore((s) => s.errorMessage);
 
   const notis = useMemo(() => {
@@ -79,7 +79,7 @@ export default function NotiDrawerContent({ onNavigate }: { onNavigate?: () => v
           </button>
           <button
             type="button"
-            onClick={() => setConfirmOpen(true)}
+            onClick={() => setIsConfirmOpen(true)}
             className="flex items-center gap-1 rounded-full border border-gray-3 px-3 py-1 text-s text-gray-1 hover:border-red-200 hover:bg-red-50 hover:text-red-500 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
@@ -90,13 +90,13 @@ export default function NotiDrawerContent({ onNavigate }: { onNavigate?: () => v
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2">{renderBody()}</div>
 
       <ConfirmOverlay
-        open={confirmOpen}
+        open={isConfirmOpen}
         title="알림을 모두 삭제할까요?"
         confirmLabel="삭제"
         cancelLabel="취소"
-        onCancel={() => setConfirmOpen(false)}
+        onCancel={() => setIsConfirmOpen(false)}
         onConfirm={() => {
-          setConfirmOpen(false);
+          setIsConfirmOpen(false);
           deleteAllNotis();
         }}
       />

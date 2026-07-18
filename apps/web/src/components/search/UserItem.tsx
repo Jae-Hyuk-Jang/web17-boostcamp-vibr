@@ -34,19 +34,19 @@ export default function UserItem({ user, disabledFollow, isMe, onFollowChange }:
     if (disabledFollow) return;
     if (isSubmitting) return;
 
-    const next = !user.isFollowing;
+    const isNextFollowing = !user.isFollowing;
 
     // Optimistic: 먼저 UI 반영(스크롤/재렌더에도 유지되도록 상위 상태 갱신)
-    onFollowChange(user.id, next);
+    onFollowChange(user.id, isNextFollowing);
 
     setIsSubmitting(true);
 
     try {
-      if (next) await addFollow(user.id);
+      if (isNextFollowing) await addFollow(user.id);
       else await removeFollow(user.id);
     } catch {
       // 실패 시 원복
-      onFollowChange(user.id, !next);
+      onFollowChange(user.id, !isNextFollowing);
       // TODO(BE): 토스트/메시지 UX 확정
     } finally {
       setIsSubmitting(false);

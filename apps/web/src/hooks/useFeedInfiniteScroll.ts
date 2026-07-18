@@ -11,7 +11,7 @@ interface UseInfiniteScrollParams {
 }
 
 export default function useFeedInfiniteScroll({ fetchFn, resetKey, initialData = [] }: UseInfiniteScrollParams) {
-  const { ref, inView } = useInView({ threshold: 0.8, rootMargin: '200px' });
+  const { ref, inView: isInView } = useInView({ threshold: 0.8, rootMargin: '200px' });
 
   const [posts, setPosts] = useState<Post[]>(initialData);
   const [hasNext, setHasNext] = useState(false);
@@ -108,8 +108,8 @@ export default function useFeedInfiniteScroll({ fetchFn, resetKey, initialData =
   }, [resetKey, reset, loadInitialData]);
 
   useEffect(() => {
-    if (inView) void loadMore();
-  }, [inView, loadMore]);
+    if (isInView) void loadMore();
+  }, [isInView, loadMore]);
 
   return {
     posts,

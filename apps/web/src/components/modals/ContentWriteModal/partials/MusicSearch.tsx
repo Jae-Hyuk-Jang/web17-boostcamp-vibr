@@ -58,9 +58,12 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
   };
 
   const hasQuery = useMemo(() => active.trimmedQuery.length > 0, [active.trimmedQuery]);
-  const needMin = useMemo(() => active.trimmedQuery.length > 0 && active.trimmedQuery.length < ITUNES_SEARCH.MIN_QUERY_LENGTH, [active.trimmedQuery]);
+  const isBelowMinQuery = useMemo(
+    () => active.trimmedQuery.length > 0 && active.trimmedQuery.length < ITUNES_SEARCH.MIN_QUERY_LENGTH,
+    [active.trimmedQuery],
+  );
 
-  const recommendEnabled = useMemo(() => isSearchOpen && !hasQuery, [isSearchOpen, hasQuery]);
+  const isRecommendEnabled = useMemo(() => isSearchOpen && !hasQuery, [isSearchOpen, hasQuery]);
 
   const {
     status: playlistStatus,
@@ -69,7 +72,7 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
     selectedPlaylistId,
     refetch,
     selectPlaylist,
-  } = usePlaylistRecommendations({ enabled: recommendEnabled });
+  } = usePlaylistRecommendations({ enabled: isRecommendEnabled });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -138,7 +141,7 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
   );
 
   const renderSearchResults = () => {
-    if (needMin) return <div className="p-4 text-center text-gray-2 text-sm">{MIN_QUERY_HINT}</div>;
+    if (isBelowMinQuery) return <div className="p-4 text-center text-gray-2 text-sm">{MIN_QUERY_HINT}</div>;
     if (active.status === 'loading') return <div className="p-4 text-center text-gray-2 text-sm">검색 중...</div>;
     if (active.status === 'error')
       return <div className="p-4 text-center text-gray-2 text-sm">{active.errorMessage ?? '검색 중 오류가 발생했습니다.'}</div>;

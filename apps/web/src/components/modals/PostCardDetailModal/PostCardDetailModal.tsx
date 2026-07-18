@@ -26,43 +26,43 @@ export const PostCardDetailModal = () => {
   const userId = useAuthStore((s) => s.userId);
   const router = useRouter();
   const { isOpen, modalType, modalProps, closeModal } = useModalStore();
-  const enabled = isOpen && modalType === MODAL_TYPES.POST_DETAIL;
+  const isEnabled = isOpen && modalType === MODAL_TYPES.POST_DETAIL;
 
-  useScrollLock(enabled);
+  useScrollLock(isEnabled);
 
-  const postId = enabled ? (modalProps?.postId as string | undefined) : undefined;
-  const passedPost = enabled ? ((modalProps?.post as Post | undefined) ?? undefined) : undefined;
+  const postId = isEnabled ? (modalProps?.postId as string | undefined) : undefined;
+  const passedPost = isEnabled ? ((modalProps?.post as Post | undefined) ?? undefined) : undefined;
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!isEnabled) return;
     if (!postId) closeModal();
-  }, [enabled, postId, closeModal]);
+  }, [isEnabled, postId, closeModal]);
 
-  const { post, isLoading, error, updatePostContent } = usePostDetail({ enabled, postId, passedPost });
+  const { post, isLoading, error, updatePostContent } = usePostDetail({ enabled: isEnabled, postId, passedPost });
   const isOwner = userId === post?.author.id;
   const safePost = post ?? passedPost ?? EMPTY_POST;
 
   const setContentOverride = usePostReactionOverridesStore((s) => s.setContentOverride);
   const likeOverride = usePostReactionOverridesStore((s) => (postId ? s.likesByPostId[postId] : undefined));
 
-  const initialIsLiked = likeOverride?.isLiked ?? post?.isLiked ?? passedPost?.isLiked ?? false;
+  const isLikedInitially = likeOverride?.isLiked ?? post?.isLiked ?? passedPost?.isLiked ?? false;
   const initialLikeCount = likeOverride?.likeCount ?? post?.likeCount ?? passedPost?.likeCount ?? 0;
 
   const reactions = usePostReactions({
-    enabled: Boolean(enabled && postId),
+    enabled: Boolean(isEnabled && postId),
     postId: postId ?? '',
-    initialIsLiked,
+    initialIsLiked: isLikedInitially,
     initialLikeCount,
   });
 
-  const [likedUsersOpen, setLikedUsersOpen] = useState(false);
+  const [isLikedUsersOpen, setIsLikedUsersOpen] = useState(false);
   useEffect(() => {
-    if (!enabled) return;
-    setLikedUsersOpen(false);
-  }, [enabled, postId]);
+    if (!isEnabled) return;
+    setIsLikedUsersOpen(false);
+  }, [isEnabled, postId]);
 
   const likedUsers = useLikedUsers({
-    enabled: Boolean(enabled && postId && likedUsersOpen),
+    enabled: Boolean(isEnabled && postId && isLikedUsersOpen),
     postId: postId ?? '',
   });
 
@@ -86,17 +86,17 @@ export const PostCardDetailModal = () => {
       prevIsMobileRef.current = isMobile;
       return;
     }
-    const prev = prevIsMobileRef.current;
+    const isPreviouslyMobile = prevIsMobileRef.current;
     prevIsMobileRef.current = isMobile;
 
-    if (!prev && isMobile && enabled && postId) {
+    if (!isPreviouslyMobile && isMobile && isEnabled && postId) {
       const profileMatch = pathname.match(/^\/profile\/([^/]+)$/);
       if (profileMatch) {
         closeModal();
         router.push(`/profile/${profileMatch[1]}/posts?postId=${postId}`);
       }
     }
-  }, [isMobile, enabled, pathname, postId, router, closeModal]);
+  }, [isMobile, isEnabled, pathname, postId, router, closeModal]);
 
   // 게시글 수정 관련 상태
   const [isEditing, setIsEditing] = useState(modalProps?.initialIsEditing === true);
@@ -143,14 +143,14 @@ export const PostCardDetailModal = () => {
 
   // 모달 열릴 때 초기화
   useEffect(() => {
-    if (!enabled || !postId) return;
+    if (!isEnabled || !postId) return;
 
     openedAtRef.current = Date.now();
     playedMusicIdsRef.current = new Set();
     listenMsByMusicRef.current = {};
     lastTickRef.current = Date.now();
     emittedRef.current = false; // open 시 reset
-  }, [enabled, postId]);
+  }, [isEnabled, postId]);
 
   // 모달에서 재생 트리거(곡 id 기록)
   const handlePlayFromPost = useCallback(
@@ -174,7 +174,7 @@ export const PostCardDetailModal = () => {
 
   // listen time 누적(1초 tick)
   useEffect(() => {
-    if (!enabled || !postId) return;
+    if (!isEnabled || !postId) return;
 
     const postMusicIdSet = new Set((safePost.musics ?? []).map((m) => m.id));
 
@@ -198,7 +198,7 @@ export const PostCardDetailModal = () => {
 
     const timer = window.setInterval(tick, 1000);
     return () => window.clearInterval(timer);
-  }, [enabled, postId, safePost.musics, userId, isPlaying, currentMusic?.id]);
+  }, [isEnabled, postId, safePost.musics, userId, isPlaying, currentMusic?.id]);
 
   const emitPostDetailSummary = useCallback(() => {
     if (!userId) return; // 로그인 사용자만
@@ -232,15 +232,15 @@ export const PostCardDetailModal = () => {
 
   // 모달 unmount/disable 시에도 summary 전송(백업) — 단, emitOnce라 중복 없음
   useEffect(() => {
-    if (!enabled) return;
+    if (!isEnabled) return;
     return () => {
       emitOnce();
     };
-  }, [enabled, emitOnce]);
+  }, [isEnabled, emitOnce]);
 
   const { sheetRef, handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeToDismiss(handleClose);
 
-  if (!enabled || !postId) return null;
+  if (!isEnabled || !postId) return null;
 
   const handleUserClick = (targetUserId: string) => {
     router.push(`/profile/${targetUserId}`);
@@ -276,7 +276,7 @@ export const PostCardDetailModal = () => {
             nickname={safePost.author.nickname}
             content={safePost.content}
             comments={reactions.comments}
-            commentsLoading={reactions.commentsLoading}
+            commentsLoading={reactions.isCommentsLoading}
           />
 
           {/* 댓글 입력 */}
@@ -359,7 +359,7 @@ export const PostCardDetailModal = () => {
                 nickname={safePost.author.nickname}
                 content={safePost.content}
                 comments={reactions.comments}
-                commentsLoading={reactions.commentsLoading}
+                commentsLoading={reactions.isCommentsLoading}
               />
             )}
 
@@ -370,7 +370,7 @@ export const PostCardDetailModal = () => {
               likeCount={reactions.likeCount}
               postId={postId}
               onToggleLike={() => reactions.toggleLike()}
-              onOpenLikedUsers={() => setLikedUsersOpen(true)}
+              onOpenLikedUsers={() => setIsLikedUsersOpen(true)}
             />
             <PostDetailCommentComposer
               isAuthenticated={reactions.isAuthenticated}
@@ -384,8 +384,8 @@ export const PostCardDetailModal = () => {
       </div>
 
       <LikedUsersOverlay
-        isOpen={likedUsersOpen}
-        onClose={() => setLikedUsersOpen(false)}
+        isOpen={isLikedUsersOpen}
+        onClose={() => setIsLikedUsersOpen(false)}
         users={likedUsers.users}
         isLoading={likedUsers.isLoading}
         errorMsg={likedUsers.errorMsg}

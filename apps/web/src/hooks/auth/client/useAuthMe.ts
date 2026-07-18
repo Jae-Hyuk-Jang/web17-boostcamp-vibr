@@ -17,21 +17,21 @@ export function useAuthMe(): AuthMeState {
   });
 
   useEffect(() => {
-    let alive = true;
+    let isAlive = true;
 
     (async () => {
       try {
         const data = await authMe();
-        if (!alive) return;
+        if (!isAlive) return;
         setState({ userId: data.id, isAuthenticated: true, isLoading: false });
       } catch {
-        if (!alive) return;
+        if (!isAlive) return;
         setState({ userId: null, isAuthenticated: false, isLoading: false });
       }
     })();
 
     return () => {
-      alive = false;
+      isAlive = false;
     };
   }, []);
 

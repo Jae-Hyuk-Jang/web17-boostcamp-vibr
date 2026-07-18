@@ -22,7 +22,7 @@ export default function PlaylistItem(playlist: Props) {
 
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState(playlist.title);
@@ -57,7 +57,7 @@ export default function PlaylistItem(playlist: Props) {
     e.stopPropagation();
     playlist.setOpenMenuId(null);
 
-    setConfirmOpen(true);
+    setIsConfirmOpen(true);
   };
 
   const validateRename = (title: string) => {
@@ -186,13 +186,13 @@ export default function PlaylistItem(playlist: Props) {
       {typeof window !== 'undefined' && menu && createPortal(menu, document.body)}
 
       <ConfirmOverlay
-        open={confirmOpen}
+        open={isConfirmOpen}
         title="플레이리스트를 삭제할까요?"
         confirmLabel="삭제"
         cancelLabel="취소"
-        onCancel={() => setConfirmOpen(false)}
+        onCancel={() => setIsConfirmOpen(false)}
         onConfirm={async () => {
-          setConfirmOpen(false);
+          setIsConfirmOpen(false);
           await playlist.onDelete(playlist.id);
         }}
       />

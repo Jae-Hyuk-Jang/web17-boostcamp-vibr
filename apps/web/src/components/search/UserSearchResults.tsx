@@ -25,8 +25,8 @@ function UserSearchResults({ users, hasNext, isLoadingMore, loadMoreRef, meId, i
   return (
     <div className="space-y-1">
       {users.map((u) => {
-        const override = followOverrides.get(u.id);
-        const isFollowing = override ?? u.isFollowing;
+        const isFollowingOverride = followOverrides.get(u.id);
+        const isFollowing = isFollowingOverride ?? u.isFollowing;
 
         return (
           <UserItem key={u.id} user={{ ...u, isFollowing }} isMe={u.id === meId} disabledFollow={!isAuthenticated} onFollowChange={onFollowChange} />

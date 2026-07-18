@@ -16,7 +16,7 @@ interface UseInfiniteScrollParams<T> {
 }
 
 export default function useInfiniteScroll<T>({ fetchFn, resetKey }: UseInfiniteScrollParams<T>) {
-  const { ref, inView } = useInView({ threshold: 0.8, rootMargin: '200px' });
+  const { ref, inView: isInView } = useInView({ threshold: 0.8, rootMargin: '200px' });
 
   const [items, setItems] = useState<T[]>([]);
   const [hasNext, setHasNext] = useState(false);
@@ -104,8 +104,8 @@ export default function useInfiniteScroll<T>({ fetchFn, resetKey }: UseInfiniteS
   }, [resetKey, reset, loadInitialData]);
 
   useEffect(() => {
-    if (inView) void loadMore();
-  }, [inView, loadMore]);
+    if (isInView) void loadMore();
+  }, [isInView, loadMore]);
 
   return {
     items,

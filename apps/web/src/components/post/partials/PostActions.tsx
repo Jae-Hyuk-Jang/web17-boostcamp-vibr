@@ -15,16 +15,16 @@ type Props = {
 
 export default function PostActions({ post, onClickLike, onClickComment, disabledLike = false }: Props) {
   const stop = (e: React.MouseEvent<HTMLButtonElement>) => e.stopPropagation();
-  const liked = Boolean(post.isLiked);
+  const isLiked = Boolean(post.isLiked);
 
   const heartClassName = [
     'w-5 h-5 sm:w-7 sm:h-7 transition-colors',
-    liked ? 'text-accent-pink fill-accent-pink' : 'text-primary group-hover:text-accent-pink group-hover:fill-accent-pink',
+    isLiked ? 'text-accent-pink fill-accent-pink' : 'text-primary group-hover:text-accent-pink group-hover:fill-accent-pink',
   ].join(' ');
 
   const likeCountClassName = [
     'font-bold text-xs sm:text-sm transition-colors',
-    liked ? 'text-accent-pink' : 'text-primary group-hover:text-accent-pink',
+    isLiked ? 'text-accent-pink' : 'text-primary group-hover:text-accent-pink',
   ].join(' ');
 
   const handleCopyLink = async (postId: string) => {

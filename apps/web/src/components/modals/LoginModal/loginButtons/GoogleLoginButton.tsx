@@ -6,11 +6,11 @@ import Image from 'next/image';
 const GOOGLE_AUTH_START_PATH = '/auth/google';
 
 export const GoogleLoginButton = () => {
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = () => {
-    if (loading) return;
-    setLoading(true);
+    if (isLoading) return;
+    setIsLoading(true);
     window.location.assign(GOOGLE_AUTH_START_PATH);
   };
 
@@ -18,8 +18,8 @@ export const GoogleLoginButton = () => {
     <button
       type="button"
       onClick={handleGoogleLogin}
-      disabled={loading}
-      aria-busy={loading}
+      disabled={isLoading}
+      aria-busy={isLoading}
       className="
         w-full flex items-center justify-center gap-3
         px-6 py-4 rounded-full font-black
@@ -31,7 +31,7 @@ export const GoogleLoginButton = () => {
         disabled:opacity-60 disabled:cursor-not-allowed
       "
     >
-      {loading ? (
+      {isLoading ? (
         <>
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           Google로 이동 중…

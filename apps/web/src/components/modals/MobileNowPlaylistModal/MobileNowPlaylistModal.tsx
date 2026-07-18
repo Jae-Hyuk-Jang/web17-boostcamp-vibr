@@ -61,7 +61,7 @@ function MobileQueueRow({ music, index, isCurrent, isFirst, isLast, onPlay, onRe
 
 export default function MobileNowPlaylistModal() {
   const { isOpen, modalType, closeModal } = useModalStore();
-  const enabled = isOpen && modalType === MODAL_TYPES.MOBILE_QUEUE;
+  const isEnabled = isOpen && modalType === MODAL_TYPES.MOBILE_QUEUE;
 
   const queue = usePlayerStore((s) => s.queue);
   const currentMusicId = usePlayerStore((s) => s.currentMusic?.id ?? null);
@@ -72,7 +72,7 @@ export default function MobileNowPlaylistModal() {
   const moveUp = usePlayerStore((s) => s.moveUp);
   const moveDown = usePlayerStore((s) => s.moveDown);
 
-  if (!enabled) return null;
+  if (!isEnabled) return null;
 
   // 플레이어(h-16) + 네비(h-16) = bottom-32
   return (
