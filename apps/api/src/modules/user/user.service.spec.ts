@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
+import { FollowService } from '../follow/follow.service';
 import { NotFoundException } from '@nestjs/common';
 
 // 테스트용 Mock 데이터 생성 헬퍼
@@ -24,6 +25,12 @@ describe('UserService', () => {
     findWithFollowInfo: jest.fn(),
   };
 
+  // UserService 생성자가 요구하지만 getUserProfile 테스트에서는 쓰이지 않는 의존성
+  const mockFollowService = {
+    getFollowingIds: jest.fn(),
+    countFollow: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -31,6 +38,10 @@ describe('UserService', () => {
         {
           provide: UserRepository,
           useValue: mockUserRepository,
+        },
+        {
+          provide: FollowService,
+          useValue: mockFollowService,
         },
       ],
     }).compile();
