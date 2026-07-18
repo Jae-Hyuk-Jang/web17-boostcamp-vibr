@@ -9,6 +9,10 @@ const mockRedis = {
   xgroup: jest.fn(),
   xreadgroup: jest.fn(),
   xack: jest.fn(),
+  // pollAndProcess가 매번 끝에 reclaimPendingOnce()를 호출하고, 이게
+  // autoClaimPendingOnce를 거쳐 항상 xautoclaim을 호출함 — 기본값은 pending
+  // 항목 없음(빈 entries)으로 응답해 reclaim 단계가 조용히 통과하도록 함
+  xautoclaim: jest.fn().mockResolvedValue(['0-0', []]),
 };
 
 const mockTx = {
