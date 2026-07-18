@@ -13,6 +13,7 @@ import {
   PrivacyConsentModal,
 } from './index';
 import { getFollowerUsers, getFollowingUsers } from '@/api';
+import type { MusicResponseDto as Music } from '@repo/dto';
 
 export default function ModalContainer() {
   const { isOpen, modalType, modalProps, closeModal } = useModalStore();
@@ -47,7 +48,12 @@ export default function ModalContainer() {
   return (
     <>
       {/* 1. 컨텐츠 작성 모달 */}
-      {modalType === MODAL_TYPES.WRITE && <ContentWriteModal initialMusic={modalProps.initialMusic} initialMusics={modalProps.initialMusics} />}
+      {modalType === MODAL_TYPES.WRITE && (
+        <ContentWriteModal
+          initialMusic={modalProps.initialMusic as Music | undefined}
+          initialMusics={modalProps.initialMusics as Music[] | undefined}
+        />
+      )}
 
       {/* 2. 로그인 모달 */}
       {modalType === MODAL_TYPES.LOGIN && <LoginModal />}
@@ -65,7 +71,7 @@ export default function ModalContainer() {
       {modalType === MODAL_TYPES.FOLLOWING_USER && <UserListModal title="팔로잉 목록" fetchFn={getFollowingUsers} />}
 
       {/* 7. 플레이리스트 상세 모달 */}
-      {modalType === MODAL_TYPES.PLAYLIST_DETAIL && <PlaylistDetailModal playlistId={modalProps.playlistId} />}
+      {modalType === MODAL_TYPES.PLAYLIST_DETAIL && <PlaylistDetailModal playlistId={modalProps.playlistId as string} />}
 
       {/* 8. 보관함 저장(플레이리스트 선택) 모달 */}
       {modalType === MODAL_TYPES.PLAYLIST_PICKER && <PlaylistPickerModal />}

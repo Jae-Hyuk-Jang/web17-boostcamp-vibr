@@ -55,7 +55,7 @@ export default function ProfileInfo({ profile, loggedInUserId }: { profile: Prof
                 <div className="w-48 md:w-60">
                   <EditInput
                     value={editForm.nickname}
-                    onChange={(e: any) => setEditForm({ ...editForm, nickname: e.target.value })}
+                    onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value })}
                     className="text-xl md:text-2xl font-black text-center md:text-left"
                   />
                 </div>
@@ -99,7 +99,7 @@ export default function ProfileInfo({ profile, loggedInUserId }: { profile: Prof
           {/* 프로필 소개란 */}
           <div className="relative mt-4 md:mt-0 max-w-md lg:max-w-lg mx-auto md:mx-0">
             {isEditing ? (
-              <EditTextarea value={editForm.bio} onChange={(e: any) => setEditForm({ ...editForm, bio: e.target.value })} />
+              <EditTextarea value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} />
             ) : (
               <p className="text-primary font-medium text-sm xs:text-base whitespace-pre-wrap leading-relaxed text-center md:text-justify">
                 {bio || (isOwner ? '자기소개를 입력해주세요.' : '')}

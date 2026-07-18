@@ -100,7 +100,7 @@ export const PostCardDetailModal = () => {
 
   // 게시글 수정 관련 상태
   const [isEditing, setIsEditing] = useState(modalProps?.initialIsEditing === true);
-  const [editedContent, setEditedContent] = useState(modalProps?.initialEditingContent || '');
+  const [editedContent, setEditedContent] = useState((modalProps?.initialEditingContent as string | undefined) || '');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleStartEdit = () => {
@@ -284,8 +284,8 @@ export const PostCardDetailModal = () => {
             isAuthenticated={reactions.isAuthenticated}
             isSubmitting={reactions.isSubmittingComment}
             value={reactions.commentText}
-            onChange={reactions.setCommentText}
-            onSubmit={reactions.submitComment}
+            onChange={(v) => reactions.setCommentText(v)}
+            onSubmit={() => reactions.submitComment()}
           />
         </section>
       </div>
@@ -369,15 +369,15 @@ export const PostCardDetailModal = () => {
               isLiked={reactions.isLiked}
               likeCount={reactions.likeCount}
               postId={postId}
-              onToggleLike={reactions.toggleLike}
+              onToggleLike={() => reactions.toggleLike()}
               onOpenLikedUsers={() => setLikedUsersOpen(true)}
             />
             <PostDetailCommentComposer
               isAuthenticated={reactions.isAuthenticated}
               isSubmitting={reactions.isSubmittingComment}
               value={reactions.commentText}
-              onChange={reactions.setCommentText}
-              onSubmit={reactions.submitComment}
+              onChange={(v) => reactions.setCommentText(v)}
+              onSubmit={() => reactions.submitComment()}
             />
           </div>
         </div>
@@ -389,7 +389,7 @@ export const PostCardDetailModal = () => {
         users={likedUsers.users}
         isLoading={likedUsers.isLoading}
         errorMsg={likedUsers.errorMsg}
-        onRetry={likedUsers.refetch}
+        onRetry={() => likedUsers.refetch()}
       />
     </>
   );

@@ -45,7 +45,7 @@ const nowIso = () => new Date().toISOString();
 
 const safeComments = (v: unknown): CommentItem[] => {
   if (!v || typeof v !== 'object') return [];
-  const list = (v as any).comments;
+  const list = (v as { comments?: unknown }).comments;
   if (!Array.isArray(list)) return [];
   return list as CommentItem[];
 };

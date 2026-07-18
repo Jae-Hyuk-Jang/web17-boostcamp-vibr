@@ -17,9 +17,9 @@ export type ModalType = (typeof MODAL_TYPES)[keyof typeof MODAL_TYPES] | null;
 interface ModalState {
   modalType: ModalType;
   isOpen: boolean;
-  modalProps: any;
+  modalProps: Record<string, unknown>;
 
-  openModal: (type: ModalType, props?: any) => void;
+  openModal: (type: ModalType, props?: Record<string, unknown>) => void;
   closeModal: () => void;
 }
 
