@@ -4,6 +4,13 @@ import { Playlist } from './entities/playlist.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { PlaylistMusic } from './entities/playlist-music.entity';
 
+export interface PlaylistBriefRow {
+  id: string;
+  title: string;
+  tracksCount: string;
+  firstAlbumCoverUrl: string | null;
+}
+
 @Injectable()
 export class PlaylistRepository {
   constructor(
@@ -37,7 +44,7 @@ export class PlaylistRepository {
           .limit(1);
       }, 'firstAlbumCoverUrl')
       .where('p.owner_id = :userId', { userId })
-      .getRawMany();
+      .getRawMany<PlaylistBriefRow>();
   }
 
   async getCountOfPlaylistOf(userId: string, manager?: EntityManager) {

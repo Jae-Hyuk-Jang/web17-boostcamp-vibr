@@ -30,24 +30,25 @@ export class FeedService {
   ): Promise<FeedResponseDto> {
     const isInitialRequest = this.isInitialCursor(cursor);
 
-    let { followingLimit, trendingLimit, recentLimit } =
-      this.sourceAllocationPolicy.allocate(limit);
+    const {
+      followingLimit,
+      trendingLimit,
+      recentLimit: initialRecentLimit,
+    } = this.sourceAllocationPolicy.allocate(limit);
+    let recentLimit = initialRecentLimit;
 
-    // todo promise.all로 묶기
-    // 팔로잉 글 (+ 내 글)
-    // 인기 게시글
-
+    // 팔로잉 글 (+ 내 글)과 인기 게시글을 병렬로 조회
     const [
       { posts: followingPosts, nextCursor: nextFollowingCursor },
       { posts: trendingPosts, nextCursor: nextTrendingCursor },
     ] = await Promise.all([
-      await this.followingSource.getPosts(
+      this.followingSource.getPosts(
         isInitialRequest,
         requestUserId,
         followingLimit,
         cursor?.following,
       ),
-      await this.trendingSource.getPosts(
+      this.trendingSource.getPosts(
         isInitialRequest,
         requestUserId,
         trendingLimit,
