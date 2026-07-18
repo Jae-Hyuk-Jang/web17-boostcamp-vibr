@@ -1,8 +1,9 @@
 name: Deploy to Each Account ECR
 
+# 팀 프로젝트 당시 AWS 인프라에 연결되어 있던 배포 워크플로우.
+# 현재는 대상 인프라가 없어 push/PR 머지로 자동 실행되지 않도록 수동 실행으로 전환.
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   # --- Account A: Frontend 배포 ---
