@@ -61,7 +61,7 @@ export class TrendingStreamConsumer implements OnModuleInit {
 
     if (!res) return;
 
-    const [, entries] = res[0];
+    const [, entries] = res[0]!;
     if (!entries?.length) return;
 
     await this.aggregateEntriesAndAck(entries);
@@ -114,7 +114,7 @@ export class TrendingStreamConsumer implements OnModuleInit {
 
     pipelineResult?.forEach(([err], i) => {
       const id = cmdEntryIds[i];
-      if (!err) ackIds.push(id);
+      if (!err && id !== undefined) ackIds.push(id);
     });
 
     if (ackIds.length === 0) return;

@@ -37,7 +37,7 @@ export class TrendingSource implements FeedSource {
 
     // nextCursor
     const hasNext = members.length > limit;
-    const nextCursor = hasNext ? members[members.length - 1].score : undefined;
+    const nextCursor = hasNext ? members[members.length - 1]!.score : undefined;
 
     // 게시글 조회
     const postIds = members.slice(0, limit).map((m) => m.postId);
@@ -83,7 +83,7 @@ export class TrendingSource implements FeedSource {
       // 뒤에꺼부터 잘라야 점수 낮은것부터 잘림
       const result: { postId: string; score: number }[] = [];
       for (let i = membersWithGroupId.length - 1; i >= 0; --i) {
-        const mg = membersWithGroupId[i];
+        const mg = membersWithGroupId[i]!;
 
         if (restCutoffCount > 0 && mg.groupId !== userGroupId) {
           --restCutoffCount;

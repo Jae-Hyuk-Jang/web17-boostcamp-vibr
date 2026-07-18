@@ -57,7 +57,7 @@ export class UserService {
     spotifyUserId: string;
     nickname: string;
     email: string;
-    profileImgUrl: string;
+    profileImgUrl?: string;
     refreshToken: string;
   }): Promise<{
     id: string;
@@ -143,7 +143,7 @@ export class UserService {
 
     const nextCursor =
       hasNext && targetUsers.length > 0
-        ? targetUsers[targetUsers.length - 1].id
+        ? targetUsers[targetUsers.length - 1]!.id
         : undefined;
 
     return {

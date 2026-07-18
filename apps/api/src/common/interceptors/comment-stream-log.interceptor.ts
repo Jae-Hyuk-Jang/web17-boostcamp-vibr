@@ -5,7 +5,7 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import type { LogEventDto } from '@repo/dto';
 
 import { LogsService } from 'src/modules/log/logs.service';

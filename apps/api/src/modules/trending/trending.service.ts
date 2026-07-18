@@ -13,7 +13,9 @@ export class TrendingService {
 
     const result: Array<{ postId: string; score: number }> = [];
     for (let i = 0; i < raw.length; i += 2) {
-      result.push({ postId: raw[i], score: Number(raw[i + 1]) });
+      const postId = raw[i];
+      if (postId === undefined) continue;
+      result.push({ postId, score: Number(raw[i + 1]) });
     }
     return result;
   }
@@ -24,7 +26,9 @@ export class TrendingService {
 
     const result: Array<{ postId: string; score: number }> = [];
     for (let i = 0; i < raw.length; i += 2) {
-      result.push({ postId: raw[i], score: Number(raw[i + 1]) });
+      const postId = raw[i];
+      if (postId === undefined) continue;
+      result.push({ postId, score: Number(raw[i + 1]) });
     }
     return result;
   }
@@ -34,7 +38,9 @@ export class TrendingService {
 
     const result: Array<{ postId: string; score: number }> = [];
     for (let i = 0; i < raw.length; i += 2) {
-      result.push({ postId: raw[i], score: Number(raw[i + 1]) });
+      const postId = raw[i];
+      if (postId === undefined) continue;
+      result.push({ postId, score: Number(raw[i + 1]) });
     }
     return result;
   }

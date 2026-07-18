@@ -30,7 +30,7 @@ export class FollowingSource implements FeedSource {
     );
     const hasNext = fetched.length > limit;
     const posts = hasNext ? fetched.slice(0, limit) : fetched;
-    const nextCursor = hasNext ? posts[posts.length - 1].id : undefined;
+    const nextCursor = hasNext ? posts[posts.length - 1]!.id : undefined;
 
     return { posts, nextCursor };
   }

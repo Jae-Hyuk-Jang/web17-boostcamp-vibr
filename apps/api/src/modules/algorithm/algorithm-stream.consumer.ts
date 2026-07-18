@@ -198,7 +198,10 @@ export class AlgorithmStreamConsumer implements OnModuleInit {
   private parseToGraphData(fields: string[]): GraphRelation[] | null {
     const log: Record<string, string> = {};
     for (let i = 0; i < fields.length; i += 2) {
-      log[fields[i]] = fields[i + 1];
+      const key = fields[i];
+      const value = fields[i + 1];
+      if (key === undefined || value === undefined) continue;
+      log[key] = value;
     }
 
     const { userId, eventType, targetPostId, targetUserId, meta, serverTs } =

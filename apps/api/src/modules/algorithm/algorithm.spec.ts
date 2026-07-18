@@ -164,7 +164,8 @@ describe('Algorithm Module Integration Test', () => {
       await consumer.pollAndProcess();
 
       expect(addBatchSpy).toHaveBeenCalledTimes(1);
-      const addPayload = addBatchSpy.mock.calls[0][0];
+      // toHaveBeenCalledTimes(1) 검증 직후이므로 calls[0]은 항상 존재함
+      const addPayload = addBatchSpy.mock.calls[0]![0];
 
       expect(addPayload).toHaveLength(4);
 
@@ -217,7 +218,8 @@ describe('Algorithm Module Integration Test', () => {
 
       // 2. removeRelationshipsBatch 검증
       expect(removeBatchSpy).toHaveBeenCalledTimes(1);
-      const removePayload = removeBatchSpy.mock.calls[0][0];
+      // toHaveBeenCalledTimes(1) 검증 직후이므로 calls[0]은 항상 존재함
+      const removePayload = removeBatchSpy.mock.calls[0]![0];
       expect(removePayload).toHaveLength(1);
       expect(removePayload[0]).toEqual(
         expect.objectContaining({

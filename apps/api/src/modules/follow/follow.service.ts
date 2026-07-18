@@ -153,7 +153,7 @@ export class FollowService {
 
     let nextCursor: string | undefined = undefined;
     if (hasNext && targetFollows.length > 0) {
-      const lastItem = targetFollows[targetFollows.length - 1];
+      const lastItem = targetFollows[targetFollows.length - 1]!;
       nextCursor = cursorGenerator(lastItem);
     }
     return {

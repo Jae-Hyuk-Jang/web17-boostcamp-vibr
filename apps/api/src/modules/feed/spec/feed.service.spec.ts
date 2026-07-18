@@ -279,8 +279,9 @@ describe('FeedService', () => {
     const res = await service.feed('u1', 1);
 
     // then
-    expect(res.posts[0].isLiked).toBe(true);
-    expect(res.posts[0].isEdited).toBe(true);
-    expect(res.posts[0].musics[0].title).toBe('t');
+    const post = res.posts[0]!;
+    expect(post.isLiked).toBe(true);
+    expect(post.isEdited).toBe(true);
+    expect(post.musics[0]!.title).toBe('t');
   });
 });
