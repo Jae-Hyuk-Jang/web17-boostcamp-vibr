@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { FeedService } from './feed.service';
 import { AuthOptionalGuard } from 'src/common/guards/auth.optional-guard';
-import { UserId } from 'src/common/decorators/userId.decorator';
+import { UserId } from 'src/common/decorators/user-id.decorator';
 import { FeedResponseDto } from '@repo/dto';
 
 @Controller('feed')

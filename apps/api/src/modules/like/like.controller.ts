@@ -12,7 +12,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from 'src/common/guards/auth.guard';
-import { UserId } from 'src/common/decorators/userId.decorator';
+import { UserId } from 'src/common/decorators/user-id.decorator';
 import { LikeService } from './like.service';
 import { CreateLikeDto, LikedUserDto } from '@repo/dto';
 import { LikeStreamLogInterceptor } from 'src/common/interceptors/like-stream-log.interceptor';

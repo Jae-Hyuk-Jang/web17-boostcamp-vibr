@@ -2,7 +2,7 @@ import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { CreateLogsReqDto, CreateLogsResDto } from '@repo/dto';
 
 import { AuthGuard } from 'src/common/guards/auth.guard';
-import { UserId } from 'src/common/decorators/userId.decorator';
+import { UserId } from 'src/common/decorators/user-id.decorator';
 import { LogsService } from './logs.service';
 
 @Controller('logs')

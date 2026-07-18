@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
+  "globalEnv": ["NODE_ENV", "PORT", "NCP_BUCKET_NAME", "NCP_ACCESS_KEY", "NCP_SECRET_KEY"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

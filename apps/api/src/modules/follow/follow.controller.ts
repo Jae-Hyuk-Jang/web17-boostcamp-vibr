@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { FollowService } from './follow.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
-import { UserId } from 'src/common/decorators/userId.decorator';
+import { UserId } from 'src/common/decorators/user-id.decorator';
 import { CreateFollowDto, DeleteFollowDto, GetUserFollowDto } from '@repo/dto';
 import { AuthOptionalGuard } from 'src/common/guards/auth.optional-guard';
 import { FollowStreamLogInterceptor } from 'src/common/interceptors/follow-stream-log.interceptor';

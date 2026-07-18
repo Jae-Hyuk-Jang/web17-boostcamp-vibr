@@ -40,19 +40,19 @@ export class LogsService {
     const { items } = await this.privacyService.getRecentConsents(userId);
 
     const map = new Map(items.map((i) => [i.type, i.agreed]));
-    const ok =
+    const isOk =
       map.get(ConsentType.TERMS_OF_SERVICE) === true &&
       map.get(ConsentType.PRIVACY_POLICY) === true;
 
     // 3) 캐시 저장(짧은 TTL)
     await this.redis.set(
       consentCacheKey(userId),
-      ok ? '1' : '0',
+      isOk ? '1' : '0',
       'EX',
       CONSENT_CACHE_TTL_SEC,
     );
 
-    return ok;
+    return isOk;
   }
 
   /**
@@ -114,8 +114,8 @@ export class LogsService {
 
   async ingest(userId: string, dto: CreateLogsReqDto): Promise<number> {
     // 동의 없으면 drop
-    const ok = await this.hasLogConsent(userId);
-    if (!ok) return 0;
+    const isOk = await this.hasLogConsent(userId);
+    if (!isOk) return 0;
 
     const serverTs = Date.now();
     // Stream only: 모든 이벤트를 원천 스트림에 적재
