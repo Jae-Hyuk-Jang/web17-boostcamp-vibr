@@ -1,7 +1,19 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": ["NODE_ENV", "PORT", "NCP_BUCKET_NAME", "NCP_ACCESS_KEY", "NCP_SECRET_KEY"],
+  "globalEnv": [
+    "NODE_ENV",
+    "PORT",
+    "NCP_BUCKET_NAME",
+    "NCP_ACCESS_KEY",
+    "NCP_SECRET_KEY",
+    "YOUTUBE_SEARCH_API_KEY",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_REDIRECT_URI",
+    "SPOTIFY_CLIENT_ID",
+    "SPOTIFY_REDIRECT_URI",
+    "INTERNAL_API_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
