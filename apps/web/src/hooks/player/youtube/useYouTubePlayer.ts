@@ -119,7 +119,7 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
                 setIsTicking(false);
                 break;
 
-              case YT.PlayerState.ENDED:
+              case YT.PlayerState.ENDED: {
                 setIsTicking(false);
 
                 const qLen = queueLengthRef.current;
@@ -132,6 +132,7 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
 
                 playNext();
                 break;
+              }
 
               default: // UNSTARTED 등
                 setIsTicking(false);

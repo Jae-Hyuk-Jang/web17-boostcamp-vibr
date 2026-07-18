@@ -37,4 +37,12 @@ export default [
       'check-file/folder-naming-convention': 'off',
     },
   },
+
+  // next.config.js는 브라우저가 아니라 Node(빌드 타임)에서 실행되므로 process 전역이 필요
+  {
+    files: ['next.config.js'],
+    languageOptions: {
+      globals: { process: 'readonly' },
+    },
+  },
 ];
