@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePlayerStore } from '@/stores';
-import { getNowPlaylist, updateNowPlaylist } from '@/api/internal/now-playlist';
+import { getNowPlaylist, updateNowPlaylist } from '@/api/internal/nowPlaylist';
 
 type Options = { enabled: boolean };
 
