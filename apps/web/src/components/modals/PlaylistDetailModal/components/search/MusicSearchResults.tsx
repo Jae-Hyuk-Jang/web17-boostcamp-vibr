@@ -1,5 +1,6 @@
 import type { MusicResponseDto as Music } from '@repo/dto';
 import type { MusicRequestDto as UnsavedMusic } from '@repo/dto';
+import Image from 'next/image';
 import { TickerText } from '@/components';
 
 type Props = {
@@ -16,7 +17,7 @@ export function MusicSearchResults({ items, handleAddSong }: Props) {
           onClick={() => handleAddSong({ ...song, id: undefined })}
           className="w-full flex items-center p-2 hover:bg-gray-4 text-left border-b border-gray-100 last:border-0"
         >
-          <img src={song.albumCoverUrl} alt={song.title} className="w-8 h-8 rounded border border-gray-200 mr-2" />
+          <Image src={song.albumCoverUrl} alt={song.title} width={32} height={32} className="w-8 h-8 rounded border border-gray-200 mr-2" />
           <div className="flex-1 min-w-0">
             <TickerText text={song.title} className="font-bold text-sm" />
             <TickerText text={song.artistName} className="text-xs text-gray-500" />

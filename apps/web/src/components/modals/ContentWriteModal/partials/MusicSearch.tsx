@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Music as MusicIcon, Search, Sparkles, X } from 'lucide-react';
 
 import { ITUNES_SEARCH } from '@/constants';
@@ -161,7 +162,7 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
             onClick={() => onAddMusic(music)}
             className="w-full flex items-center px-4 py-2 hover:bg-gray-4 transition-colors text-left group"
           >
-            <img src={music.albumCoverUrl} alt="art" className="w-10 h-10 rounded object-cover mr-3 border border-gray-3" />
+            <Image src={music.albumCoverUrl} alt="art" width={40} height={40} className="w-10 h-10 rounded object-cover mr-3 border border-gray-3" />
             <div className="min-w-0 flex-1">
               <TickerText text={music.title} className="font-bold text-sm text-primary group-hover:text-accent-cyan transition-colors" />
               <TickerText text={music.artistName} className="text-xs text-gray-1" />

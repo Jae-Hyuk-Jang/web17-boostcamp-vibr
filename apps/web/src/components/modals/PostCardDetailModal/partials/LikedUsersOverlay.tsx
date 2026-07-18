@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { LikedUserDto } from '@repo/dto';
 
@@ -62,10 +63,11 @@ export default function LikedUsersOverlay({ isOpen, onClose, users, isLoading, e
                     }}
                     className="relative shrink-0 w-10 h-10"
                   >
-                    <img
+                    <Image
                       src={coalesceImageSrc(u.profileImgUrl, DEFAULT_IMAGES.PROFILE)}
                       alt={u.nickname}
-                      className="w-full h-full rounded-full border border-primary object-cover"
+                      fill
+                      className="rounded-full border border-primary object-cover"
                     />
                   </button>
                   <p className="ml-3 min-w-0 font-bold text-md text-primary truncate">{u.nickname}</p>

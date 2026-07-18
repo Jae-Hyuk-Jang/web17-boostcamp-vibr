@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { usePostMedia } from '@/hooks';
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
@@ -179,28 +180,30 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
             {prevUrl &&
               (variant === 'modal' ? (
                 <>
-                  <img src={prevUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-md brightness-75" />
-                  <img src={prevUrl} alt="이전" className="absolute inset-0 w-full h-full object-contain" />
+                  <Image src={prevUrl} alt="" aria-hidden fill className="object-cover scale-110 blur-md brightness-75" />
+                  <Image src={prevUrl} alt="이전" fill className="object-contain" />
                 </>
               ) : (
-                <img src={prevUrl} alt="이전" className="w-full h-full object-cover" />
+                <Image src={prevUrl} alt="이전" fill className="object-cover" />
               ))}
           </div>
           <div className="w-1/3 h-full flex-shrink-0 relative overflow-hidden">
             {variant === 'modal' ? (
               <>
-                <img src={coverUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-md brightness-75" />
-                <img
+                <Image src={coverUrl} alt="" aria-hidden fill className="object-cover scale-110 blur-md brightness-75" />
+                <Image
                   src={coverUrl}
                   alt={activeMusic?.title ?? 'cover'}
-                  className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  fill
+                  className="object-contain transition-transform duration-500 group-hover:scale-105"
                 />
               </>
             ) : (
-              <img
+              <Image
                 src={coverUrl}
                 alt={activeMusic?.title ?? 'cover'}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
             )}
           </div>
@@ -208,28 +211,30 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
             {nextUrl &&
               (variant === 'modal' ? (
                 <>
-                  <img src={nextUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-md brightness-75" />
-                  <img src={nextUrl} alt="다음" className="absolute inset-0 w-full h-full object-contain" />
+                  <Image src={nextUrl} alt="" aria-hidden fill className="object-cover scale-110 blur-md brightness-75" />
+                  <Image src={nextUrl} alt="다음" fill className="object-contain" />
                 </>
               ) : (
-                <img src={nextUrl} alt="다음" className="w-full h-full object-cover" />
+                <Image src={nextUrl} alt="다음" fill className="object-cover" />
               ))}
           </div>
         </div>
       ) : variant === 'modal' ? (
         <>
-          <img src={coverUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-md brightness-75" />
-          <img
+          <Image src={coverUrl} alt="" aria-hidden fill className="object-cover scale-110 blur-md brightness-75" />
+          <Image
             src={coverUrl}
             alt={activeMusic?.title ?? 'cover'}
-            className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+            fill
+            className="object-contain transition-transform duration-500 group-hover:scale-105"
           />
         </>
       ) : (
-        <img
+        <Image
           src={coverUrl}
           alt={activeMusic?.title ?? 'cover'}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
       )}
 

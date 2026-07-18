@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { X, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -203,9 +204,11 @@ export default function PlaylistPickerModal() {
                       className="w-full flex items-center justify-between p-3 hover:bg-grayish rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <div className="flex items-center min-w-0">
-                        <img
+                        <Image
                           src={coalesceImageSrc(pl.firstAlbumCoverUrl, DEFAULT_IMAGES.ALBUM)}
                           alt={pl.title}
+                          width={40}
+                          height={40}
                           className="w-10 h-10 rounded-lg border border-gray-3 object-cover shrink-0"
                         />
                         <div className="ml-3 min-w-0 text-left">

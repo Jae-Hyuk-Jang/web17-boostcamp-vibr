@@ -1,6 +1,7 @@
 'use client';
 
 import type { GetCommentsResDto } from '@repo/dto';
+import Image from 'next/image';
 import { LoadingSpinner } from '@/components';
 import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc, formatRelativeTime } from '@/utils';
@@ -22,7 +23,13 @@ export default function PostDetailBody({ profileImg, nickname, content, comments
       {!hideAuthorRow && (
         <>
           <div className="flex space-x-3">
-            <img src={profileImg} alt={nickname} className="w-9 h-9 rounded-full border border-primary/20 object-cover shrink-0" />
+            <Image
+              src={profileImg}
+              alt={nickname}
+              width={36}
+              height={36}
+              className="w-9 h-9 rounded-full border border-primary/20 object-cover shrink-0"
+            />
             <div className="text-sm min-w-0">
               <p className="font-bold text-primary mb-1">{nickname}</p>
               <p className="text-primary/80 leading-relaxed font-medium whitespace-pre-wrap">{content}</p>
@@ -39,9 +46,11 @@ export default function PostDetailBody({ profileImg, nickname, content, comments
         ) : comments.length > 0 ? (
           comments.map((c) => (
             <div key={c.id} className="flex space-x-3">
-              <img
+              <Image
                 src={coalesceImageSrc(c.author.profileImgUrl, DEFAULT_IMAGES.PROFILE)}
                 alt={c.author.nickname}
+                width={36}
+                height={36}
                 className="w-9 h-9 rounded-full border border-primary/10 object-cover shrink-0"
               />
               <div className="flex-1 text-sm min-w-0">

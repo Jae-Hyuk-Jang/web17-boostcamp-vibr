@@ -22,6 +22,14 @@ const nextConfig = {
         hostname: 'kr.object.ncloudstorage.com',
         pathname: `/${process.env.NCP_BUCKET_NAME}/**`,
       },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.scdn.co',
+      },
     ],
   },
   async rewrites() {

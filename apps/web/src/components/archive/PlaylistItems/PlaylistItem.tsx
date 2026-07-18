@@ -3,6 +3,7 @@ import { DEFAULT_IMAGES, MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
 import { MODAL_TYPES, useModalStore } from '@/stores';
 import type { PlaylistBriefResDto as Playlist } from '@repo/dto';
 import { Library, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -135,10 +136,11 @@ export default function PlaylistItem(playlist: Props) {
       <div className="relative w-12 md:w-16 aspect-square shrink-0">
         <div className="absolute top-0 right-0 w-full h-full bg-primary/20 rounded-lg transform rotate-6 border border-primary/20 transition-transform group-hover:rotate-12"></div>
         <div className="absolute top-0 right-0 w-full h-full bg-white rounded-lg border border-primary/20 transform rotate-3"></div>
-        <img
+        <Image
           src={playlist.firstAlbumCoverUrl || DEFAULT_IMAGES.ALBUM}
           alt={playlist.title}
-          className="relative w-full h-full object-cover rounded-lg border-2 border-primary z-10"
+          fill
+          className="object-cover rounded-lg border-2 border-primary z-10"
         />
       </div>
 

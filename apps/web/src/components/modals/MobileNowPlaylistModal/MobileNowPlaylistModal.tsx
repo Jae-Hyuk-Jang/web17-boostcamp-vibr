@@ -1,6 +1,7 @@
 'use client';
 
 import { X, Trash2, ChevronUp, ChevronDown, XCircle, ListPlus } from 'lucide-react';
+import Image from 'next/image';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 import { usePlayerStore } from '@/stores';
 import type { MusicResponseDto as Music } from '@repo/dto';
@@ -24,7 +25,7 @@ function MobileQueueRow({ music, index, isCurrent, isFirst, isLast, onPlay, onRe
       <span className={`w-6 text-center text-sm font-bold ${isCurrent ? 'text-accent-pink' : 'text-gray-2'}`}>{index + 1}</span>
 
       <button type="button" onClick={() => onPlay(music)} className="flex items-center gap-3 min-w-0 flex-1 text-left">
-        <img src={music.albumCoverUrl} alt={music.title} className="w-10 h-10 rounded border border-gray-3 object-cover" />
+        <Image src={music.albumCoverUrl} alt={music.title} width={40} height={40} className="w-10 h-10 rounded border border-gray-3 object-cover" />
         <div className="min-w-0">
           <p className="text-sm font-bold text-primary truncate">{music.title}</p>
           <p className="text-xs font-bold text-gray-1 truncate">{music.artistName}</p>

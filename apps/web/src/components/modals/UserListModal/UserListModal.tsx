@@ -6,6 +6,7 @@ import { DEFAULT_IMAGES } from '@/constants';
 import type { GetUserFollowDto } from '@repo/dto';
 import { useAuthStore, useModalStore, useProfileStore } from '@/stores';
 import { X } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 import { useInfiniteScroll } from '@/hooks';
@@ -82,10 +83,11 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
                     <li key={user.id + idx} className="flex items-center justify-between p-3 hover:bg-grayish rounded-xl transition-colors group">
                       <div className="flex items-center flex-1 min-w-0 mr-4">
                         <button onClick={() => handleProfileClick(user.id)} className="relative shrink-0 w-10 h-10">
-                          <img
+                          <Image
                             src={user.profileImgUrl || DEFAULT_IMAGES.PROFILE}
                             alt={user.nickname}
-                            className="w-full h-full rounded-full border border-primary object-cover"
+                            fill
+                            className="rounded-full border border-primary object-cover"
                           />
                         </button>
                         <p className="ml-3 min-w-0 font-bold text-md text-primary truncate">{user.nickname}</p>

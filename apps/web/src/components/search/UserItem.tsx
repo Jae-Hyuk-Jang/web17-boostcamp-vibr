@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { SearchUsersResDto } from '@repo/dto';
 
@@ -66,9 +67,11 @@ export default function UserItem({ user, disabledFollow, isMe, onFollowChange }:
         className={`w-12 h-12 mr-4 shrink-0 ${isMe ? 'cursor-default' : ''}`}
         title={isMe ? '내 프로필' : '프로필 보기'}
       >
-        <img
+        <Image
           src={coalesceImageSrc(user.profileImgUrl, DEFAULT_IMAGES.PROFILE)}
           alt={user.nickname}
+          width={48}
+          height={48}
           className="w-12 h-12 rounded-full object-cover border border-gray-3"
         />
       </button>
