@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRedisConnectionToken } from '@nestjs-modules/ioredis';
-import { Driver } from 'neo4j-driver';
 import { AlgorithmStreamConsumer } from './algorithm-stream.consumer';
 import { AlgorithmService } from './algorithm.service';
 import { REDIS_KEYS } from 'src/infra/redis/redis-keys';
@@ -17,8 +16,12 @@ const mockTx = {
 };
 
 const mockSession = {
-  executeWrite: jest.fn((callback) => callback(mockTx)),
-  executeRead: jest.fn((callback) => callback(mockTx)),
+  executeWrite: jest.fn((callback: (tx: typeof mockTx) => unknown) =>
+    callback(mockTx),
+  ),
+  executeRead: jest.fn((callback: (tx: typeof mockTx) => unknown) =>
+    callback(mockTx),
+  ),
   close: jest.fn().mockResolvedValue(undefined),
 };
 
@@ -180,6 +183,9 @@ describe('Algorithm Module Integration Test', () => {
           targetLabel: 'Content', // [수정] Music -> Content
           relationType: 'LISTENED',
           // 어떤 음악인지는 props에 들어있는지 확인
+          // expect.objectContaining()을 중첩하면 반환 타입이 any가 되는 jest 타입
+          // 정의의 알려진 한계라 이 지점만 예외 처리
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           props: expect.objectContaining({ sourceMusicId: 'music_1' }),
         }),
       );

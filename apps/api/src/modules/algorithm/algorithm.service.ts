@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import neo4j, { Session, Driver } from 'neo4j-driver';
+import neo4j, { Driver } from 'neo4j-driver';
 import { GraphRelation } from './algorithm-stream.consumer';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
@@ -166,9 +166,9 @@ export class AlgorithmService {
       );
       const records = result.records;
       const batch = records.map((r) => ({
-        id: r.get('id'),
-        label: r.get('label'),
-        groupId: r.get('groupId').toString(),
+        id: r.get('id') as string,
+        label: r.get('label') as string,
+        groupId: String(r.get('groupId')),
       }));
 
       // 가져온 데이터가 마지막이면 null or 0 반환
@@ -196,8 +196,10 @@ export class AlgorithmService {
       );
 
       return result.records.map((record) => ({
-        contentId: record.get('contentId'),
-        groupId: record.get('groupId')?.toString() || 'default',
+        contentId: record.get('contentId') as string,
+        groupId: record.get('groupId')
+          ? String(record.get('groupId'))
+          : 'default',
       }));
     } finally {
       await session.close();
@@ -252,8 +254,6 @@ export class AlgorithmService {
     try {
       await this.runUnifiedGrouping();
       await this.syncAllGroupsToRedis();
-    } catch (error) {
-      throw error;
     } finally {
       this.isGroupingRunning = false;
     }

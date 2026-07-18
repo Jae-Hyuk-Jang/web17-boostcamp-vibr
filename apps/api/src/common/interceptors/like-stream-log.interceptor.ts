@@ -8,6 +8,7 @@ import { Observable, tap } from 'rxjs';
 import type { Request, Response } from 'express';
 import type { LogEventDto } from '@repo/dto';
 import { LogsService } from 'src/modules/log/logs.service';
+import { AuthenticatedRequest } from 'src/common/types/jwt-payload.type';
 
 import {
   getUserIdFromReq,
@@ -21,7 +22,7 @@ export class LikeStreamLogInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const http = context.switchToHttp();
-    const req = http.getRequest<Request>();
+    const req = http.getRequest<AuthenticatedRequest>();
     const res = http.getResponse<Response>();
     const startedAt = Date.now();
 
@@ -35,14 +36,13 @@ export class LikeStreamLogInterceptor implements NestInterceptor {
           const path = normalizePathFromReq(req);
 
           const eventType = method === 'POST' ? 'LIKE_ADD' : 'LIKE_REMOVE';
+          const body = req.body as { postId?: string };
           const targetPostId =
-            method === 'POST'
-              ? (req.body as any)?.postId
-              : (req.params as any)?.postId;
+            method === 'POST' ? body?.postId : req.params?.postId;
           if (!targetPostId) return;
 
           // userId는 필수(로그인 전용 정책). 없으면 스킵(방어)
-          const userId = getUserIdFromReq(req as any);
+          const userId = getUserIdFromReq(req);
           if (!userId) return;
           const sessionId = getSessionIdFromReq(req);
           const durationMs = Math.max(0, Date.now() - startedAt);
@@ -60,7 +60,7 @@ export class LikeStreamLogInterceptor implements NestInterceptor {
           };
 
           void this.logsService
-            .ingest(userId, { events: [event] } as any)
+            .ingest(userId, { events: [event] })
             .catch(() => {});
         },
       }),

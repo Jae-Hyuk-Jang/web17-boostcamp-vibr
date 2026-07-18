@@ -49,7 +49,7 @@ export class PostController {
 
     let musics: MusicRequestDto[];
     try {
-      musics = JSON.parse(body.musics ?? '[]');
+      musics = JSON.parse(body.musics ?? '[]') as MusicRequestDto[];
     } catch {
       throw new BadRequestException('musics 형식이 올바르지 않습니다.');
     }
@@ -86,7 +86,7 @@ export class PostController {
     @Param('id') postId: string,
     @Body() updatePostDto: UpdatePostRequestDto,
   ): Promise<{ ok: true }> {
-    this.postService.update(requestUserId, postId, updatePostDto.content);
+    await this.postService.update(requestUserId, postId, updatePostDto.content);
     return { ok: true };
   }
 
@@ -109,8 +109,9 @@ export class PostController {
     try {
       return await this.postService.getByUserId(userId, limit, cursor);
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       throw new InternalServerErrorException(
-        `데이터를 불러오는 데 실패했습니다. 에러 메시지: ${error.message}`,
+        `데이터를 불러오는 데 실패했습니다. 에러 메시지: ${message}`,
       );
     }
   }

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PlaylistRepository } from './playlist.repository';
+import { PlaylistBriefRow, PlaylistRepository } from './playlist.repository';
 import {
   GetAllPlaylistsResDto,
   GetPlaylistDetailResDto,
@@ -26,18 +26,18 @@ export class PlaylistService {
 
   async getAllPlaylists(userId: string): Promise<GetAllPlaylistsResDto> {
     const playlists = (await this.playlistRepo.getAllPlaylists(userId)).map(
-      this.toPlaylistBriefResDto,
+      (row) => this.toPlaylistBriefResDto(row),
     );
 
     return { playlists };
   }
 
-  private toPlaylistBriefResDto(row: any): PlaylistBriefResDto {
+  private toPlaylistBriefResDto(row: PlaylistBriefRow): PlaylistBriefResDto {
     return {
       id: row.id,
       title: row.title,
       tracksCount: Number(row.tracksCount ?? 0),
-      firstAlbumCoverUrl: row.firstAlbumCoverUrl,
+      firstAlbumCoverUrl: row.firstAlbumCoverUrl ?? '',
     };
   }
 

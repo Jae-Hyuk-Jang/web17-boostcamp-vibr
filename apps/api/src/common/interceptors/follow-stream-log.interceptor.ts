@@ -9,6 +9,7 @@ import type { Request, Response } from 'express';
 import type { LogEventDto } from '@repo/dto';
 
 import { LogsService } from 'src/modules/log/logs.service';
+import { AuthenticatedRequest } from 'src/common/types/jwt-payload.type';
 import {
   getUserIdFromReq,
   getSessionIdFromReq,
@@ -21,7 +22,7 @@ export class FollowStreamLogInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const http = context.switchToHttp();
-    const req = http.getRequest<Request>();
+    const req = http.getRequest<AuthenticatedRequest>();
     const res = http.getResponse<Response>();
     const startedAt = Date.now();
 
@@ -34,13 +35,14 @@ export class FollowStreamLogInterceptor implements NestInterceptor {
           const method = req.method.toUpperCase();
 
           // FollowController: POST /follow, DELETE /follow (body에 otherUserId)
-          const targetUserId = (req.body as any)?.otherUserId;
+          const body = req.body as { otherUserId?: string };
+          const targetUserId = body?.otherUserId;
           if (!targetUserId) return;
 
           const eventType = method === 'POST' ? 'FOLLOW_ADD' : 'FOLLOW_REMOVE';
 
           // userId는 필수(로그인 전용 정책). 없으면 스킵(방어)
-          const userId = getUserIdFromReq(req as any);
+          const userId = getUserIdFromReq(req);
           if (!userId) return;
           const sessionId = getSessionIdFromReq(req);
           const durationMs = Math.max(0, Date.now() - startedAt);
@@ -58,7 +60,7 @@ export class FollowStreamLogInterceptor implements NestInterceptor {
           };
 
           void this.logsService
-            .ingest(userId, { events: [event] } as any)
+            .ingest(userId, { events: [event] })
             .catch(() => {});
         },
       }),

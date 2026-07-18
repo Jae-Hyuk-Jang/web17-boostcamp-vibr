@@ -36,7 +36,16 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
+    },
+  },
+  {
+    // expect(mockRepo.someMethod).toHaveBeenCalledWith(...) 처럼 jest.fn()
+    // 참조를 그대로 넘기는 건 this 바인딩이 필요 없어 안전한데도 unbound-method가
+    // 오탐하는 잘 알려진 케이스라 spec 파일에 한해 끔
+    files: ['**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 );

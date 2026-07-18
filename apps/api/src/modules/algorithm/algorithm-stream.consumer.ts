@@ -18,6 +18,12 @@ export interface GraphRelation {
 
 type XReadGroupReply = [string, [string, string[]][]][];
 
+type ParsedLogMeta = {
+  dwellMs?: number;
+  listenMsByMusic?: Record<string, number>;
+  length?: number;
+};
+
 @Injectable()
 export class AlgorithmStreamConsumer implements OnModuleInit {
   private readonly logger = new Logger(AlgorithmStreamConsumer.name);
@@ -48,7 +54,8 @@ export class AlgorithmStreamConsumer implements OnModuleInit {
         'MKSTREAM',
       );
     } catch (e) {
-      if (!e?.message?.includes('BUSYGROUP')) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (!message.includes('BUSYGROUP')) {
         this.logger.error('Failed to create consumer group', e);
       }
     }
@@ -198,9 +205,9 @@ export class AlgorithmStreamConsumer implements OnModuleInit {
       log;
     if (!userId || !eventType) return null;
 
-    let parsedMeta: any = {};
+    let parsedMeta: ParsedLogMeta = {};
     try {
-      parsedMeta = meta ? JSON.parse(meta) : {};
+      parsedMeta = meta ? (JSON.parse(meta) as ParsedLogMeta) : {};
     } catch {
       parsedMeta = {};
     }

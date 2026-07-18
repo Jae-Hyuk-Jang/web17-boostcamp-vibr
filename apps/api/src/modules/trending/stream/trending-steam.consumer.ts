@@ -41,7 +41,8 @@ export class TrendingStreamConsumer implements OnModuleInit {
         'MKSTREAM',
       );
     } catch (e) {
-      if (!e?.message?.includes('BUSYGROUP')) throw e;
+      const message = e instanceof Error ? e.message : String(e);
+      if (!message.includes('BUSYGROUP')) throw e;
     }
   }
 

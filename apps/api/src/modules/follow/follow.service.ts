@@ -126,7 +126,7 @@ export class FollowService {
     limit: number,
     userExtractor: (follow: Follow) => UserDto,
     cursorGenerator: (lastItem: Follow) => string,
-    userId?: string | undefined,
+    userId?: string,
   ): Promise<GetUserFollowDto> {
     const hasNext = follows.length > limit;
     const targetFollows = hasNext ? follows.slice(0, limit) : follows;

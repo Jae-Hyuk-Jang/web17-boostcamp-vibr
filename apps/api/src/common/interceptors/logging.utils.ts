@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+import type { AuthenticatedRequest } from 'src/common/types/jwt-payload.type';
 
 export const stripQuery = (url: string): string => {
   const idx = url.indexOf('?');
@@ -24,9 +25,8 @@ export const normalizePathFromReq = (req: Request): string => {
  * - 로그인 전용 정책이라 userId는 "반드시 있어야" 정상
  * - 다만 런타임 안전성을 위해 없으면 빈 문자열 반환(로깅 스킵용)
  */
-export const getUserIdFromReq = (req: any): string => {
-  const u = req.user;
-  const id = u?.sub ?? u?.id;
+export const getUserIdFromReq = (req: AuthenticatedRequest): string => {
+  const id = req.user?.sub;
   return typeof id === 'string' && id.trim().length > 0 ? id : '';
 };
 

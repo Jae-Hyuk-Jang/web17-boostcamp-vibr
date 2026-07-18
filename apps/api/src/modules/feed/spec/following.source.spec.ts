@@ -1,29 +1,38 @@
 import { FollowingSource } from '../sources/following.source';
+import { Post } from 'src/modules/post/entities/post.entity';
+import { Repository } from 'typeorm';
+
+type MockQueryBuilder = {
+  leftJoinAndSelect: jest.Mock;
+  orderBy: jest.Mock;
+  where: jest.Mock;
+  andWhere: jest.Mock;
+  innerJoin: jest.Mock;
+  take: jest.Mock;
+  getMany: jest.Mock;
+};
 
 describe('FollowingSource (mock only)', () => {
   const postRepository = { createQueryBuilder: jest.fn() };
 
-  const makeQb = () => {
-    const qb: any = {
-      leftJoinAndSelect: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      innerJoin: jest.fn().mockReturnThis(),
-      take: jest.fn().mockReturnThis(),
-      getMany: jest.fn(),
-    };
-    return qb;
-  };
+  const makeQb = (): MockQueryBuilder => ({
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    innerJoin: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    getMany: jest.fn(),
+  });
 
-  const makeMockPost = (id: string) => ({ id }) as any;
+  const makeMockPost = (id: string) => ({ id }) as unknown as Post;
 
   let source: FollowingSource;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    source = new FollowingSource(postRepository as any);
+    source = new FollowingSource(postRepository as unknown as Repository<Post>);
   });
 
   it('비초기 + cursor 없으면 posts: [] 즉시 반환', async () => {

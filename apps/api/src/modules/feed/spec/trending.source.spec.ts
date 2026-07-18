@@ -1,5 +1,21 @@
 import { TrendingSource } from '../sources/trending.source';
 import { InternalServerErrorException } from '@nestjs/common';
+import { Post } from 'src/modules/post/entities/post.entity';
+import { TrendingService } from 'src/modules/trending/trending.service';
+import { Repository } from 'typeorm';
+import type Redis from 'ioredis';
+
+type MockQueryBuilder = {
+  leftJoinAndSelect: jest.Mock;
+  andWhere: jest.Mock;
+  take: jest.Mock;
+  getMany: jest.Mock;
+};
+
+type MockPipeline = {
+  get: jest.Mock;
+  exec: jest.Mock;
+};
 
 describe('TrendingSource (mock only)', () => {
   const trendingService = { getByMaxScore: jest.fn() };
@@ -9,23 +25,17 @@ describe('TrendingSource (mock only)', () => {
   };
   const postRepository = { createQueryBuilder: jest.fn() };
 
-  const makeQb = () => {
-    const qb: any = {
-      leftJoinAndSelect: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      take: jest.fn().mockReturnThis(),
-      getMany: jest.fn().mockReturnThis(),
-    };
-    return qb;
-  };
+  const makeQb = (): MockQueryBuilder => ({
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    getMany: jest.fn().mockReturnThis(),
+  });
 
-  const makePipeline = () => {
-    const pipeline: any = {
-      get: jest.fn().mockReturnThis(),
-      exec: jest.fn(),
-    };
-    return pipeline;
-  };
+  const makePipeline = (): MockPipeline => ({
+    get: jest.fn().mockReturnThis(),
+    exec: jest.fn(),
+  });
 
   const makeMembers = (scores: number[]) => {
     return scores.map((s, i) => ({ postId: `p${i + 1}`, score: s }));
@@ -37,9 +47,9 @@ describe('TrendingSource (mock only)', () => {
     jest.clearAllMocks();
 
     source = new TrendingSource(
-      postRepository as any,
-      redis as any,
-      trendingService as any,
+      postRepository as unknown as Repository<Post>,
+      redis as unknown as Redis,
+      trendingService as unknown as TrendingService,
     );
   });
 

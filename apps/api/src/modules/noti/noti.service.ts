@@ -187,7 +187,7 @@ export class NotiService {
         nickname: noti.actor.nickname,
         profileImgUrl: noti.actor.profileImgUrl,
       },
-      type: noti.type as NotiType,
+      type: noti.type,
       relatedId: noti.relatedId ?? noti.actor.id,
       relatedType,
       isRead: noti.isRead,
