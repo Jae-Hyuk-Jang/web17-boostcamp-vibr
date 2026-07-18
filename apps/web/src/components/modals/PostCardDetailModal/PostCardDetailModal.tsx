@@ -238,13 +238,13 @@ export const PostCardDetailModal = () => {
     };
   }, [enabled, emitOnce]);
 
+  const { sheetRef, handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeToDismiss(handleClose);
+
   if (!enabled || !postId) return null;
 
   const handleUserClick = (targetUserId: string) => {
     router.push(`/profile/${targetUserId}`);
   };
-
-  const { sheetRef, handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeToDismiss(handleClose);
 
   return (
     <>
