@@ -1,7 +1,7 @@
 import { ConfirmOverlay } from '@/components';
 import { useModalStore, usePlayerStore, usePlaylistRefreshStore } from '@/stores';
 import type { MusicRequestDto as UnsavedMusic, MusicResponseDto as SavedMusic, GetPlaylistDetailResDto } from '@repo/dto';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DEFAULT_IMAGES, MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
 import { Header, SearchDropdown, SongList, Toolbar } from './components';
 import { addMusicsToPlaylist, changeMusicOrderOfPlaylist, deletePlaylist, editTitleOfPlaylist, getPlaylistDetail } from '@/api';
@@ -20,11 +20,11 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const [isInvalidTitle, setIsInvalidTitle] = useState(false);
 
-  const initialFetchPlaylist = async () => {
+  const initialFetchPlaylist = useCallback(async () => {
     try {
       const fetched = await getPlaylistDetail(playlistId);
       setPlaylist(fetched);
@@ -33,11 +33,11 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
       toast.error('플레이리스트 정보를 불러오지 못했습니다.');
       console.error(e);
     }
-  };
+  }, [playlistId]);
 
   useEffect(() => {
     initialFetchPlaylist();
-  }, [playlistId]);
+  }, [initialFetchPlaylist]);
 
   const onPlayTotalSongs = () => {
     if (songs.length > 0) {
@@ -146,13 +146,13 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   };
 
   const requestDeletePlaylist = () => {
-    setConfirmOpen(true);
+    setIsConfirmOpen(true);
   };
 
   useEffect(() => {
     const isInValid = !validateRename(draftTitle);
-    isInvalidTitle !== isInValid && setIsInvalidTitle(isInValid);
-  }, [draftTitle]);
+    if (isInvalidTitle !== isInValid) setIsInvalidTitle(isInValid);
+  }, [draftTitle, isInvalidTitle]);
 
   return (
     playlist && (
@@ -190,14 +190,14 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
         </div>
 
         <ConfirmOverlay
-          open={confirmOpen}
+          open={isConfirmOpen}
           title="플레이리스트를 삭제할까요?"
           confirmLabel="삭제"
           cancelLabel="취소"
-          onCancel={() => setConfirmOpen(false)}
+          onCancel={() => setIsConfirmOpen(false)}
           onConfirm={async () => {
             try {
-              setConfirmOpen(false);
+              setIsConfirmOpen(false);
               await deletePlaylist(playlistId);
               bumpPlaylistRefresh();
               closeModal();

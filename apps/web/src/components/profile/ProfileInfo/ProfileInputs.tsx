@@ -1,4 +1,12 @@
-export const EditInput = ({ value, onChange, className = '' }: any) => (
+import type { ChangeEventHandler } from 'react';
+
+type EditInputProps = {
+  value: string;
+  onChange: ChangeEventHandler<HTMLInputElement>;
+  className?: string;
+};
+
+export const EditInput = ({ value, onChange, className = '' }: EditInputProps) => (
   <input
     type="text"
     value={value}
@@ -8,7 +16,12 @@ export const EditInput = ({ value, onChange, className = '' }: any) => (
   />
 );
 
-export const EditTextarea = ({ value, onChange }: any) => (
+type EditTextareaProps = {
+  value: string;
+  onChange: ChangeEventHandler<HTMLTextAreaElement>;
+};
+
+export const EditTextarea = ({ value, onChange }: EditTextareaProps) => (
   <textarea
     value={value}
     onChange={onChange}

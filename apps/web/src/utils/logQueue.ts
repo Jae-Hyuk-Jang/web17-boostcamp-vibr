@@ -23,8 +23,8 @@ const DEFAULTS: Required<Options> = {
 
 let buffer: LogEventDto[] = [];
 let flushTimer: number | null = null;
-let flushing = false;
-let initialized = false;
+let isFlushing = false;
+let isInitialized = false;
 
 /** 실패 백오프 */
 let backoffMs = 0;
@@ -135,7 +135,7 @@ export const enqueueLog = (event: LogEventDto) => {
  */
 export const flush = async () => {
   if (typeof window === 'undefined') return;
-  if (flushing) return;
+  if (isFlushing) return;
   if (buffer.length === 0) return;
 
   if (!canFlushNow()) {
@@ -143,7 +143,7 @@ export const flush = async () => {
     return;
   }
 
-  flushing = true;
+  isFlushing = true;
 
   const batch = popBatch();
 
@@ -162,7 +162,7 @@ export const flush = async () => {
       setBackoff();
     }
   } finally {
-    flushing = false;
+    isFlushing = false;
 
     if (buffer.length > 0) {
       if (canFlushNow() && buffer.length >= config.flushSize) {
@@ -185,9 +185,9 @@ export const flush = async () => {
  */
 export const initLogQueue = (opts?: Options) => {
   if (typeof window === 'undefined') return () => {};
-  if (initialized) return () => {};
+  if (isInitialized) return () => {};
 
-  initialized = true;
+  isInitialized = true;
   config = { ...DEFAULTS, ...(opts ?? {}) };
 
   const onVisibility = () => {
@@ -199,7 +199,7 @@ export const initLogQueue = (opts?: Options) => {
   window.addEventListener('visibilitychange', onVisibility);
 
   return () => {
-    initialized = false;
+    isInitialized = false;
     window.removeEventListener('visibilitychange', onVisibility);
     clearFlushTimer();
   };

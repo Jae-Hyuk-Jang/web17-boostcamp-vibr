@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { usePostMedia } from '@/hooks';
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
@@ -57,7 +58,7 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
 
   // 스와이프 캐러셀 상태
   const [dragOffset, setDragOffset] = useState(0);
-  const [transitioning, setTransitioning] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const touchStartX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const wasSwipeRef = useRef(false); // 스와이프였으면 click 방지
@@ -99,13 +100,13 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
 
   // 터치 스와이프
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isMulti || transitioning) return;
+    if (!isMulti || isTransitioning) return;
     touchStartX.current = e.touches[0]?.clientX ?? 0;
     wasSwipeRef.current = false;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMulti || transitioning) return;
+    if (!isMulti || isTransitioning) return;
     const delta = (e.touches[0]?.clientX ?? 0) - touchStartX.current;
     if (Math.abs(delta) > 5) wasSwipeRef.current = true;
     // 경계에서 해당 방향 스와이프 막기
@@ -126,7 +127,7 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
       return;
     }
 
-    setTransitioning(true);
+    setIsTransitioning(true);
 
     const isAtStart = activeIndex <= 0;
     const isAtEnd = activeIndex >= totalLength - 1;
@@ -136,7 +137,7 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
       setDragOffset(-containerWidth);
       setTimeout(() => {
         next();
-        setTransitioning(false);
+        setIsTransitioning(false);
         setDragOffset(0);
       }, 250);
     } else if (delta > threshold && !isAtStart) {
@@ -144,13 +145,13 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
       setDragOffset(containerWidth);
       setTimeout(() => {
         prev();
-        setTransitioning(false);
+        setIsTransitioning(false);
         setDragOffset(0);
       }, 250);
     } else {
       // 임계값 미달 → 제자리 복귀
       setDragOffset(0);
-      setTimeout(() => setTransitioning(false), 250);
+      setTimeout(() => setIsTransitioning(false), 250);
     }
   };
 
@@ -159,7 +160,7 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
   // 트랙 스타일: [이전, 현재, 다음]을 나란히, translateX로 현재 이미지를 중앙에 표시
   const trackStyle: React.CSSProperties = {
     transform: `translateX(calc(-33.333% + ${dragOffset}px))`,
-    transition: transitioning ? 'transform 0.25s ease-out' : 'none',
+    transition: isTransitioning ? 'transform 0.25s ease-out' : 'none',
   };
 
   return (
@@ -179,28 +180,30 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
             {prevUrl &&
               (variant === 'modal' ? (
                 <>
-                  <img src={prevUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-md brightness-75" />
-                  <img src={prevUrl} alt="이전" className="absolute inset-0 w-full h-full object-contain" />
+                  <Image src={prevUrl} alt="" aria-hidden fill className="object-cover scale-110 blur-md brightness-75" />
+                  <Image src={prevUrl} alt="이전" fill className="object-contain" />
                 </>
               ) : (
-                <img src={prevUrl} alt="이전" className="w-full h-full object-cover" />
+                <Image src={prevUrl} alt="이전" fill className="object-cover" />
               ))}
           </div>
           <div className="w-1/3 h-full flex-shrink-0 relative overflow-hidden">
             {variant === 'modal' ? (
               <>
-                <img src={coverUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-md brightness-75" />
-                <img
+                <Image src={coverUrl} alt="" aria-hidden fill className="object-cover scale-110 blur-md brightness-75" />
+                <Image
                   src={coverUrl}
                   alt={activeMusic?.title ?? 'cover'}
-                  className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  fill
+                  className="object-contain transition-transform duration-500 group-hover:scale-105"
                 />
               </>
             ) : (
-              <img
+              <Image
                 src={coverUrl}
                 alt={activeMusic?.title ?? 'cover'}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
             )}
           </div>
@@ -208,28 +211,30 @@ export default function PostMedia({ post, variant, currentMusicId, isPlayingGlob
             {nextUrl &&
               (variant === 'modal' ? (
                 <>
-                  <img src={nextUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-md brightness-75" />
-                  <img src={nextUrl} alt="다음" className="absolute inset-0 w-full h-full object-contain" />
+                  <Image src={nextUrl} alt="" aria-hidden fill className="object-cover scale-110 blur-md brightness-75" />
+                  <Image src={nextUrl} alt="다음" fill className="object-contain" />
                 </>
               ) : (
-                <img src={nextUrl} alt="다음" className="w-full h-full object-cover" />
+                <Image src={nextUrl} alt="다음" fill className="object-cover" />
               ))}
           </div>
         </div>
       ) : variant === 'modal' ? (
         <>
-          <img src={coverUrl} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-md brightness-75" />
-          <img
+          <Image src={coverUrl} alt="" aria-hidden fill className="object-cover scale-110 blur-md brightness-75" />
+          <Image
             src={coverUrl}
             alt={activeMusic?.title ?? 'cover'}
-            className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+            fill
+            className="object-contain transition-transform duration-500 group-hover:scale-105"
           />
         </>
       ) : (
-        <img
+        <Image
           src={coverUrl}
           alt={activeMusic?.title ?? 'cover'}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
       )}
 

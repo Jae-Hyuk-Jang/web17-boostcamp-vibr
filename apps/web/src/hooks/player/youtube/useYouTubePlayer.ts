@@ -3,7 +3,7 @@
 import { YOUTUBE_IFRAME_ID, YOUTUBE_IFRAME_SCRIPT_SRC } from '@/constants';
 import { usePlayerStore } from '@/stores';
 import { PlayerProgress } from '@/types';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
@@ -22,7 +22,7 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
   const togglePlay = usePlayerStore((s) => s.togglePlay);
   const setPlayError = usePlayerStore((s) => s.setPlayError);
 
-  const [ready, setReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YT.Player | null>(null);
@@ -44,11 +44,14 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
       tag.id = YOUTUBE_IFRAME_ID;
       tag.src = YOUTUBE_IFRAME_SCRIPT_SRC;
 
+      // YouTube IFrame API 자체가 요구하는 전역 콜백 계약(정해진 이름의 window
+      // 프로퍼티)이라 구조를 바꿔도 피할 수 없는 전역 쓰기 — effect 내부에서만 호출됨
+      // eslint-disable-next-line react-compiler/react-compiler
       window.onYouTubeIframeAPIReady = () => resolve();
       document.body.appendChild(tag);
     });
 
-  const loadScript = async () => {
+  const loadScript = useCallback(async () => {
     if (window.YT?.Player) return;
 
     const existing = document.getElementById(YOUTUBE_IFRAME_ID);
@@ -58,19 +61,19 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
     }
 
     await appendYouTubeScript();
-  };
+  }, []);
 
   useEffect(() => {
     queueLengthRef.current = queueLength;
   }, [queueLength]);
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
     const waitForContainer = () =>
       new Promise<HTMLDivElement>((resolve) => {
         const tick = () => {
-          if (!mounted) return;
+          if (!isMounted) return;
           const el = containerRef.current;
           if (el) return resolve(el);
           requestAnimationFrame(tick);
@@ -81,14 +84,14 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
     const init = async () => {
       await loadScript();
       const el = await waitForContainer();
-      if (!mounted || playerRef.current) return;
+      if (!isMounted || playerRef.current) return;
 
       playerRef.current = new window.YT.Player(el, {
         playerVars: { autoplay: 0, controls: 1 },
         events: {
           onReady: (e) => {
             playerRef.current = e.target;
-            setReady(true);
+            setIsReady(true);
           },
           onError: (e) => {
             setPlayError(`Youtube error: ${e.data}`);
@@ -146,15 +149,19 @@ export function useYouTubePlayer({ setProgress, setIsTicking }: Props) {
     init();
 
     return () => {
-      mounted = false;
+      isMounted = false;
       playerRef.current?.destroy();
       playerRef.current = null;
     };
-  }, []);
+    // queueLength 변화는 queueLengthRef로 우회하므로 deps에서 제외.
+    // loadScript/playNext/togglePlay/setPlayError/setProgress/setIsTicking은
+    // 전부 안정적 참조(useCallback([])/zustand action/useState setter)라
+    // 실질적으로 값이 바뀌지 않아 마운트 시 1회만 실행되는 동작은 그대로 유지됨
+  }, [loadScript, playNext, togglePlay, setPlayError, setProgress, setIsTicking]);
 
   return {
     containerRef,
     playerRef,
-    ready,
+    ready: isReady,
   };
 }

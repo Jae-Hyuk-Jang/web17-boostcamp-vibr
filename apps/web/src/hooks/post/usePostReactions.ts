@@ -29,7 +29,7 @@ type Result = {
   isSubmittingLike: boolean;
 
   comments: CommentItem[];
-  commentsLoading: boolean;
+  isCommentsLoading: boolean;
 
   commentText: string;
   setCommentText: (v: string) => void;
@@ -45,7 +45,7 @@ const nowIso = () => new Date().toISOString();
 
 const safeComments = (v: unknown): CommentItem[] => {
   if (!v || typeof v !== 'object') return [];
-  const list = (v as any).comments;
+  const list = (v as { comments?: unknown }).comments;
   if (!Array.isArray(list)) return [];
   return list as CommentItem[];
 };
@@ -63,8 +63,8 @@ const mergeComments = (server: CommentItem[], local: CommentItem[]) => {
 };
 
 const getEffectivePollMs = (base: number) => {
-  const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
-  if (hidden) return Math.max(base * 6, 30000);
+  const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+  if (isHidden) return Math.max(base * 6, 30000);
   return base;
 };
 
@@ -76,7 +76,7 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
   const [isSubmittingLike, setIsSubmittingLike] = useState(false);
 
   const [comments, setComments] = useState<CommentItem[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [isCommentsLoading, setIsCommentsLoading] = useState(false);
 
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -129,7 +129,7 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
   useEffect(() => {
     applyComments([]);
     setCommentText('');
-    setCommentsLoading(false);
+    setIsCommentsLoading(false);
 
     setIsSubmittingComment(false);
     setIsSubmittingLike(false);
@@ -149,16 +149,16 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
   useEffect(() => {
     if (!enabled) return;
 
-    let alive = true;
+    let isAlive = true;
 
     const run = async () => {
       try {
         const me = await authMe();
-        if (!alive) return;
+        if (!isAlive) return;
         meRef.current = me;
         setIsAuthenticated(true);
       } catch {
-        if (!alive) return;
+        if (!isAlive) return;
         meRef.current = null;
         setIsAuthenticated(false);
       }
@@ -167,7 +167,7 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
     void run();
 
     return () => {
-      alive = false;
+      isAlive = false;
     };
   }, [enabled, postId]);
 
@@ -186,28 +186,28 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
   useEffect(() => {
     if (!enabled) return;
 
-    let alive = true;
+    let isAlive = true;
 
     const run = async () => {
       if (!onlineRef.current) return;
 
-      setCommentsLoading(true);
+      setIsCommentsLoading(true);
       try {
         const data = await getComments(postId);
-        if (!alive) return;
+        if (!isAlive) return;
 
         const server = safeComments(data);
         const merged = mergeComments(server, commentsRef.current);
         applyComments(merged);
       } finally {
-        if (alive) setCommentsLoading(false);
+        if (isAlive) setIsCommentsLoading(false);
       }
     };
 
     void run();
 
     return () => {
-      alive = false;
+      isAlive = false;
     };
   }, [enabled, postId, applyComments]);
 
@@ -265,30 +265,30 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
     if (!isAuthenticated) return;
     if (isSubmittingLike) return;
 
-    const prevLiked = isLiked;
+    const isPrevLiked = isLiked;
     const prevCount = likeCount;
 
-    const nextLiked = !prevLiked;
-    const nextCount = prevCount + (nextLiked ? 1 : -1);
+    const isNextLiked = !isPrevLiked;
+    const nextCount = prevCount + (isNextLiked ? 1 : -1);
 
     setIsSubmittingLike(true);
-    setIsLiked(nextLiked);
+    setIsLiked(isNextLiked);
     setLikeCount(nextCount);
 
     usePostReactionOverridesStore.getState().setLikeOverride(postId, {
-      isLiked: nextLiked,
+      isLiked: isNextLiked,
       likeCount: nextCount,
     });
 
     try {
-      if (nextLiked) await addLike({ postId });
+      if (isNextLiked) await addLike({ postId });
       else await removeLike(postId);
     } catch {
-      setIsLiked(prevLiked);
+      setIsLiked(isPrevLiked);
       setLikeCount(prevCount);
 
       usePostReactionOverridesStore.getState().setLikeOverride(postId, {
-        isLiked: prevLiked,
+        isLiked: isPrevLiked,
         likeCount: prevCount,
       });
     } finally {
@@ -349,7 +349,7 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
     isSubmittingLike,
 
     comments,
-    commentsLoading,
+    isCommentsLoading,
 
     commentText,
     setCommentText,

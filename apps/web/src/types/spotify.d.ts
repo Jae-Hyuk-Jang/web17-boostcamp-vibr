@@ -14,7 +14,7 @@ declare global {
       disconnect: () => void;
       addListener(event: 'ready' | 'not_ready', cb: (obj: WebPlaybackInst) => void): boolean;
       addListener(event: 'player_state_changed', cb: (state: PlaybackState | null) => void): boolean;
-      addListener(event: string, cb: (data: any) => void): boolean;
+      addListener(event: string, cb: (data: unknown) => void): boolean;
 
       removeListener: (eventName: string, callback: (state: PlaybackState) => void) => boolean;
       getCurrentState: () => Promise<PlaybackState | null>;
@@ -40,7 +40,7 @@ declare global {
     interface PlaybackState {
       context: {
         uri: string;
-        metadata: any;
+        metadata: unknown;
       };
       disallows: {
         pausing: boolean;

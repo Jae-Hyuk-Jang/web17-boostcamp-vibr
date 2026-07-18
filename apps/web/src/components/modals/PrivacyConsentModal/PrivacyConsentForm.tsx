@@ -46,7 +46,7 @@ export const PrivacyConsentForm = ({ onSuccess, submitButtonText = '동의하고
 
       // 페이지에서 성공 시 초기 상태 업데이트 / 모달에서 성공 시 파라미터 무시하고 closeModal
       if (onSuccess) onSuccess(agreements);
-    } catch (error) {
+    } catch {
       toast.error('동의 실패, 다시 시도해주세요');
     } finally {
       setIsLoading(false);

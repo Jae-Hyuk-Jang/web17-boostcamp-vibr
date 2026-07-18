@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { X, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -42,9 +43,9 @@ const dedupeById = (musics: Music[]): Music[] => {
 
 export default function PlaylistPickerModal() {
   const { isOpen, modalType, modalProps, closeModal } = useModalStore();
-  const enabled = isOpen && modalType === 'PLAYLIST_PICKER';
+  const isEnabled = isOpen && modalType === 'PLAYLIST_PICKER';
 
-  const musics = enabled ? (modalProps?.musics as Music[] | undefined) : undefined;
+  const musics = isEnabled ? (modalProps?.musics as Music[] | undefined) : undefined;
 
   const [playlists, setPlaylists] = useState<PlaylistBrief[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,17 +55,17 @@ export default function PlaylistPickerModal() {
   const [submittingPlaylistId, setSubmittingPlaylistId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  const canSubmit = Boolean(musics && musics.length > 0) && !submittingPlaylistId && !isCreating;
+  const isSubmittable = Boolean(musics && musics.length > 0) && !submittingPlaylistId && !isCreating;
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!isEnabled) return;
 
     if (!musics || musics.length === 0) {
       closeModal();
       return;
     }
 
-    let alive = true;
+    let isAlive = true;
 
     const run = async () => {
       setIsLoading(true);
@@ -72,23 +73,23 @@ export default function PlaylistPickerModal() {
 
       try {
         const list = await getAllPlaylists();
-        if (!alive) return;
+        if (!isAlive) return;
         setPlaylists(list);
       } catch {
-        if (!alive) return;
+        if (!isAlive) return;
         setPlaylists([]);
         setErrorMsg('플레이리스트 목록을 불러오지 못했습니다.');
       } finally {
-        if (alive) setIsLoading(false);
+        if (isAlive) setIsLoading(false);
       }
     };
 
     void run();
 
     return () => {
-      alive = false;
+      isAlive = false;
     };
-  }, [enabled, musics, closeModal]);
+  }, [isEnabled, musics, closeModal]);
 
   const handleSaveResultToast = (addedCount: number) => {
     if (addedCount === 0) toast.info('이미 플레이리스트에 있는 곡이에요.');
@@ -110,7 +111,7 @@ export default function PlaylistPickerModal() {
   };
 
   const handleSelect = async (playlistId: string) => {
-    if (!canSubmit) return;
+    if (!isSubmittable) return;
 
     setSubmittingPlaylistId(playlistId);
     setErrorMsg(null);
@@ -126,7 +127,7 @@ export default function PlaylistPickerModal() {
   };
 
   const handleCreateAndSave = async () => {
-    if (!canSubmit) return;
+    if (!isSubmittable) return;
 
     setIsCreating(true);
     setErrorMsg(null);
@@ -149,7 +150,7 @@ export default function PlaylistPickerModal() {
     return null;
   }, [isLoading, errorMsg, playlists.length]);
 
-  if (!enabled) return null;
+  if (!isEnabled) return null;
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in">
@@ -167,7 +168,7 @@ export default function PlaylistPickerModal() {
           <button
             type="button"
             onClick={() => void handleCreateAndSave()}
-            disabled={!canSubmit}
+            disabled={!isSubmittable}
             className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-primary bg-white font-black text-primary py-3
                        hover:bg-grayish disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -192,20 +193,22 @@ export default function PlaylistPickerModal() {
           ) : (
             <ul className="space-y-1">
               {playlists.map((pl) => {
-                const busy = submittingPlaylistId === pl.id;
+                const isBusy = submittingPlaylistId === pl.id;
 
                 return (
                   <li key={pl.id}>
                     <button
                       type="button"
                       onClick={() => void handleSelect(pl.id)}
-                      disabled={!canSubmit}
+                      disabled={!isSubmittable}
                       className="w-full flex items-center justify-between p-3 hover:bg-grayish rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <div className="flex items-center min-w-0">
-                        <img
+                        <Image
                           src={coalesceImageSrc(pl.firstAlbumCoverUrl, DEFAULT_IMAGES.ALBUM)}
                           alt={pl.title}
+                          width={40}
+                          height={40}
                           className="w-10 h-10 rounded-lg border border-gray-3 object-cover shrink-0"
                         />
                         <div className="ml-3 min-w-0 text-left">
@@ -214,7 +217,7 @@ export default function PlaylistPickerModal() {
                         </div>
                       </div>
 
-                      <span className="text-xs font-black text-primary">{busy ? '저장 중…' : '선택'}</span>
+                      <span className="text-xs font-black text-primary">{isBusy ? '저장 중…' : '선택'}</span>
                     </button>
                   </li>
                 );

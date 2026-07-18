@@ -3,7 +3,8 @@ import { DEFAULT_IMAGES, MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
 import { MODAL_TYPES, useModalStore } from '@/stores';
 import type { PlaylistBriefResDto as Playlist } from '@repo/dto';
 import { Library, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 type Props = Playlist & {
@@ -22,7 +23,7 @@ export default function PlaylistItem(playlist: Props) {
 
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState(playlist.title);
@@ -45,20 +46,26 @@ export default function PlaylistItem(playlist: Props) {
     playlist.setOpenMenuId(playlist.id);
   };
 
-  const onRename: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    e.stopPropagation();
-    playlist.setOpenMenuId(null);
+  const onRename: React.MouseEventHandler<HTMLButtonElement> = useCallback(
+    (e) => {
+      e.stopPropagation();
+      playlist.setOpenMenuId(null);
 
-    setDraftTitle(playlist.title);
-    setIsEditingTitle(true);
-  };
+      setDraftTitle(playlist.title);
+      setIsEditingTitle(true);
+    },
+    [playlist],
+  );
 
-  const onDelete: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    e.stopPropagation();
-    playlist.setOpenMenuId(null);
+  const onDelete: React.MouseEventHandler<HTMLButtonElement> = useCallback(
+    (e) => {
+      e.stopPropagation();
+      playlist.setOpenMenuId(null);
 
-    setConfirmOpen(true);
-  };
+      setIsConfirmOpen(true);
+    },
+    [playlist],
+  );
 
   const validateRename = (title: string) => {
     return title.trim().length <= MAX_PLAYLIST_TITLE_LENGTH;
@@ -87,8 +94,8 @@ export default function PlaylistItem(playlist: Props) {
 
   useEffect(() => {
     const isInValid = !validateRename(draftTitle);
-    isInvalidTitle !== isInValid && setIsInvalidTitle(isInValid);
-  }, [draftTitle]);
+    if (isInvalidTitle !== isInValid) setIsInvalidTitle(isInValid);
+  }, [draftTitle, isInvalidTitle]);
 
   useEffect(() => {
     const onDocMouseDown = (e: MouseEvent) => {
@@ -124,7 +131,7 @@ export default function PlaylistItem(playlist: Props) {
         </button>
       </div>
     );
-  }, [isMenuOpen, menuPos]);
+  }, [isMenuOpen, menuPos, onRename, onDelete]);
 
   return (
     <div
@@ -135,10 +142,11 @@ export default function PlaylistItem(playlist: Props) {
       <div className="relative w-12 md:w-16 aspect-square shrink-0">
         <div className="absolute top-0 right-0 w-full h-full bg-primary/20 rounded-lg transform rotate-6 border border-primary/20 transition-transform group-hover:rotate-12"></div>
         <div className="absolute top-0 right-0 w-full h-full bg-white rounded-lg border border-primary/20 transform rotate-3"></div>
-        <img
+        <Image
           src={playlist.firstAlbumCoverUrl || DEFAULT_IMAGES.ALBUM}
           alt={playlist.title}
-          className="relative w-full h-full object-cover rounded-lg border-2 border-primary z-10"
+          fill
+          className="object-cover rounded-lg border-2 border-primary z-10"
         />
       </div>
 
@@ -186,13 +194,13 @@ export default function PlaylistItem(playlist: Props) {
       {typeof window !== 'undefined' && menu && createPortal(menu, document.body)}
 
       <ConfirmOverlay
-        open={confirmOpen}
+        open={isConfirmOpen}
         title="플레이리스트를 삭제할까요?"
         confirmLabel="삭제"
         cancelLabel="취소"
-        onCancel={() => setConfirmOpen(false)}
+        onCancel={() => setIsConfirmOpen(false)}
         onConfirm={async () => {
-          setConfirmOpen(false);
+          setIsConfirmOpen(false);
           await playlist.onDelete(playlist.id);
         }}
       />

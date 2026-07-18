@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Music as MusicIcon, Search, Sparkles, X } from 'lucide-react';
 
 import { ITUNES_SEARCH } from '@/constants';
@@ -58,9 +59,12 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
   };
 
   const hasQuery = useMemo(() => active.trimmedQuery.length > 0, [active.trimmedQuery]);
-  const needMin = useMemo(() => active.trimmedQuery.length > 0 && active.trimmedQuery.length < ITUNES_SEARCH.MIN_QUERY_LENGTH, [active.trimmedQuery]);
+  const isBelowMinQuery = useMemo(
+    () => active.trimmedQuery.length > 0 && active.trimmedQuery.length < ITUNES_SEARCH.MIN_QUERY_LENGTH,
+    [active.trimmedQuery],
+  );
 
-  const recommendEnabled = useMemo(() => isSearchOpen && !hasQuery, [isSearchOpen, hasQuery]);
+  const isRecommendEnabled = useMemo(() => isSearchOpen && !hasQuery, [isSearchOpen, hasQuery]);
 
   const {
     status: playlistStatus,
@@ -69,7 +73,7 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
     selectedPlaylistId,
     refetch,
     selectPlaylist,
-  } = usePlaylistRecommendations({ enabled: recommendEnabled });
+  } = usePlaylistRecommendations({ enabled: isRecommendEnabled });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -78,10 +82,6 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
 
   const handleInputFocus = () => {
     setIsSearchOpen(true);
-  };
-
-  const handleCloseDropdown = () => {
-    setIsSearchOpen(false);
   };
 
   const handleSelectPlaylist = async (playlistId: string) => {
@@ -142,7 +142,7 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
   );
 
   const renderSearchResults = () => {
-    if (needMin) return <div className="p-4 text-center text-gray-2 text-sm">{MIN_QUERY_HINT}</div>;
+    if (isBelowMinQuery) return <div className="p-4 text-center text-gray-2 text-sm">{MIN_QUERY_HINT}</div>;
     if (active.status === 'loading') return <div className="p-4 text-center text-gray-2 text-sm">검색 중...</div>;
     if (active.status === 'error')
       return <div className="p-4 text-center text-gray-2 text-sm">{active.errorMessage ?? '검색 중 오류가 발생했습니다.'}</div>;
@@ -162,7 +162,7 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
             onClick={() => onAddMusic(music)}
             className="w-full flex items-center px-4 py-2 hover:bg-gray-4 transition-colors text-left group"
           >
-            <img src={music.albumCoverUrl} alt="art" className="w-10 h-10 rounded object-cover mr-3 border border-gray-3" />
+            <Image src={music.albumCoverUrl} alt="art" width={40} height={40} className="w-10 h-10 rounded object-cover mr-3 border border-gray-3" />
             <div className="min-w-0 flex-1">
               <TickerText text={music.title} className="font-bold text-sm text-primary group-hover:text-accent-cyan transition-colors" />
               <TickerText text={music.artistName} className="text-xs text-gray-1" />

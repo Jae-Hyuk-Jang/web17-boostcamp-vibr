@@ -64,10 +64,10 @@ export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
       return;
     }
 
-    const prev = prevIsMobileRef.current;
+    const isPreviouslyMobile = prevIsMobileRef.current;
     prevIsMobileRef.current = isMobile;
 
-    if (prev && !isMobile && initialPostId) {
+    if (isPreviouslyMobile && !isMobile && initialPostId) {
       openModal(MODAL_TYPES.POST_DETAIL, { postId: initialPostId });
       router.replace(`/profile/${userId}`);
     }

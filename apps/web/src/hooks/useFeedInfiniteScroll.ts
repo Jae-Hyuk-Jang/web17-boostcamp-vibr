@@ -11,7 +11,7 @@ interface UseInfiniteScrollParams {
 }
 
 export default function useFeedInfiniteScroll({ fetchFn, resetKey, initialData = [] }: UseInfiniteScrollParams) {
-  const { ref, inView } = useInView({ threshold: 0.8, rootMargin: '200px' });
+  const { ref, inView: isInView } = useInView({ threshold: 0.8, rootMargin: '200px' });
 
   const [posts, setPosts] = useState<Post[]>(initialData);
   const [hasNext, setHasNext] = useState(false);
@@ -60,7 +60,7 @@ export default function useFeedInfiniteScroll({ fetchFn, resetKey, initialData =
     try {
       const data = await fetchFn();
       updateScrollStates(data);
-    } catch (err) {
+    } catch {
       setErrorMsg('오류가 발생했습니다.');
     } finally {
       setIsInitialLoading(false); // 초기 데이터 fetching 로딩 상태는 따로 관리 (스켈레톤 UI 렌더링 목적)
@@ -108,8 +108,8 @@ export default function useFeedInfiniteScroll({ fetchFn, resetKey, initialData =
   }, [resetKey, reset, loadInitialData]);
 
   useEffect(() => {
-    if (inView) void loadMore();
-  }, [inView, loadMore]);
+    if (isInView) void loadMore();
+  }, [isInView, loadMore]);
 
   return {
     posts,

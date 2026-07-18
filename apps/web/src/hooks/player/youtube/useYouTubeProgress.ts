@@ -11,11 +11,14 @@ type Props = {
 };
 
 export function useYouTubeProgress({ progress, playerRef, setProgress }: Props) {
-  const getTimeSec = useCallback(() => playerRef.current?.getCurrentTime() ?? -1, []);
+  const getTimeSec = useCallback(() => playerRef.current?.getCurrentTime() ?? -1, [playerRef]);
 
-  const onTickMs = useCallback((ms: number) => {
-    setProgress((prev) => ({ ...prev, positionMs: ms }));
-  }, []);
+  const onTickMs = useCallback(
+    (ms: number) => {
+      setProgress((prev) => ({ ...prev, positionMs: ms }));
+    },
+    [setProgress],
+  );
 
   const seekToMs = useCallback(
     (ms: number) => {
@@ -33,7 +36,7 @@ export function useYouTubeProgress({ progress, playerRef, setProgress }: Props) 
 
       setProgress((prev) => ({ ...prev, positionMs: nextMs, durationMs: maxMs || prev.durationMs }));
     },
-    [progress.durationMs],
+    [progress.durationMs, playerRef, setProgress],
   );
 
   return {

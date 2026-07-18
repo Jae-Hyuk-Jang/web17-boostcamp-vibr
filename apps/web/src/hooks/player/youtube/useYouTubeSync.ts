@@ -37,7 +37,7 @@ export function useYouTubeSync({ ready, playerRef, setProgress }: Props) {
       if (player.isMuted()) player.unMute();
       player.setVolume(v100);
     }
-  }, [volume]);
+  }, [volume, playerRef]);
 
   // video 교체
   useEffect(() => {
@@ -56,7 +56,7 @@ export function useYouTubeSync({ ready, playerRef, setProgress }: Props) {
 
     if (isPlaying) player.loadVideoById(videoId);
     else player.cueVideoById(videoId);
-  }, [ready, currentMusic?.id, videoId, isYoutube]);
+  }, [ready, currentMusic, isPlaying, videoId, isYoutube, playerRef, setProgress]);
 
   // 에러메시지 초기화
   useEffect(() => {
@@ -70,5 +70,5 @@ export function useYouTubeSync({ ready, playerRef, setProgress }: Props) {
 
     if (isPlaying) player.playVideo();
     else player.pauseVideo();
-  }, [isYoutube, isPlaying, currentMusic?.id]);
+  }, [isYoutube, isPlaying, currentMusic, playerRef]);
 }

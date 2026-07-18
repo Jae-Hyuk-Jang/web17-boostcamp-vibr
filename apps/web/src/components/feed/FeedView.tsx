@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useFeedInfiniteScroll } from '@/hooks';
 import { getFeedPosts } from '@/api';
 import { FeedSkeleton } from '../skeleton';
@@ -37,14 +37,20 @@ export default function FeedView({ initialPost }: FeedViewProps) {
   const deletedPostId = usePostReactionOverridesStore((s) => s.deletedPostId);
   const clearDeletedPostId = usePostReactionOverridesStore((s) => s.clearDeletedPostId);
 
-  const updatePostContent = (updatedPostId: string, newContent?: string) => {
-    if (!newContent) return;
-    setPosts((prev) => prev.map((post) => (post.id === updatedPostId ? { ...post, content: newContent } : post)));
-  };
+  const updatePostContent = useCallback(
+    (updatedPostId: string, newContent?: string) => {
+      if (!newContent) return;
+      setPosts((prev) => prev.map((post) => (post.id === updatedPostId ? { ...post, content: newContent } : post)));
+    },
+    [setPosts],
+  );
 
-  const updateDeletedPost = (deletedPostId: string) => {
-    setPosts((prev) => prev.filter((post) => post.id !== deletedPostId));
-  };
+  const updateDeletedPost = useCallback(
+    (deletedPostId: string) => {
+      setPosts((prev) => prev.filter((post) => post.id !== deletedPostId));
+    },
+    [setPosts],
+  );
 
   useEffect(() => {
     const updatedIds = Object.keys(contentByPostId);
@@ -53,13 +59,13 @@ export default function FeedView({ initialPost }: FeedViewProps) {
       updatePostContent(id, contentByPostId[id]?.content);
       clearContentOverride(id);
     });
-  }, [contentByPostId]);
+  }, [contentByPostId, updatePostContent, clearContentOverride]);
 
   useEffect(() => {
     if (!deletedPostId) return;
     updateDeletedPost(deletedPostId);
     clearDeletedPostId();
-  }, [deletedPostId]);
+  }, [deletedPostId, updateDeletedPost, clearDeletedPostId]);
 
   if (isInitialLoading && !initialPost) return <FeedSkeleton />;
 

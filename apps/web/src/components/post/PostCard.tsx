@@ -33,23 +33,23 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
   const commentOverride = usePostReactionOverridesStore((s) => s.commentsByPostId[post.id]);
   const baseCommentCount = commentOverride?.commentCount ?? post.commentCount;
 
-  const baseLiked = Boolean(likeOverride?.isLiked ?? post.isLiked);
+  const isBaseLiked = Boolean(likeOverride?.isLiked ?? post.isLiked);
   const baseLikeCount = likeOverride?.likeCount ?? post.likeCount;
 
-  const [optimisticLiked, setOptimisticLiked] = useState(baseLiked);
+  const [isOptimisticLiked, setIsOptimisticLiked] = useState(isBaseLiked);
   const [optimisticLikeCount, setOptimisticLikeCount] = useState(baseLikeCount);
-  const [likeSubmitting, setLikeSubmitting] = useState(false);
+  const [isLikeSubmitting, setIsLikeSubmitting] = useState(false);
   const isOwner = post.author.id === userId;
 
   const postForActions: Post = useMemo(
     () => ({
       ...post,
-      isLiked: optimisticLiked,
+      isLiked: isOptimisticLiked,
       likeCount: optimisticLikeCount,
       // 댓글 카운트도 store 반영값 사용
       commentCount: baseCommentCount,
     }),
-    [post, optimisticLiked, optimisticLikeCount, baseCommentCount],
+    [post, isOptimisticLiked, optimisticLikeCount, baseCommentCount],
   );
 
   /**
@@ -57,44 +57,44 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
    * - Detail에서 눌러서 store가 바뀌어도 카드가 즉시 따라감
    */
   useEffect(() => {
-    setOptimisticLiked(baseLiked);
+    setIsOptimisticLiked(isBaseLiked);
     setOptimisticLikeCount(baseLikeCount);
-    setLikeSubmitting(false);
-  }, [post.id, baseLiked, baseLikeCount]);
+    setIsLikeSubmitting(false);
+  }, [post.id, isBaseLiked, baseLikeCount]);
 
   const handleOpenDetail = useCallback(() => onOpenDetail(postForActions), [onOpenDetail, postForActions]);
 
   const handleToggleLike = useCallback(async () => {
     if (!isAuthenticated) return;
-    if (likeSubmitting) return;
+    if (isLikeSubmitting) return;
 
-    const prevLiked = optimisticLiked;
+    const isPrevLiked = isOptimisticLiked;
     const prevCount = optimisticLikeCount;
 
-    const nextLiked = !prevLiked;
-    const nextCount = prevCount + (nextLiked ? 1 : -1);
+    const isNextLiked = !isPrevLiked;
+    const nextCount = prevCount + (isNextLiked ? 1 : -1);
 
-    setLikeSubmitting(true);
+    setIsLikeSubmitting(true);
 
     // optimistic (로컬)
-    setOptimisticLiked(nextLiked);
+    setIsOptimisticLiked(isNextLiked);
     setOptimisticLikeCount(nextCount);
 
     // optimistic (전역)
-    setLikeOverride(post.id, { isLiked: nextLiked, likeCount: nextCount });
+    setLikeOverride(post.id, { isLiked: isNextLiked, likeCount: nextCount });
 
     try {
-      if (nextLiked) await addLike({ postId: post.id });
+      if (isNextLiked) await addLike({ postId: post.id });
       else await removeLike(post.id);
     } catch {
       // rollback
-      setOptimisticLiked(prevLiked);
+      setIsOptimisticLiked(isPrevLiked);
       setOptimisticLikeCount(prevCount);
-      setLikeOverride(post.id, { isLiked: prevLiked, likeCount: prevCount });
+      setLikeOverride(post.id, { isLiked: isPrevLiked, likeCount: prevCount });
     } finally {
-      setLikeSubmitting(false);
+      setIsLikeSubmitting(false);
     }
-  }, [isAuthenticated, likeSubmitting, optimisticLiked, optimisticLikeCount, post.id, setLikeOverride]);
+  }, [isAuthenticated, isLikeSubmitting, isOptimisticLiked, optimisticLikeCount, post.id, setLikeOverride]);
 
   const openEditPostModal = useCallback(() => {
     openModal(MODAL_TYPES.POST_DETAIL, { postId: post.id, initialIsEditing: true, initialEditingContent: post.content });
@@ -124,7 +124,7 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
           post={postForActions}
           onClickLike={handleToggleLike}
           onClickComment={handleOpenDetail}
-          disabledLike={!isAuthenticated || likeSubmitting}
+          disabledLike={!isAuthenticated || isLikeSubmitting}
         />
 
         <PostContentPreview content={post.content} onClickMore={handleOpenDetail} />

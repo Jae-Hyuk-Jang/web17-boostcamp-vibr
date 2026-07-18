@@ -16,8 +16,8 @@ export const usePrivacyAgreements = (initialState?: ConsentState) => {
   };
 
   const handleAllCheck = () => {
-    const nextState = !Object.values(agreements).every(Boolean);
-    setAgreements({ terms: nextState, privacy: nextState });
+    const isNextChecked = !Object.values(agreements).every(Boolean);
+    setAgreements({ terms: isNextChecked, privacy: isNextChecked });
   };
 
   // 초기 상태와 비교했을 때 변경 사항 있으면 제출 버튼 활성화

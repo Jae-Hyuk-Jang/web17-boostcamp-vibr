@@ -23,7 +23,7 @@ export default function useLikedUsers({ enabled, postId }: { enabled: boolean; p
     if (!enabled) return;
     if (!postId) return;
 
-    let alive = true;
+    let isAlive = true;
 
     const run = async () => {
       setIsLoading(true);
@@ -31,21 +31,21 @@ export default function useLikedUsers({ enabled, postId }: { enabled: boolean; p
 
       try {
         const data = await getLikedUsers(postId);
-        if (!alive) return;
+        if (!isAlive) return;
         setUsers(Array.isArray(data) ? data : []);
       } catch {
-        if (!alive) return;
+        if (!isAlive) return;
         setUsers([]);
         setErrorMsg('좋아요 목록을 불러오지 못했습니다.');
       } finally {
-        if (alive) setIsLoading(false);
+        if (isAlive) setIsLoading(false);
       }
     };
 
     void run();
 
     return () => {
-      alive = false;
+      isAlive = false;
     };
   }, [enabled, postId, tick]);
 

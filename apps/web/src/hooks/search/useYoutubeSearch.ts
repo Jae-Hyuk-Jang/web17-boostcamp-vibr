@@ -55,12 +55,12 @@ export default function useYoutubeSearch({
     setStatus('loading');
     setErrorMessage(null);
 
-    let alive = true;
+    let isAlive = true;
 
     const run = async () => {
       // 캐시에 데이터 있으면 추가 요청 없이 사용
-      if (cache.current.has(query)) {
-        const cachedItems = cache.current.get(query) ?? [];
+      if (cache.current.has(trimmedQuery)) {
+        const cachedItems = cache.current.get(trimmedQuery) ?? [];
         setResults(cachedItems);
         setStatus(cachedItems.length > 0 ? 'success' : 'empty');
         return;
@@ -74,16 +74,16 @@ export default function useYoutubeSearch({
 
         const mapped = items.map(youtubeVideoToMusic);
 
-        if (!alive) return;
+        if (!isAlive) return;
 
         // 캐시 업데이트
-        cache.current.set(query, mapped);
+        cache.current.set(trimmedQuery, mapped);
 
         // 상태 업데이트
         setResults(mapped);
         setStatus(mapped.length > 0 ? 'success' : 'empty');
       } catch (e) {
-        if (!alive) return;
+        if (!isAlive) return;
 
         const err = e as { name?: string; message?: string };
         if (err?.name === 'AbortError') return;
@@ -97,7 +97,7 @@ export default function useYoutubeSearch({
     run();
 
     return () => {
-      alive = false;
+      isAlive = false;
       controller.abort();
     };
   }, [enabled, trimmedQuery, minQueryLength]);

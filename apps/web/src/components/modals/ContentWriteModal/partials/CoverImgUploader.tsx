@@ -15,6 +15,9 @@ export const CoverImgUploader = ({ currentCover, onFileChange }: CoverImgUploade
         className="group relative w-full aspect-square rounded-xl border-2 border-primary overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all bg-gray-4"
         onClick={() => fileInputRef.current?.click()}
       >
+        {/* currentCover는 URL.createObjectURL(file)의 blob: URL일 수 있어 next/image의
+            기본 로더가 지원하지 않음 — 로컬 파일 미리보기이므로 img 유지 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={currentCover} alt="Cover" className="w-full h-full object-cover" />
 
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">

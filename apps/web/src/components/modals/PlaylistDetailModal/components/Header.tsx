@@ -1,6 +1,6 @@
 import { MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
-import { Check, Pencil, Play, Search, Trash2, X } from 'lucide-react';
-import { Dispatch, SetStateAction } from 'react';
+import { Check, Pencil, Play, Trash2, X } from 'lucide-react';
+import Image from 'next/image';
 
 type Props = {
   title: string;
@@ -37,7 +37,7 @@ export function Header({
         {/* Cover */}
         <div className="relative w-28 h-28 shrink-0">
           <div className="absolute inset-0 bg-primary translate-x-1 translate-y-1 rounded-xl"></div>
-          <img src={coverImgUrl} alt={title} className="relative w-full h-full object-cover rounded-xl border-2 border-primary z-10" />
+          <Image src={coverImgUrl} alt={title} fill className="object-cover rounded-xl border-2 border-primary z-10" />
           <div className="absolute -bottom-2 -right-2 z-20 bg-accent-pink text-white text-xs font-bold px-2 py-0.5 rounded-full border border-primary">
             {tracksCount}곡
           </div>

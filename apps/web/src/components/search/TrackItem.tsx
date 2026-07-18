@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, Plus } from 'lucide-react';
+import Image from 'next/image';
 
 import { useModalStore, MODAL_TYPES } from '@/stores';
 import { useMusicActions } from '@/hooks';
@@ -45,9 +46,9 @@ export default function TrackItem({ mode, item, isAuthenticated }: TrackItemProp
   return (
     <div onClick={handlePlayClick} title="재생" className="w-full flex items-center p-3 rounded-xl cursor-pointer hover:bg-gray-4 transition-colors">
       <div
-        className={`${isVideo ? 'h-14 aspect-video' : 'h-12 aspect-square'} mr-4 shrink-0 rounded-lg overflow-hidden border border-gray-3 bg-gray-4`}
+        className={`relative ${isVideo ? 'h-14 aspect-video' : 'h-12 aspect-square'} mr-4 shrink-0 rounded-lg overflow-hidden border border-gray-3 bg-gray-4`}
       >
-        <img src={item.albumCoverUrl} alt={item.title} className="w-full h-full object-cover" />
+        <Image src={item.albumCoverUrl} alt={item.title} fill className="object-cover" />
       </div>
 
       <div className="flex-1 min-w-0">

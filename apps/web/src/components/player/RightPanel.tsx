@@ -15,11 +15,11 @@ const findCurrentIndex = (currentMusicId: string | null, queueIds: string[]): nu
 export default function RightPanel() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
-  const enableServerSync = isAuthenticated && !isLoading;
-  const enableGuestSession = !isAuthenticated && !isLoading;
+  const isServerSyncEnabled = isAuthenticated && !isLoading;
+  const isGuestSessionEnabled = !isAuthenticated && !isLoading;
 
-  useQueueSync({ enabled: enableServerSync });
-  useGuestQueueSession(enableGuestSession);
+  useQueueSync({ enabled: isServerSyncEnabled });
+  useGuestQueueSession(isGuestSessionEnabled);
 
   const { openModal, closeModal, isOpen, modalType } = useModalStore();
   const isQueueOpen = isOpen && modalType === MODAL_TYPES.MOBILE_QUEUE;
@@ -41,8 +41,8 @@ export default function RightPanel() {
   const queueIds = useMemo(() => queue.map((m) => m.id), [queue]);
   const currentIndex = useMemo(() => findCurrentIndex(currentMusic?.id ?? null, queueIds), [currentMusic?.id, queueIds]);
 
-  const canPrev = currentIndex > 0;
-  const canNext = currentIndex >= 0 && currentIndex < queue.length - 1;
+  const isPrevAvailable = currentIndex > 0;
+  const isNextAvailable = currentIndex >= 0 && currentIndex < queue.length - 1;
 
   const handleTogglePlay = useCallback(() => {
     if (!currentMusic) return;
@@ -130,8 +130,8 @@ export default function RightPanel() {
         <NowPlaying
           currentMusic={currentMusic}
           isPlaying={isPlaying}
-          canPrev={canPrev}
-          canNext={canNext}
+          canPrev={isPrevAvailable}
+          canNext={isNextAvailable}
           onTogglePlay={handleTogglePlay}
           onPrev={playPrev}
           onNext={playNext}
@@ -156,8 +156,8 @@ export default function RightPanel() {
       <MiniPlayerBar
         currentMusic={currentMusic}
         isPlaying={isPlaying}
-        canPrev={canPrev}
-        canNext={canNext}
+        canPrev={isPrevAvailable}
+        canNext={isNextAvailable}
         isQueueOpen={isQueueOpen}
         onTogglePlay={handleTogglePlay}
         onPrev={playPrev}

@@ -23,13 +23,14 @@ export function PlaybackProvider({ children }: { children: React.ReactNode }) {
   const playback = usePlayback();
 
   // 거의 안 변하는 값들만(cover는 이것만 구독)
+  const youtubeContainerRef = playback.kind === 'youtube' ? playback.containerRef : null;
   const refsValue = useMemo<PlaybackRefsValue>(
     () => ({
       kind: playback.kind as PlaybackKind,
-      containerRef: playback.kind === 'youtube' ? playback.containerRef : null,
+      containerRef: youtubeContainerRef,
       seekToMs: playback.seekToMs,
     }),
-    [playback.kind, playback.seekToMs, playback.kind === 'youtube' ? playback.containerRef : null],
+    [playback.kind, playback.seekToMs, youtubeContainerRef],
   );
 
   // tick으로 자주 변하는 값들만(progress는 이것만 구독)

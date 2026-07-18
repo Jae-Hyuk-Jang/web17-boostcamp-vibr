@@ -43,11 +43,11 @@ export default function useUserSearch({
   const debounced = useDebouncedValue(query, debounceMs);
   const trimmedQuery = useMemo(() => debounced.trim(), [debounced]);
 
-  const canFetch = useMemo(() => shouldFetch(enabled, trimmedQuery, minQueryLength), [enabled, trimmedQuery, minQueryLength]);
+  const isFetchable = useMemo(() => shouldFetch(enabled, trimmedQuery, minQueryLength), [enabled, trimmedQuery, minQueryLength]);
 
   const fetchFn = useCallback(
     async (cursor?: string) => {
-      if (!canFetch) return { items: [], hasNext: false, nextCursor: undefined };
+      if (!isFetchable) return { items: [], hasNext: false, nextCursor: undefined };
 
       const data = await searchUsers(trimmedQuery, cursor, limit);
       const users = Array.isArray(data.users) ? data.users : [];
@@ -58,12 +58,12 @@ export default function useUserSearch({
         nextCursor: data.nextCursor,
       };
     },
-    [canFetch, trimmedQuery, limit],
+    [isFetchable, trimmedQuery, limit],
   );
 
   const { items, hasNext, isLoading, isInitialLoading, initialError, errorMsg, ref } = useInfiniteScroll<SearchUser>({
     fetchFn,
-    resetKey: canFetch ? trimmedQuery : '',
+    resetKey: isFetchable ? trimmedQuery : '',
   });
 
   const status: SearchStatus = useMemo(() => {

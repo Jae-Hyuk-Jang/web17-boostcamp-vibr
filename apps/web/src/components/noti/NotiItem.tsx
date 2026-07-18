@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { NotiView } from './noti.types';
@@ -24,11 +25,12 @@ function NotiItem({ noti, onClick, onMarkRead }: { noti: NotiView; onClick: (not
 
       {/* 썸네일 */}
       <div className="relative shrink-0">
-        <div className="w-12 h-12">
-          <img
+        <div className="relative w-12 h-12">
+          <Image
             src={coalesceImageSrc(noti.thumbnailUrl, DEFAULT_IMAGES.ALBUM)}
             alt="noti"
-            className={`w-full h-full object-cover border border-gray-200 ${thumbShape}`}
+            fill
+            className={`object-cover border border-gray-200 ${thumbShape}`}
           />
         </div>
       </div>

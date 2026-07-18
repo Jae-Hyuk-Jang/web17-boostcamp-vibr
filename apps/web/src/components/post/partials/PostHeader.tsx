@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { MoreHorizontal } from 'lucide-react';
 import { coalesceImageSrc, formatRelativeTime } from '@/utils';
 import type { PostResponseDto } from '@repo/dto';
@@ -67,7 +68,7 @@ export default function PostHeader({ post, isOwner, onUserClick, onEditPost, onD
         toast.success('삭제했습니다.');
         onDeletePost?.();
         setDeletedPostId(post.id); // 삭제한 게시글 id 등록 (피드에 반영)
-      } catch (error) {
+      } catch {
         toast.error('삭제 실패! 다시 시도해주세요.');
       }
     });
@@ -78,8 +79,8 @@ export default function PostHeader({ post, isOwner, onUserClick, onEditPost, onD
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-3 cursor-pointer group min-w-0" onClick={handleUser}>
-        <div className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden bg-gray-100 shrink-0 group-hover:ring-2 ring-accent-cyan transition-all">
-          <img src={profileImg} alt={post.author.nickname} className="w-full h-full object-cover" />
+        <div className="relative w-10 h-10 rounded-full border-2 border-primary overflow-hidden bg-gray-100 shrink-0 group-hover:ring-2 ring-accent-cyan transition-all">
+          <Image src={profileImg} alt={post.author.nickname} fill className="object-cover" />
         </div>
 
         <div className="min-w-0">

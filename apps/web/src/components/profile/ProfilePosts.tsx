@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { MODAL_TYPES, useModalStore } from '@/stores';
 import { PostPreviewDto as PostPreview } from '@repo/dto';
 import { Heart, MessageCircle } from 'lucide-react';
@@ -46,10 +47,11 @@ export default function ProfilePosts({ posts, isMyProfile, userId }: { posts: Po
                     ${post.isMoreThanOneMusic ? 'group-hover:-translate-x-1' : ''} 
                 `}
             >
-              <img
+              <Image
                 src={post.coverImgUrl}
                 alt={`사용자 게시물:${post.postId}`}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-primary/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white space-y-2">
                 <div className="flex items-center space-x-2 font-bold 2xl:text-lg">

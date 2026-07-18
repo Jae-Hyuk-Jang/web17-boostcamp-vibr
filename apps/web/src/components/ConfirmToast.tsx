@@ -1,11 +1,5 @@
 import { toast } from 'react-toastify';
 
-interface ConfirmToastProps {
-  message: string;
-  onConfirm: () => void;
-  onCancel?: () => void;
-}
-
 export const showConfirmToast = (message: string, onConfirm: () => void) => {
   const ConfirmComponent = ({ closeToast }: { closeToast?: () => void }) => (
     <div className="flex flex-col items-center text-center gap-2 p-1 mx-auto">

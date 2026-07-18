@@ -18,8 +18,8 @@ export function PrivacyConsentGate() {
 
     (async () => {
       const { items } = await getRecentConsents();
-      const needsPrivacyConsent = items.length === 0;
-      if (needsPrivacyConsent) {
+      const isPrivacyConsentNeeded = items.length === 0;
+      if (isPrivacyConsentNeeded) {
         openModal(MODAL_TYPES.PRIVACY_CONCENT);
       }
     })().catch(() => {

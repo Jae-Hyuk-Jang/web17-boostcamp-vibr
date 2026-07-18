@@ -69,7 +69,7 @@ export default function Sidebar() {
           return null;
         }
 
-        isExpanded && setIsExpanded(false);
+        if (isExpanded) setIsExpanded(false);
         return type;
       });
     },
@@ -107,7 +107,8 @@ export default function Sidebar() {
         return;
       }
 
-      type === SidebarItemType.PROFILE ? handleMyProfileNavigate() : handleNavigate(type);
+      if (type === SidebarItemType.PROFILE) handleMyProfileNavigate();
+      else handleNavigate(type);
     },
     [handleCloseDrawer, handleOpenDrawer, isAuthenticated, openModal, handleMyProfileNavigate, handleNavigate],
   );
@@ -138,7 +139,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     // 드로어가 닫힐 때마다 사이드바 활성화 아이콘을 현재 pathname 기반으로 업데이트
-    !activeDrawer && setActiveItem(initialActiveItem);
+    if (!activeDrawer) setActiveItem(initialActiveItem);
   }, [activeDrawer, initialActiveItem]);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { SearchUsersResDto } from '@repo/dto';
 
@@ -34,19 +35,19 @@ export default function UserItem({ user, disabledFollow, isMe, onFollowChange }:
     if (disabledFollow) return;
     if (isSubmitting) return;
 
-    const next = !user.isFollowing;
+    const isNextFollowing = !user.isFollowing;
 
     // Optimistic: 먼저 UI 반영(스크롤/재렌더에도 유지되도록 상위 상태 갱신)
-    onFollowChange(user.id, next);
+    onFollowChange(user.id, isNextFollowing);
 
     setIsSubmitting(true);
 
     try {
-      if (next) await addFollow(user.id);
+      if (isNextFollowing) await addFollow(user.id);
       else await removeFollow(user.id);
     } catch {
       // 실패 시 원복
-      onFollowChange(user.id, !next);
+      onFollowChange(user.id, !isNextFollowing);
       // TODO(BE): 토스트/메시지 UX 확정
     } finally {
       setIsSubmitting(false);
@@ -66,9 +67,11 @@ export default function UserItem({ user, disabledFollow, isMe, onFollowChange }:
         className={`w-12 h-12 mr-4 shrink-0 ${isMe ? 'cursor-default' : ''}`}
         title={isMe ? '내 프로필' : '프로필 보기'}
       >
-        <img
+        <Image
           src={coalesceImageSrc(user.profileImgUrl, DEFAULT_IMAGES.PROFILE)}
           alt={user.nickname}
+          width={48}
+          height={48}
           className="w-12 h-12 rounded-full object-cover border border-gray-3"
         />
       </button>

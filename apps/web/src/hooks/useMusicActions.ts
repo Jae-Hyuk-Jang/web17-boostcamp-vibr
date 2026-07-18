@@ -15,8 +15,6 @@ const toCreateMusicReqDto = (m: Music): CreateMusicReqDto => ({
   durationMs: m.durationMs,
 });
 
-const normalizeToArray = (v: Music | Music[]): Music[] => (Array.isArray(v) ? v : [v]);
-
 /**
  * NOTE:
  * - 검색(iTunes) 결과는 id가 외부 trackId일 수 있음

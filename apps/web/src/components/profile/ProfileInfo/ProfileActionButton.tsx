@@ -24,10 +24,10 @@ export default function ProfileActionButton({
   const [isLoading, setIsLoading] = useState(false);
 
   // ⚠️ 리캡 기능 구현 이후 삭제 예정 - '준비중' 안내 임시 처리
-  const [showRecapHint, setShowRecapHint] = useState(false);
+  const [isShowingRecapHint, setIsShowingRecapHint] = useState(false);
   const handleRecapClick = useCallback(() => {
-    setShowRecapHint(true);
-    setTimeout(() => setShowRecapHint(false), 1800);
+    setIsShowingRecapHint(true);
+    setTimeout(() => setIsShowingRecapHint(false), 1800);
   }, []);
 
   const isLoggedIn = !!loggedInUserId;
@@ -39,7 +39,8 @@ export default function ProfileActionButton({
   const handleFollowAction = useCallback(async () => {
     setIsLoading(true);
     try {
-      isFollowing ? await removeFollow(profileUserId) : await addFollow(profileUserId);
+      if (isFollowing) await removeFollow(profileUserId);
+      else await addFollow(profileUserId);
       onFollowActionComplete();
     } catch {
       toast.error(`요청 처리에 실패했습니다.`);
@@ -53,7 +54,7 @@ export default function ProfileActionButton({
     return renderIn === 'modal' ? null : (
       <div className="relative">
         {/* ⚠️ 리캡 기능 구현 이후 삭제 예정 - 클릭 시 '준비중' 둥실 안내 */}
-        {showRecapHint && (
+        {isShowingRecapHint && (
           // 바깥: 가로 중앙 정렬 / 안쪽: 위로 둥실 떠오르며 페이드아웃 (transform 충돌 방지)
           <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1">
             <span className="block whitespace-nowrap text-sm font-bold text-primary animate-float-up">🚧 준비중!</span>
