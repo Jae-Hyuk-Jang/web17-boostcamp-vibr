@@ -144,7 +144,7 @@ export const SEED_POSTS: DeepPartial<Post>[] = [
   {
     id: post1Id, // noti.relatedId
     author: { id: user1Id },
-    coverImgUrl: SEED_MUSICS[0].albumCoverUrl!, // 커버 이미지: music 1 앨범커버
+    coverImgUrl: SEED_MUSICS[0]!.albumCoverUrl!, // 커버 이미지: music 1 앨범커버
     content: '요즘 이 곡 진짜 반복재생 중… 분위기 미쳤다. 너네도 들어봐.',
     likeCount: 1,
     commentCount: 1,
@@ -198,13 +198,13 @@ export const SEED_POST_MUSICS: DeepPartial<PostMusic>[] = [
   {
     id: pm4Id,
     post: { id: post1Id } as DeepPartial<Post>,
-    music: { id: SEED_MUSICS[0].id } as DeepPartial<Music>,
+    music: { id: SEED_MUSICS[0]!.id } as DeepPartial<Music>,
     orderIndex: 0,
   },
   {
     id: pm5Id,
     post: { id: post1Id } as DeepPartial<Post>,
-    music: { id: SEED_MUSICS[2].id } as DeepPartial<Music>,
+    music: { id: SEED_MUSICS[2]!.id } as DeepPartial<Music>,
     orderIndex: 1,
   },
 ];
@@ -230,38 +230,38 @@ export const SEED_PLAYLISTS = [
 export const SEED_PLAYLIST_MUSICS = [
   {
     id: '019be169-4f7a-7339-afcb-5a7dcd553d19',
-    playlist: { id: SEED_PLAYLISTS[0].id },
+    playlist: { id: SEED_PLAYLISTS[0]!.id },
     music: { id: music2Id },
     orderIndex: 0,
   },
   {
     id: '019be169-4f7e-746c-ae3d-2d814eaa59bb',
-    playlist: { id: SEED_PLAYLISTS[0].id },
+    playlist: { id: SEED_PLAYLISTS[0]!.id },
     music: { id: music5Id },
     orderIndex: 1,
   },
   {
     id: '019be169-80e8-7568-8c24-8520c54b7e6b',
-    playlist: { id: SEED_PLAYLISTS[0].id },
+    playlist: { id: SEED_PLAYLISTS[0]!.id },
     music: { id: music1Id },
     orderIndex: 2,
   },
   {
     id: '019be169-4f7e-746c-ae3d-314c3d99bf5f',
-    playlist: { id: SEED_PLAYLISTS[0].id },
+    playlist: { id: SEED_PLAYLISTS[0]!.id },
     music: { id: music6Id },
     orderIndex: 3,
   },
 
   {
     id: '019be169-c254-70db-ae7f-361ef3a7c592',
-    playlist: { id: SEED_PLAYLISTS[1].id },
+    playlist: { id: SEED_PLAYLISTS[1]!.id },
     music: { id: music6Id },
     orderIndex: 0,
   },
   {
     id: '019be169-d510-737c-9ede-38267ddeeb1b',
-    playlist: { id: SEED_PLAYLISTS[1].id },
+    playlist: { id: SEED_PLAYLISTS[1]!.id },
     music: { id: music1Id },
     orderIndex: 1,
   },

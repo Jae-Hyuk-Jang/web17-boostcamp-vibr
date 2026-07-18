@@ -59,7 +59,7 @@ export class PostService {
       }),
     );
 
-    thumbnailImgUrl ??= musics[0].albumCoverUrl;
+    thumbnailImgUrl ??= musics[0]!.albumCoverUrl;
 
     await this.ds.transaction(async (transactionalEntityManager) => {
       const postRepo = transactionalEntityManager.getRepository(Post);
@@ -199,7 +199,7 @@ export class PostService {
     let nextCursor: string | undefined = undefined;
 
     if (hasNext && targetPosts.length > 0) {
-      const lastPost = targetPosts[targetPosts.length - 1];
+      const lastPost = targetPosts[targetPosts.length - 1]!;
       nextCursor = `${lastPost.createdAt.toISOString()}_${lastPost.id}`;
     }
 

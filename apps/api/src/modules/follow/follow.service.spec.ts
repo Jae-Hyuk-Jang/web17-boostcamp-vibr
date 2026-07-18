@@ -131,10 +131,10 @@ describe('FollowService', () => {
 
       // 3. 실제 데이터는 limit 개수만큼만 잘려서 와야 함
       expect(result.users).toHaveLength(limit);
-      expect(result.users[0].id).toBe('u1'); // followedUser가 매핑되었는지 확인
+      expect(result.users[0]!.id).toBe('u1'); // followedUser가 매핑되었는지 확인
 
       // 4. nextCursor 확인 (마지막 아이템의 createdAt)
-      expect(result.nextCursor).toBe(follows[1].createdAt.toISOString());
+      expect(result.nextCursor).toBe(follows[1]!.createdAt.toISOString());
     });
 
     it('should return paginated follows with cursor', async () => {
@@ -192,10 +192,10 @@ describe('FollowService', () => {
       );
 
       expect(result.hasNext).toBe(true);
-      expect(result.users[0].id).toBe('u1'); // followingUser가 매핑되었는지 확인
+      expect(result.users[0]!.id).toBe('u1'); // followingUser가 매핑되었는지 확인
 
       // **중요**: getFollowers는 커서가 "Date_ID" 형태여야 함
-      const expectedCursor = `${follows[1].createdAt.toISOString()}_${follows[1].followingUserId}`;
+      const expectedCursor = `${follows[1]!.createdAt.toISOString()}_${follows[1]!.followingUserId}`;
       expect(result.nextCursor).toBe(expectedCursor);
     });
 

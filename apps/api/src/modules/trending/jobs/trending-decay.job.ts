@@ -30,6 +30,7 @@ export class TrendingDecayJob {
 
       for (let i = 0; i < items.length; i += 2) {
         const postId = items[i];
+        if (postId === undefined) continue;
         const score = Number(items[i + 1]);
 
         const newScore = score * TRENDING_DECAY_FACTOR;
