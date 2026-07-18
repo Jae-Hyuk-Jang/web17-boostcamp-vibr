@@ -1,2 +1,2 @@
-export * from './updatePostRequestDto';
-export * from './createPostMultipartDto';
+export * from './update-post.dto';
+export * from './create-post-multipart.dto';

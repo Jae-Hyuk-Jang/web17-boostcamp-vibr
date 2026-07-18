@@ -1,6 +1,6 @@
 import { UserDto } from '../../user';
 
-interface comment {
+interface CommentItem {
   id: string;
   content: string;
   createdAt: string;
@@ -8,5 +8,5 @@ interface comment {
 }
 
 export class GetCommentsResDto {
-  comments: comment[];
+  comments: CommentItem[];
 }
