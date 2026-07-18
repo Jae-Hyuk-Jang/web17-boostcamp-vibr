@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsUUID } from 'class-validator';
+import { IsArray, IsUUID } from 'class-validator';
 
 export class UpdateMusicsOrderOfPlaylistReqDto {
   @IsArray()
