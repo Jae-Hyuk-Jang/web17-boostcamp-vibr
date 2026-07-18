@@ -74,13 +74,14 @@ export const nextJsConfig = [
 
       // 1-2. 이벤트 핸들러 네이밍 강제 (handle~, on~)
       // 복잡한 regex 대신 react 전용 규칙을 사용합니다.
+      // checkLocalVariables/checkInlineFunction은 끔: onCancel={onCancel}처럼 on* prop을 그대로
+      // 전달하거나 onClick={(e) => e.stopPropagation()} 같은 인라인 콜백까지 handle*로 강제해서
+      // 실제 컨벤션(및 흔한 prop-forwarding 패턴)과 충돌하는 대량 오탐을 유발했음.
       'react/jsx-handler-names': [
         'error',
         {
           eventHandlerPrefix: 'handle', // 함수 이름은 handle로 시작 (ex: handleClick)
           eventHandlerPropPrefix: 'on', // Props 이름은 on으로 시작 (ex: onClick)
-          checkLocalVariables: true, // 내부 변수도 검사
-          checkInlineFunction: true,
         },
       ],
     },

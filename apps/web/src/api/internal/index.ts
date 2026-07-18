@@ -1,5 +1,5 @@
 export * from './post';
-export * from './now-playlist';
+export * from './nowPlaylist';
 export * from './auth';
 export * from './follow';
 export * from './user';
