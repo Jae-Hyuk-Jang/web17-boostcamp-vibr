@@ -5,14 +5,17 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
+import {
+  AuthenticatedRequest,
+  JwtPayload,
+} from 'src/common/types/jwt-payload.type';
 
 @Injectable()
 export class AuthOptionalGuard implements CanActivate {
   constructor(private readonly jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req = context.switchToHttp().getRequest<Request>();
+    const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -28,11 +31,11 @@ export class AuthOptionalGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token);
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
 
-      (req as any).user = payload;
+      req.user = payload;
       return true;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('유효하지 않은 토큰입니다.');
     }
   }
