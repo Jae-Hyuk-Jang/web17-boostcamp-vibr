@@ -80,10 +80,6 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
     setIsSearchOpen(true);
   };
 
-  const handleCloseDropdown = () => {
-    setIsSearchOpen(false);
-  };
-
   const handleSelectPlaylist = async (playlistId: string) => {
     const detail = await selectPlaylist(playlistId);
     if (!detail) return;

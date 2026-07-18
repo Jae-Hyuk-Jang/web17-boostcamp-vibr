@@ -67,7 +67,7 @@ export default function PostHeader({ post, isOwner, onUserClick, onEditPost, onD
         toast.success('삭제했습니다.');
         onDeletePost?.();
         setDeletedPostId(post.id); // 삭제한 게시글 id 등록 (피드에 반영)
-      } catch (error) {
+      } catch {
         toast.error('삭제 실패! 다시 시도해주세요.');
       }
     });

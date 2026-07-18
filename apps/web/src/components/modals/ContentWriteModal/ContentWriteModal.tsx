@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, FolderOpen } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import { useModalStore } from '@/stores';
 import { CoverImgUploader, MusicSearch, SelectedMusicList } from './index';

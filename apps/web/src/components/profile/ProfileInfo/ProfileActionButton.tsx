@@ -39,7 +39,8 @@ export default function ProfileActionButton({
   const handleFollowAction = useCallback(async () => {
     setIsLoading(true);
     try {
-      isFollowing ? await removeFollow(profileUserId) : await addFollow(profileUserId);
+      if (isFollowing) await removeFollow(profileUserId);
+      else await addFollow(profileUserId);
       onFollowActionComplete();
     } catch {
       toast.error(`요청 처리에 실패했습니다.`);

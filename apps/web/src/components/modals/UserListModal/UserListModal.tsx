@@ -43,7 +43,8 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
 
     // 내가 내 프로필에서 다른 사람을 팔로우/언팔로우 하는 경우, 전역 프로필(내 프로필) 스토어 상태 업데이트
     if (profileUserId === loggedInUserId) {
-      prevIsFollowing ? decrementFollowingCount() : incrementFollowingCount();
+      if (prevIsFollowing) decrementFollowingCount();
+      else incrementFollowingCount();
     }
   };
 

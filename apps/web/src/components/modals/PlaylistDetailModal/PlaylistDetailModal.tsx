@@ -151,7 +151,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
 
   useEffect(() => {
     const isInValid = !validateRename(draftTitle);
-    isInvalidTitle !== isInValid && setIsInvalidTitle(isInValid);
+    if (isInvalidTitle !== isInValid) setIsInvalidTitle(isInValid);
   }, [draftTitle]);
 
   return (

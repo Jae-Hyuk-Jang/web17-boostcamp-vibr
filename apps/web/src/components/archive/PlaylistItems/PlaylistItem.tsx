@@ -87,7 +87,7 @@ export default function PlaylistItem(playlist: Props) {
 
   useEffect(() => {
     const isInValid = !validateRename(draftTitle);
-    isInvalidTitle !== isInValid && setIsInvalidTitle(isInValid);
+    if (isInvalidTitle !== isInValid) setIsInvalidTitle(isInValid);
   }, [draftTitle]);
 
   useEffect(() => {

@@ -1,6 +1,5 @@
 import type { MusicResponseDto as Music } from '@repo/dto';
 import type { MusicRequestDto as UnsavedMusic } from '@repo/dto';
-import { Plus } from 'lucide-react';
 import { TickerText } from '@/components';
 
 type Props = {

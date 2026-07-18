@@ -1,6 +1,5 @@
 import { MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
-import { Check, Pencil, Play, Search, Trash2, X } from 'lucide-react';
-import { Dispatch, SetStateAction } from 'react';
+import { Check, Pencil, Play, Trash2, X } from 'lucide-react';
 
 type Props = {
   title: string;
