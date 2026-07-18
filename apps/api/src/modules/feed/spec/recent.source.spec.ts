@@ -1,27 +1,34 @@
 import { RecentSource } from '../sources/recent.source';
+import { Post } from 'src/modules/post/entities/post.entity';
+import { Repository } from 'typeorm';
+
+type MockQueryBuilder = {
+  leftJoinAndSelect: jest.Mock;
+  orderBy: jest.Mock;
+  andWhere: jest.Mock;
+  take: jest.Mock;
+  getMany: jest.Mock;
+};
 
 describe('RecentSource (mock only)', () => {
   const repo = { createQueryBuilder: jest.fn() };
 
-  const makeQb = () => {
-    const qb: any = {
-      leftJoinAndSelect: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      take: jest.fn().mockReturnThis(),
-      getMany: jest.fn(),
-    };
-    return qb;
-  };
+  const makeQb = (): MockQueryBuilder => ({
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    getMany: jest.fn(),
+  });
 
-  const makeMockPost = (id: string) => ({ id }) as any;
+  const makeMockPost = (id: string) => ({ id }) as unknown as Post;
 
   let source: RecentSource;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    source = new RecentSource(repo as any);
+    source = new RecentSource(repo as unknown as Repository<Post>);
   });
 
   it('비초기 + cursor 없음이면 posts:[] 즉시 반환 + repo 호출 X', async () => {
@@ -44,7 +51,7 @@ describe('RecentSource (mock only)', () => {
     await source.getPosts(true, null, 10, undefined);
 
     // then
-    const calls = qb.leftJoinAndSelect.mock.calls.map((c: any[]) => c[0]);
+    const calls = qb.leftJoinAndSelect.mock.calls.map((c: string[]) => c[0]);
     expect(calls).toEqual([
       'post.author',
       'post.postMusics',
