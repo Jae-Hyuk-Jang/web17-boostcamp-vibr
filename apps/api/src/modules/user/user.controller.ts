@@ -15,7 +15,7 @@ import {
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { AuthOptionalGuard } from 'src/common/guards/auth.optional-guard';
-import { UserId } from 'src/common/decorators/userId.decorator';
+import { UserId } from 'src/common/decorators/user-id.decorator';
 import {
   UserDto,
   GetUserDto,

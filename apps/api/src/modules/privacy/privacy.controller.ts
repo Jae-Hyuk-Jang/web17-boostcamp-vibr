@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UseGuards, Ip, Get } from '@nestjs/common';
 import { PrivacyService } from './privacy.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
-import { UserId } from 'src/common/decorators/userId.decorator';
+import { UserId } from 'src/common/decorators/user-id.decorator';
 import { GetRecentConsentListDto, UpdateConsentListDto } from '@repo/dto';
 
 @Controller('privacy')

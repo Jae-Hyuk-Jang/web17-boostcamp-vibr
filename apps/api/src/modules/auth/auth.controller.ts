@@ -10,10 +10,9 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
-import { ExchangeTokenDto } from './dto/exchangeDto';
+import { ExchangeTokenDto } from './dto/exchange-token.dto';
 
 const JWT_COOKIE_NAME = 'jwt';
-const ONE_HOUR_MS = 1000 * 60 * 60;
 
 function isProduction() {
   return process.env.NODE_ENV === 'production';
@@ -34,10 +33,7 @@ export class AuthController {
    * DEV-ONLY endpoint: 임시 유저 ID로 JWT 발급 (prod에서는 숨김)
    */
   @Post('login/tmp')
-  async tmpLogin(
-    @Body() body: { id: string },
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async tmpLogin(@Body() body: { id: string }) {
     if (isProduction()) {
       throw new NotFoundException();
     }
@@ -52,7 +48,7 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
+  logout(@Res({ passthrough: true }) res: Response) {
     // 쿠키 삭제는 같은 옵션(path/samesite/secure)로 덮어써야 확실함
     res.clearCookie(JWT_COOKIE_NAME, {
       httpOnly: true,

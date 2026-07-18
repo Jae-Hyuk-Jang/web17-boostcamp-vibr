@@ -1,13 +1,11 @@
-import js from '@eslint/js';
 import { globalIgnores } from 'eslint/config';
-import eslintConfigPrettier from 'eslint-config-prettier';
-import tseslint from 'typescript-eslint';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
 import pluginReact from 'eslint-plugin-react';
 import globals from 'globals';
 import pluginNext from '@next/eslint-plugin-next';
 import reactCompiler from 'eslint-plugin-react-compiler';
 import { config as baseConfig } from './base.mjs';
+import { onlyWarnConfig } from './only-warn.mjs';
 
 /**
  * A custom ESLint configuration for libraries that use Next.js.
@@ -16,6 +14,7 @@ import { config as baseConfig } from './base.mjs';
  * */
 export const nextJsConfig = [
   ...baseConfig,
+  ...onlyWarnConfig,
 
   globalIgnores(['*.d.ts', '.next/**', 'out/**', 'build/**']),
 

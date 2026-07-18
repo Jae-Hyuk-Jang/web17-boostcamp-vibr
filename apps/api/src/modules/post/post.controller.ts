@@ -25,7 +25,7 @@ import {
 } from '@repo/dto';
 
 import { AuthGuard } from 'src/common/guards/auth.guard';
-import { UserId } from 'src/common/decorators/userId.decorator';
+import { UserId } from 'src/common/decorators/user-id.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from '../upload/upload.service';
 import { AuthOptionalGuard } from 'src/common/guards/auth.optional-guard';

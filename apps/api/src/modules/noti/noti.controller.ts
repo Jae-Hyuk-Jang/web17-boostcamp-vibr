@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { NotiService } from './noti.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
-import { UserId } from 'src/common/decorators/userId.decorator';
+import { UserId } from 'src/common/decorators/user-id.decorator';
 import { NotiResponseDto } from '@repo/dto';
 @Controller('noti')
 export class NotiController {

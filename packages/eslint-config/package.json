@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "exports": {
-    "./base": "./base.js",
+    "./base": "./base.mjs",
     "./next-js": "./next.js",
     "./react-internal": "./react-internal.js"
   },

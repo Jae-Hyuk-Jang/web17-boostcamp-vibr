@@ -1,8 +1,8 @@
-import { Body, Controller, Put, Get, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Put, Get, UseGuards } from '@nestjs/common';
 import { NowPlaylistService } from './now-playlist.service';
 import { UpdateNowPlaylistReqDto, GetNowPlaylistResDto } from '@repo/dto';
 import { AuthGuard } from 'src/common/guards/auth.guard';
-import { UserId } from 'src/common/decorators/userId.decorator';
+import { UserId } from 'src/common/decorators/user-id.decorator';
 
 @Controller('nowPlaylist')
 export class NowPlaylistController {
