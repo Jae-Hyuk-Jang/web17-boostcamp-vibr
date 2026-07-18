@@ -1,11 +1,13 @@
 name: Trigger ECS Deployment
 
+# "Deploy to Each Account ECR"가 수동 실행(workflow_dispatch)으로 바뀌면서
+# 이 워크플로우도 해당 실행에 체이닝된 채로 자동 트리거되지 않음.
 on:
   workflow_run:
     workflows: ["Deploy to Each Account ECR"]
     types:
       - completed
-    branches: 
+    branches:
       - main
 
 env:
