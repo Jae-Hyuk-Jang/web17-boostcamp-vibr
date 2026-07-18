@@ -3,6 +3,7 @@ import { FollowService } from './follow.service';
 import { FollowRepository } from './follow.repository';
 import { DataSource } from 'typeorm';
 import { CreateFollowDto, DeleteFollowDto } from '@repo/dto';
+import { NotiService } from '../noti/noti.service';
 
 // Mock용 데이터 생성 헬퍼
 const mockUser = (id: string, name: string) => ({
@@ -41,12 +42,18 @@ describe('FollowService', () => {
   // DataSource Mock 정의 (Service 생성자에서 요구하므로)
   const mockDataSource = {};
 
+  // NotiService Mock 정의 (addFollow에서 팔로우 알림 생성에 사용)
+  const mockNotiService = {
+    create: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FollowService,
         { provide: FollowRepository, useValue: mockFollowRepository },
         { provide: DataSource, useValue: mockDataSource },
+        { provide: NotiService, useValue: mockNotiService },
       ],
     }).compile();
 
