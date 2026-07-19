@@ -39,3 +39,6 @@ yarn-error.log*
 
 # Claude Code (개인 로컬 설정만 무시 — .claude/settings.json 등 팀 공용 설정은 커밋)
 .claude/settings.local.json
+
+# skill-creator eval 산출물(테스트 응답, 벤치마크 등) — 스킬 본체(SKILL.md)만 커밋 대상
+.claude/skills/*-workspace/
