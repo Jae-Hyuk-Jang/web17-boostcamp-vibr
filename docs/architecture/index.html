@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>VIBR 아키텍처 다이어그램</title>
+<style>
+  body {
+    background: #1a1a1a;
+    color: #eee;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, sans-serif;
+    padding: 24px 32px 64px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  h2 { font-size: 1.1rem; margin-top: 48px; color: #9ecbff; }
+  p.sub { color: #999; margin-top: 0; font-size: 0.9rem; }
+  .legend { font-size: 0.85rem; color: #aaa; margin-bottom: 8px; }
+  .mermaid { background: #222; border-radius: 8px; padding: 16px; overflow-x: auto; }
+</style>
+</head>
+<body>
+  <h1>VIBR 아키텍처 다이어그램</h1>
+  <p class="sub">apps/api/src/modules/*, apps/web/src/{components,hooks,stores,api,mappers,...} 폴더 단위 의존성 스캔 결과 (mermaid-diagram 스킬 자동 생성)</p>
+
+  <h2>백엔드 (apps/api) — 도메인 모듈 &amp; 데이터스토어</h2>
+  <p class="legend">실선 = 모듈 간 직접 import · 점선 = Redis Streams 이벤트 버스를 통한 비동기 연결</p>
+  <pre class="mermaid">
+graph TD
+  subgraph auth_users["인증 · 사용자"]
+    auth[auth]
+    user[user]
+    follow[follow]
+    privacy[privacy]
+  end
+
+  subgraph social["소셜 상호작용"]
+    comment[comment]
+    like[like]
+    noti[noti]
+    post[post]
+    log[log]
+    music[music]
+    upload[upload]
+  end
+
+  subgraph feed_reco["피드 · 추천"]
+    feed[feed]
+    trending[trending]
+    playlist[playlist]
+    algorithm[algorithm]
+    seed[seed]
+  end
+
+  redis_streams[["Redis Streams<br/>이벤트 버스"]]
+  neo4j[("Neo4j<br/>관계 그래프")]
+
+  auth --> user
+  user --> auth
+  user --> follow
+  privacy --> user
+
+  comment --> post
+  comment --> log
+  comment --> noti
+  follow --> log
+  follow --> noti
+  like --> post
+  like --> log
+  like --> noti
+  noti --> post
+  post --> like
+  post --> music
+  post --> upload
+  log --> privacy
+
+  feed --> post
+  feed --> trending
+  playlist --> music
+  seed --> user
+  seed --> post
+  seed --> playlist
+  seed --> music
+  seed --> like
+  seed --> noti
+
+  comment -.->|event| redis_streams
+  follow -.->|event| redis_streams
+  like -.->|event| redis_streams
+  redis_streams -.-> trending
+  redis_streams -.-> algorithm
+  algorithm --> neo4j
+  </pre>
+
+  <h2>프론트엔드 (apps/web/src) — 최상위 폴더 의존성</h2>
+  <pre class="mermaid">
+graph TD
+  components[components]
+  hooks[hooks]
+  stores[stores]
+  api[api]
+  mappers[mappers]
+  constants[constants]
+  types[types]
+  utils[utils]
+
+  components --> api
+  components --> hooks
+  components --> stores
+  components --> constants
+  components --> types
+  components --> utils
+
+  hooks --> api
+  hooks --> stores
+  hooks --> mappers
+  hooks --> constants
+  hooks --> types
+  hooks --> utils
+
+  stores --> api
+  api --> stores
+  api --> constants
+  api --> utils
+  mappers --> api
+  </pre>
+
+  <h2>ERD — MySQL 엔티티 관계도</h2>
+  <p class="legend">근거: apps/api/src/modules/**/entities/*.entity.ts의 @ManyToOne 관계(연관관계의 주인 기준)</p>
+  <pre class="mermaid">
+erDiagram
+  USER ||--o{ POST : "author"
+  USER ||--o{ COMMENT : "author"
+  POST ||--o{ COMMENT : "post"
+  USER ||--o{ LIKE : "user"
+  POST ||--o{ LIKE : "post"
+  USER ||--o{ FOLLOW : "following_user"
+  USER ||--o{ FOLLOW : "followed_user"
+  USER ||--o{ NOTI : "receiver"
+  USER ||--o{ NOTI : "actor"
+  USER ||--o{ NOW_PLAYLIST_MUSIC : "user"
+  MUSIC ||--o{ NOW_PLAYLIST_MUSIC : "music"
+  USER ||--o{ CONSENT_HISTORY : "user"
+  USER ||--o{ PLAYLIST : "owner"
+  PLAYLIST ||--o{ PLAYLIST_MUSIC : "playlist"
+  MUSIC ||--o{ PLAYLIST_MUSIC : "music"
+  POST ||--o{ POST_MUSIC : "post"
+  MUSIC ||--o{ POST_MUSIC : "music"
+  </pre>
+  <p class="legend">참고: Follow와 Noti는 같은 대상 엔티티(User)를 두 개의 서로 다른 FK로 참조합니다(팔로우하는/팔로우받는 사용자, 알림 수신자/발신자) — 위 다이어그램의 두 USER-FOLLOW, 두 USER-NOTI 관계선이 이를 나타냅니다.</p>
+
+  <h2>프론트엔드 컴포넌트 간 의존성 (components/* 도메인 단위 cross-import)</h2>
+  <p class="legend">화살표 = "components/{domain}" 폴더의 파일이 다른 "components/{domain}" 폴더나 루트 공용 컴포넌트를 import</p>
+  <pre class="mermaid">
+graph TD
+  subgraph domains["도메인 컴포넌트"]
+    archive[archive]
+    feed[feed]
+    layout[layout]
+    modals[modals]
+    noti[noti]
+    player[player]
+    playlist[playlist]
+    post[post]
+    profile[profile]
+    search[search]
+    setting[setting]
+    sidebar[sidebar]
+    skeleton[skeleton]
+  end
+
+  subgraph shared["루트 공용 컴포넌트"]
+    ConfirmOverlay[ConfirmOverlay]
+    ConfirmToast[ConfirmToast]
+    LoadingSpinner[LoadingSpinner]
+    TickerText[TickerText]
+  end
+
+  archive --> ConfirmOverlay
+  layout --> LoadingSpinner
+  layout --> noti
+  modals --> LoadingSpinner
+  modals --> playlist
+  modals --> profile
+  modals --> search
+  noti --> ConfirmOverlay
+  post --> ConfirmToast
+  post --> TickerText
+  profile --> LoadingSpinner
+  </pre>
+  <p class="legend">참고: feed / player / sidebar / setting / skeleton 도메인은 다른 컴포넌트 도메인을 직접 import하지 않아(다른 도메인에서 "들어오는" 화살표만 있거나 고립) 이 그래프에서 발신 화살표가 없습니다 — app/ 라우트 레벨에서 조합되는 리프 컴포넌트라는 뜻입니다.</p>
+
+  <h2>상태 흐름도 — 인증 세션 (useAuthStore + internalClient)</h2>
+  <p class="legend">근거: apps/web/src/stores/useAuthStore.ts, apps/web/src/api/internal/client.ts의 401 인터셉터</p>
+  <pre class="mermaid">
+stateDiagram-v2
+  [*] --> Loading: 앱 로드 (isLoading=true)
+  Loading --> Guest: 세션 토큰 없음
+  Loading --> Authenticated: /user/me 조회 성공 (setAuth)
+
+  Guest --> Authenticated: 로그인 성공 (setAuth)
+  Authenticated --> Guest: 로그아웃 (clearAuth)
+
+  Authenticated --> SessionExpired: /user/me 401 + 토큰 일치 확인\n(client.ts, 다른 API의 401은 무시)
+  SessionExpired --> Guest: clearAuthState()\n(store 초기화 + LoginModal 오픈)
+  </pre>
+
+  <h2>상태 흐름도 — 음악 재생 (usePlayerStore)</h2>
+  <p class="legend">근거: apps/web/src/stores/usePlayerStore.ts의 currentMusic / isPlaying / queue 액션</p>
+  <pre class="mermaid">
+stateDiagram-v2
+  [*] --> Idle: currentMusic=null
+
+  Idle --> Playing: playMusic(track)\n(다른 곡 선택 시 즉시 재생)
+  Playing --> Paused: togglePlay()
+  Paused --> Playing: togglePlay()
+
+  Playing --> Playing: playMusic(같은 곡)\n(토글 처리)
+  Playing --> Playing: playNext() / playPrev()
+  Paused --> Playing: playNext() / playPrev()
+
+  Playing --> Idle: clearQueue()
+  Paused --> Idle: clearQueue()
+  </pre>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+</body>
+</html>
