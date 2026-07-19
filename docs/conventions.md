@@ -136,6 +136,7 @@
   - 예: `feat(post): 좋아요 낙관적 업데이트 추가`
   - 커밋 subject 맨 앞에 대문자로 시작하는 라틴 약어(PR, STAR, JWT, PascalCase 컴포넌트명 등)를 두면 `subject-case` 규칙에 false-positive로 걸릴 수 있으니, 소문자로 바꾸거나 문장 뒤쪽으로 옮기세요.
 - PR 본문은 `.github/pull_request_template.md`의 STAR 포맷(Situation/Task/Action/Result + 관련 이슈)을 따릅니다. 관련 이슈는 `- Closes #번호` 형식으로 씁니다.
+- **PR을 열기 전에 GitHub 이슈부터 만듭니다.** 작업을 시작하기 전에 `gh issue create`로 무엇을, 왜 하는지 먼저 기록한 뒤 브랜치를 파고 PR을 여세요. 이슈가 먼저 있어야 PR의 "Closes #번호"가 실제로 의미를 가지고, 나중에 "왜 이 변경을 했더라"를 되짚을 근거가 남습니다. 작업 도중 우연히 발견한 별개의 버그처럼 시작 전엔 몰랐던 것도, 그 순간 바로 이슈부터 만들고 나서 브랜치를 파세요.
 - 하나의 커밋은 하나의 관심사만 다룹니다(one-concern-per-commit). 서로 무관한 변경(예: 사전 존재하던 lint 버그 수정과 새 기능 변경)은 별도 커밋으로 분리합니다.
 
 ## 7. ⚠️ 강제 규칙이 아닌, 혼용되는 패턴
