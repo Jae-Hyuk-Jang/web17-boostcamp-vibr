@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import PostCard from './PostCard';
@@ -108,5 +108,41 @@ describe('PostCard — 게시글 반응 상태 특성화 테스트', () => {
     renderPostCard(mockPost({ commentCount: 2 }));
 
     expect(screen.getByTestId('like-button')).toHaveTextContent('comments:7');
+  });
+
+  it('[회귀 안전망 #44] 좋아요를 연달아 두 번 클릭하면 토글→역토글로 처리된다 (Fact: "진행 중 재클릭 차단"이 완전하지 않음)', async () => {
+    // 애초 기대는 "진행 중이면 두 번째 클릭이 아예 무시된다"였지만, 실제로 실행해보면 그렇지 않다.
+    // override 동기화 useEffect(PostCard.tsx:59-63)가 1번째 클릭의 optimistic store 기록을 감지해
+    // isLikeSubmitting을 즉시 false로 되돌리기 때문에, 2번째 클릭이 가드를 통과해 반대 방향으로 토글된다.
+    // 결과적으로 addLike 1회 + removeLike 1회가 나가고 화면은 원래 값으로 돌아온다 — "중복 요청"은 안 나가지만
+    // "진행 중 재클릭 차단"이라는 이름이 암시하는 동작과는 다르다. 이건 리팩터링 대상이 아니라 현재 동작의
+    // 특성화이며, 실제 사용자의 더블클릭 간격(수백ms)에서는 이 이펙트가 이미 반영된 뒤라 문제로 드러나지 않는다.
+    let resolveAddLike!: (value: unknown) => void;
+    let resolveRemoveLike!: (value: unknown) => void;
+    addLike.mockReturnValue(
+      new Promise((resolve) => {
+        resolveAddLike = resolve;
+      }),
+    );
+    removeLike.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRemoveLike = resolve;
+      }),
+    );
+
+    renderPostCard(mockPost({ isLiked: false, likeCount: 3 }));
+
+    const button = screen.getByTestId('like-button');
+    fireEvent.click(button); // 1번째 클릭 — 좋아요 ON
+    fireEvent.click(button); // 같은 tick 안에서 곧바로 2번째 클릭
+
+    expect(addLike).toHaveBeenCalledTimes(1);
+    expect(removeLike).toHaveBeenCalledTimes(1);
+    expect(button).toHaveTextContent('like:false:3'); // 토글 → 역토글, 순변화 없음
+
+    await act(async () => {
+      resolveAddLike({});
+      resolveRemoveLike({});
+    });
   });
 });

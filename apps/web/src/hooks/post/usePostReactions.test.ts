@@ -169,4 +169,61 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     await waitFor(() => expect(result.current.comments).toHaveLength(0));
     expect(usePostReactionOverridesStore.getState().commentsByPostId['post-1']).toEqual({ commentCount: 0 });
   });
+
+  it('[회귀 안전망 #44] 좋아요 요청이 진행 중일 때 다시 toggleLike를 호출해도 API가 한 번만 호출된다', async () => {
+    let resolveAddLike!: (value: unknown) => void;
+    addLike.mockReturnValue(
+      new Promise((resolve) => {
+        resolveAddLike = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 }));
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+
+    let firstCall!: Promise<void>;
+    act(() => {
+      firstCall = result.current.toggleLike(); // 첫 호출 — 아직 응답 안 옴
+    });
+    await act(async () => {
+      await result.current.toggleLike(); // 진행 중에 재호출
+    });
+
+    expect(addLike).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveAddLike({});
+      await firstCall;
+    });
+  });
+
+  it('[회귀 안전망 #44] usePostReactions의 반환 객체는 고정된 13개 필드를 그대로 유지한다 (usePostLikeToggle 합성 전환 시 계약)', async () => {
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }));
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+
+    const expectedKeys = [
+      'isAuthenticated',
+      'isLiked',
+      'likeCount',
+      'toggleLike',
+      'isSubmittingLike',
+      'comments',
+      'isCommentsLoading',
+      'commentText',
+      'setCommentText',
+      'submitComment',
+      'isSubmittingComment',
+      'commentCount',
+      'refetchComments',
+    ].sort();
+
+    expect(Object.keys(result.current).sort()).toEqual(expectedKeys);
+    expect(typeof result.current.toggleLike).toBe('function');
+    expect(typeof result.current.submitComment).toBe('function');
+    expect(typeof result.current.setCommentText).toBe('function');
+    expect(typeof result.current.refetchComments).toBe('function');
+    expect(typeof result.current.isLiked).toBe('boolean');
+    expect(typeof result.current.likeCount).toBe('number');
+    expect(typeof result.current.isSubmittingLike).toBe('boolean');
+  });
 });
