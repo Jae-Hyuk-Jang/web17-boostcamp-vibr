@@ -5,6 +5,7 @@ import { useModalStore } from '@/stores/useModalStore';
 import { X } from 'lucide-react';
 import { getAuthErrorMessage } from '@/hooks/auth/client/authErrorMessage';
 import { GoogleLoginButton, TmpLoginButton } from './loginButtons';
+import { ModalShell } from '@/components';
 
 type LoginModalProps = {
   authError?: string;
@@ -16,11 +17,10 @@ export const LoginModal = () => {
   const errorMessage = authError ? getAuthErrorMessage(authError) : undefined;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) closeModal();
-      }}
+    <ModalShell
+      onClose={closeModal}
+      ariaLabel="로그인"
+      className="flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in"
     >
       <div className="bg-white w-full max-w-md rounded-3xl shadow-[8px_8px_0px_0px_var(--color-primary)] border-2 border-primary flex flex-col overflow-hidden transition-all">
         {/* 헤더 */}
@@ -41,6 +41,6 @@ export const LoginModal = () => {
           {process.env.NODE_ENV !== 'production' && <TmpLoginButton />}
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

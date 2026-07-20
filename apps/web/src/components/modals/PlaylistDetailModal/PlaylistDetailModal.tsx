@@ -1,4 +1,4 @@
-import { ConfirmOverlay } from '@/components';
+import { ConfirmOverlay, ModalShell } from '@/components';
 import { useModalStore, usePlayerStore, usePlaylistRefreshStore } from '@/stores';
 import type { MusicRequestDto as UnsavedMusic, MusicResponseDto as SavedMusic, GetPlaylistDetailResDto } from '@repo/dto';
 import { useCallback, useEffect, useState } from 'react';
@@ -156,11 +156,10 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
 
   return (
     playlist && (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in"
-        onMouseDown={(e) => {
-          if (e.target === e.currentTarget) closeModal();
-        }}
+      <ModalShell
+        onClose={closeModal}
+        ariaLabel="플레이리스트 상세"
+        className="flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in"
       >
         <div className="bg-white w-full max-w-lg rounded-3xl shadow-[8px_8px_0px_0px_#00214D] border-2 border-primary flex flex-col max-h-[85vh] overflow-hidden">
           {/* Header Section */}
@@ -207,7 +206,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
             }
           }}
         />
-      </div>
+      </ModalShell>
     )
   );
 }
