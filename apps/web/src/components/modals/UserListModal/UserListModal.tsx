@@ -1,6 +1,7 @@
 'use client';
 
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { ModalShell } from '@/components';
 import { ProfileActionButton } from '@/components/profile';
 import { DEFAULT_IMAGES } from '@/constants';
 import type { GetUserFollowDto } from '@repo/dto';
@@ -56,8 +57,11 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="absolute inset-0" onClick={closeModal}></div>
+    <ModalShell
+      onClose={closeModal}
+      ariaLabel={title}
+      className="flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in"
+    >
       <div className="relative bg-white w-full max-w-sm md:max-w-md rounded-3xl border-2 border-primary flex flex-col h-[50vh] overflow-hidden animate-scale-up z-10">
         {/* 모달 헤더 영역 */}
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-primary bg-white">
@@ -121,6 +125,6 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
           </div>
         )}
       </div>
-    </div>
+    </ModalShell>
   );
 };
