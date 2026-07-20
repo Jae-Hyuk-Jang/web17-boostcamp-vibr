@@ -232,6 +232,21 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     expect(event.meta.listenMsByMusic['music-1']).toBeUndefined();
   });
 
+  it('모바일(바텀시트) 배경을 클릭해도 enqueueLog가 1회 호출된다 (#66)', () => {
+    const post = mockPost();
+    usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
+    openModalFor(post);
+
+    const { container } = render(<PostCardDetailModal />);
+
+    // 모바일 바텀시트 backdrop(lg:hidden 래퍼의 첫 자식, onClick={handleClose})
+    const mobileWrapper = container.firstElementChild as HTMLElement;
+    const mobileBackdrop = mobileWrapper.firstElementChild as HTMLElement;
+    fireEvent.click(mobileBackdrop);
+
+    expect(enqueueLog).toHaveBeenCalledTimes(1);
+  });
+
   it('모달에서 곡을 재생하면 playedMusicCount에 반영된다', () => {
     const music = mockMusic({ id: 'music-1' });
     const post = mockPost({ musics: [music] });
