@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GetCommentsResDto, UserDto } from '@repo/dto';
 
-import { addLike, removeLike, getComments, createComment } from '@/api/internal';
+import { getComments, createComment } from '@/api/internal';
 import { authMe } from '@/api/internal/auth';
 import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
+import usePostLikeToggle from './usePostLikeToggle';
 
 type CommentItem = GetCommentsResDto['comments'][number];
 
@@ -71,9 +72,20 @@ const getEffectivePollMs = (base: number) => {
 export default function usePostReactions({ enabled, postId, initialIsLiked, initialLikeCount, pollMs = 5000 }: Options): Result {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const [isLiked, setIsLiked] = useState(initialIsLiked);
-  const [likeCount, setLikeCount] = useState(initialLikeCount);
-  const [isSubmittingLike, setIsSubmittingLike] = useState(false);
+  const {
+    isLiked,
+    likeCount,
+    isSubmitting: isSubmittingLike,
+    toggleLike,
+  } = usePostLikeToggle({
+    postId,
+    initialIsLiked,
+    initialLikeCount,
+    isAuthenticated,
+    // 이 훅(usePostReactions)은 override 변경만으로는 isSubmittingLike를 리셋하지 않는 기존 동작을
+    // 유지한다 — postId가 실제로 바뀔 때만 리셋된다(usePostLikeToggle 내부에서 항상 처리).
+    resetSubmittingOnSync: false,
+  });
 
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [isCommentsLoading, setIsCommentsLoading] = useState(false);
@@ -132,18 +144,9 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
     setIsCommentsLoading(false);
 
     setIsSubmittingComment(false);
-    setIsSubmittingLike(false);
 
     clearTimer();
   }, [postId, clearTimer, applyComments]);
-
-  /**
-   * like 초기값 동기화는 postId 단위로만 반영
-   */
-  useEffect(() => {
-    setIsLiked(initialIsLiked);
-    setLikeCount(initialLikeCount);
-  }, [postId, initialIsLiked, initialLikeCount]);
 
   // 내 정보 로드(댓글 optimistic author + 로그인 여부)
   useEffect(() => {
@@ -259,42 +262,6 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
       window.removeEventListener('offline', onOffline);
     };
   }, [enabled, pollMs, commentText, isSubmittingComment, refetchComments, clearTimer]);
-
-  // 좋아요 토글(Detail -> Feed 동기화 포함)
-  const toggleLike = useCallback(async () => {
-    if (!isAuthenticated) return;
-    if (isSubmittingLike) return;
-
-    const isPrevLiked = isLiked;
-    const prevCount = likeCount;
-
-    const isNextLiked = !isPrevLiked;
-    const nextCount = prevCount + (isNextLiked ? 1 : -1);
-
-    setIsSubmittingLike(true);
-    setIsLiked(isNextLiked);
-    setLikeCount(nextCount);
-
-    usePostReactionOverridesStore.getState().setLikeOverride(postId, {
-      isLiked: isNextLiked,
-      likeCount: nextCount,
-    });
-
-    try {
-      if (isNextLiked) await addLike({ postId });
-      else await removeLike(postId);
-    } catch {
-      setIsLiked(isPrevLiked);
-      setLikeCount(prevCount);
-
-      usePostReactionOverridesStore.getState().setLikeOverride(postId, {
-        isLiked: isPrevLiked,
-        likeCount: prevCount,
-      });
-    } finally {
-      setIsSubmittingLike(false);
-    }
-  }, [isAuthenticated, isSubmittingLike, isLiked, likeCount, postId]);
 
   // 댓글 작성(optimistic + 성공 시 refetch)
   const submitComment = useCallback(async () => {
