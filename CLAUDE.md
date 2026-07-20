@@ -128,6 +128,8 @@ pnpm test:e2e                     # jest --config ./test/jest-e2e.json
 
 커밋 시 Husky + lint-staged가 staged 파일에 prettier/eslint를 실행하고, commitlint(`commitlint.config.js`)가 커밋 메시지에 Conventional Commits 규칙을 강제합니다. `type`은 `feat|fix|docs|style|refactor|test|chore|revert|perf|ci|design` 중 하나여야 하고(표준 세트에 UI/디자인 전용 `design` 추가), `scope`를 쓸 경우 소문자여야 합니다(`scope-case: lower-case`). 예: `feat(post): 좋아요 낙관적 업데이트 추가`.
 
+`gh issue create`/`gh pr create`를 실행하기 전에는 반드시 `.github/ISSUE_TEMPLATE/issue.md`, `.github/pull_request_template.md`를 실제로 열어서 그 포맷을 따르세요 — 이 요약 문장만 보고 자체 포맷으로 대체하지 않습니다. 상세 규칙은 `docs/conventions.md` §6(커밋·PR)을 참고하세요.
+
 ## 백엔드 아키텍처 (`apps/api`)
 
 NestJS, `src/modules/*` 아래 도메인별 모듈 구조 (auth, user, post, comment, follow, like, music, playlist, now-playlist, noti, upload, privacy, log, seed, feed, trending, algorithm). 각 도메인 모듈은 대체로 `*.controller.ts` → `*.service.ts` → `*.repository.ts` (TypeORM `Repository<Entity>` 래퍼) → `entities/*.entity.ts` 순서를 따릅니다.
