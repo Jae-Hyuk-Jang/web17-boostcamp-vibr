@@ -1,0 +1,40 @@
+{
+  "skill_name": "test-scenarios",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "/test-scenarios 39",
+      "expected_output": "이슈 #39(댓글 작성 직후 refetchComments가 방금 쓴 댓글을 지워버릴 수 있음)는 feature-planner가 만든 이슈가 아니라 버그 리포트이므로 본문에 `📄 관련 기획 문서` 마커가 없다. 스킬은 시그니처를 추측해서 만들지 않고, 멈춰서 어느 docs/features/{name}/에 속하는지(또는 이 스킬의 대상이 아닌지) 사용자에게 확인을 요청한다.",
+      "files": [],
+      "expectations": [
+        "gh issue view 39로 실제 이슈 본문을 확인한다",
+        "📄 관련 기획 문서 마커가 없음을 이유로 명시하며 멈춘다",
+        "feature 이름이나 시그니처를 임의로 추측해서 만들지 않는다",
+        "issue-39.md 같은 산출물 파일을 생성하지 않는다"
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "/test-scenarios 200 (이슈 본문에 '📄 관련 기획 문서: docs/features/tag/prd.md' 마커는 있지만, docs/features/tag/ 폴더 자체가 저장소에 없는 상황을 가정)",
+      "expected_output": "마커에서 feature 이름(tag)은 추출했지만 docs/features/tag/prd.md가 실제로 존재하지 않으므로, PRD 없이 시그니처를 지어내지 않고 멈춰서 사용자에게 알린다.",
+      "files": [],
+      "expectations": [
+        "docs/features/tag/prd.md 존재 여부를 실제로 확인한다(파일 읽기 시도)",
+        "PRD가 없다는 사실을 이유로 명시하며 멈춘다",
+        "PRD 내용을 지어내거나 코드베이스 추측만으로 시그니처를 확정하지 않는다"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "/test-scenarios 47 (이슈 본문에 '📄 관련 기획 문서: docs/features/tag/prd.md' 마커가 있고, docs/features/tag/prd.md도 실제로 존재하며 '태그 생성 API'에 대한 AC 2개를 담은 정상적인 feature-planner 이슈인 상황을 가정)",
+      "expected_output": "PRD와 이슈 AC, apps/web/src/api/internal/*.ts의 기존 패턴을 근거로 시그니처(예: createTag(name: string): Promise<Tag>)를 제안하고, 왜 이 타입/구조를 골랐는지 근거를 남긴 뒤 사용자 승인을 위해 멈춘다. 구현 코드나 테스트 코드는 작성하지 않는다.",
+      "files": [],
+      "expectations": [
+        "api/internal/{domain}.ts 스타일(동사+도메인 명사, @repo/dto 타입 사용)을 실제로 따르는 시그니처를 제안한다",
+        "시그니처 승인 GATE에서 명시적으로 멈추고 임의로 다음 단계(시나리오 도출)까지 진행하지 않는다",
+        "구현 코드나 실제 테스트 코드(.test.ts 등)를 작성하지 않는다",
+        "왜 이 시그니처 형태를 골랐는지 근거를 이슈/PRD/기존 코드에 연결해 설명한다"
+      ]
+    }
+  ]
+}
