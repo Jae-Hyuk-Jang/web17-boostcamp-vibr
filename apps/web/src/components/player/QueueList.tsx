@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { enqueueLog } from '@/utils/logQueue';
 import { makeArchiveAddMusicLog, makePostAddMusicLog } from '@/api/internal/logging';
 
-import { TickerText } from '@/components';
+import TickerText from '@/components/TickerText';
 
 interface QueueListProps {
   queue: Music[];

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 
 interface CoverImgUploaderProps {

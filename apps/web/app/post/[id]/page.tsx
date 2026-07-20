@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { FeedView } from '@/components';
+import { FeedView } from '@/components/feed';
 
 interface Props {
   params: Promise<{ id: string }>;

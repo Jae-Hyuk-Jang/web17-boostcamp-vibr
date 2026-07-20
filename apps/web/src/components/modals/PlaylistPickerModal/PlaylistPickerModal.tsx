@@ -11,7 +11,8 @@ import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc } from '@/utils';
 
 import type { MusicRequestDto, MusicResponseDto as Music } from '@repo/dto';
-import { LoadingSpinner, ModalShell } from '@/components';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import ModalShell from '@/components/ModalShell';
 
 type PlaylistBrief = {
   id: string;

@@ -11,7 +11,9 @@ import useIsMobile from '@/hooks/useIsMobile';
 import { useScrollLock, usePostDetail, useLikedUsers, usePostReactions, usePostDetailUxLog, useSwipeToDismiss } from '@/hooks';
 
 import { EMPTY_POST, DEFAULT_IMAGES } from '@/constants';
-import { LoadingSpinner, PostMedia, ModalShell } from '@/components';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { PostMedia } from '@/components/post';
+import ModalShell from '@/components/ModalShell';
 import { coalesceImageSrc } from '@/utils';
 import { toast } from 'react-toastify';
 import { updatePost } from '@/api';
