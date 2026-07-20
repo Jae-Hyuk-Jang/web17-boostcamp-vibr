@@ -57,14 +57,22 @@ jest.mock('./partials', () => ({
   LikedUsersOverlay: () => <div data-testid="liked-users-overlay" />,
 }));
 
-jest.mock('@/components', () => ({
-  LoadingSpinner: () => <div data-testid="loading-spinner" />,
-  PostMedia: ({ onPlay, post }: { onPlay: (m: Music) => void; post: Post }) => (
-    <button data-testid="play-first-music" onClick={() => post.musics[0] && onPlay(post.musics[0])}>
-      play
-    </button>
-  ),
-}));
+// ModalShell은 실제 구현을 그대로 쓴다(#70) — 데스크탑 backdrop의 role="dialog"/닫기 판정이
+// 이제 ModalShell 내부에 있으므로, 통째로 mock하면 이 파일의 특성화 테스트가 무의미해진다.
+// '@/components' 배럴 전체를 requireActual하면 player 등 무관한 하위 트리까지 평가되며
+// 순환 참조 오류가 나므로, ModalShell 파일만 개별적으로 requireActual한다.
+jest.mock('@/components', () => {
+  const { default: ModalShell } = jest.requireActual('@/components/ModalShell');
+  return {
+    ModalShell,
+    LoadingSpinner: () => <div data-testid="loading-spinner" />,
+    PostMedia: ({ onPlay, post }: { onPlay: (m: Music) => void; post: Post }) => (
+      <button data-testid="play-first-music" onClick={() => post.musics[0] && onPlay(post.musics[0])}>
+        play
+      </button>
+    ),
+  };
+});
 
 jest.mock('../../post', () => ({
   PostHeader: () => <div data-testid="post-header" />,
@@ -140,8 +148,8 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
 
     render(<PostCardDetailModal />);
 
-    // 데스크톱 배경 클릭으로 닫기(가장 바깥 dialog의 backdrop, onClick={handleClose})
-    fireEvent.click(screen.getByRole('dialog'));
+    // 데스크톱 배경 클릭으로 닫기(ModalShell backdrop, onMouseDown 기반 판정 — #70)
+    fireEvent.mouseDown(screen.getByRole('dialog'));
 
     expect(enqueueLog).toHaveBeenCalledTimes(1);
     const event = enqueueLog.mock.calls[0][0];
@@ -166,7 +174,7 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     openModalFor(post);
 
     const { unmount } = render(<PostCardDetailModal />);
-    fireEvent.click(screen.getByRole('dialog'));
+    fireEvent.mouseDown(screen.getByRole('dialog'));
     unmount();
 
     expect(enqueueLog).toHaveBeenCalledTimes(1);
