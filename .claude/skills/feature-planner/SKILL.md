@@ -15,7 +15,11 @@ spec-fixed.md (확정된 요구사항)
 prd.md (단일 기준 문서)
     ↓ 단계 3 — 이슈 분해
 issues.md + GitHub Issues (실행 가능한 작업 단위)
+    ↓ 단계 4 — 시그니처 확정 + 테스트 시나리오 도출 (이슈 단위, 별도 스킬)
+issue-{N}.md → TDD 구현
 ```
+
+단계 4는 이 스킬이 아니라 `/test-scenarios <issue-number>`가 담당합니다. 단계 1~3은 feature 전체를 한 세션에 몰아서 기획하지만, 단계 4는 이슈 하나를 실제로 구현하려는 시점에 — 종종 훨씬 나중에, 다른 세션에서 — 실행되기 때문에 별도 슬래시 커맨드로 분리했습니다.
 
 ## 시작하기 전에
 
@@ -149,15 +153,19 @@ issues.md + GitHub Issues (실행 가능한 작업 단위)
 
 ### GitHub 등록
 
-게이트를 통과하면 실제 이슈를 만드세요:
+게이트를 통과하면 실제 이슈를 만드세요. 이슈 본문의 `💬 Remarks` 섹션 첫 줄에 항상 아래 마커를 남기세요 — 이후 `/test-scenarios`가 이슈 번호만으로 `docs/features/{name}/`을 찾아야 하므로, 이 마커가 없으면 기계적으로 feature 이름을 알아낼 방법이 없습니다:
+
+```
+📄 관련 기획 문서: docs/features/{name}/prd.md
+```
 
 ```bash
-gh issue create --title "이슈 제목" --body "설명 + AC + 의존성"
+gh issue create --title "이슈 제목" --body "설명 + AC + 의존성 + 📄 관련 기획 문서 마커"
 ```
 
 프로젝트 보드 등록은 `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>`로 시도하되, 이 저장소의 `gh` CLI 버전이 `gh project` 서브커맨드를 지원하지 않을 수 있습니다(버전 확인: `gh --version`, 2.20 미만이면 미지원). 실패하면 무리하게 우회하지 말고 사용자에게 "프로젝트 보드는 수동으로 등록해달라"고 안내하고 넘어가세요 — 이슈 생성 자체는 이미 성공했으니 그것까지 막을 필요는 없습니다.
 
-**산출물**: `docs/features/{name}/issues.md`, GitHub Issues(각 이슈에 AC 포함), 가능하면 프로젝트 칸반 보드 Todo 컬럼.
+**산출물**: `docs/features/{name}/issues.md`, GitHub Issues(각 이슈에 AC + `📄 관련 기획 문서` 마커 포함), 가능하면 프로젝트 칸반 보드 Todo 컬럼.
 
 ---
 
