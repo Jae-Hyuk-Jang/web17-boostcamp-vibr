@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { PostHeader, PostMedia, PostActions, PostContentPreview } from './index';
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
 
-import { addLike, removeLike } from '@/api';
+import { usePostLikeToggle } from '@/hooks';
 import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
 import { useModalStore, useAuthStore, MODAL_TYPES } from '@/stores';
 
@@ -27,7 +27,6 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
   const { openModal } = useModalStore();
 
   const likeOverride = usePostReactionOverridesStore((s) => s.likesByPostId[post.id]);
-  const setLikeOverride = usePostReactionOverridesStore((s) => s.setLikeOverride);
 
   // 댓글 카운트 override 추가
   const commentOverride = usePostReactionOverridesStore((s) => s.commentsByPostId[post.id]);
@@ -36,9 +35,21 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
   const isBaseLiked = Boolean(likeOverride?.isLiked ?? post.isLiked);
   const baseLikeCount = likeOverride?.likeCount ?? post.likeCount;
 
-  const [isOptimisticLiked, setIsOptimisticLiked] = useState(isBaseLiked);
-  const [optimisticLikeCount, setOptimisticLikeCount] = useState(baseLikeCount);
-  const [isLikeSubmitting, setIsLikeSubmitting] = useState(false);
+  const {
+    isLiked: isOptimisticLiked,
+    likeCount: optimisticLikeCount,
+    isSubmitting: isLikeSubmitting,
+    toggleLike: handleToggleLike,
+  } = usePostLikeToggle({
+    postId: post.id,
+    initialIsLiked: isBaseLiked,
+    initialLikeCount: baseLikeCount,
+    isAuthenticated,
+    // override/서버값 변경 시(예: 상세 모달에서 눌러서 store가 바뀜) 로컬 optimistic을 곧바로
+    // 동기화하는 기존 동작을 그대로 보존한다 — usePostReactionOverridesStore를 직접 구독하는 소비처의 기존 관례.
+    resetSubmittingOnSync: true,
+  });
+
   const isOwner = post.author.id === userId;
 
   const postForActions: Post = useMemo(
@@ -52,49 +63,7 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
     [post, isOptimisticLiked, optimisticLikeCount, baseCommentCount],
   );
 
-  /**
-   * 핵심: override/서버값 변경 시 로컬 optimistic도 동기화
-   * - Detail에서 눌러서 store가 바뀌어도 카드가 즉시 따라감
-   */
-  useEffect(() => {
-    setIsOptimisticLiked(isBaseLiked);
-    setOptimisticLikeCount(baseLikeCount);
-    setIsLikeSubmitting(false);
-  }, [post.id, isBaseLiked, baseLikeCount]);
-
   const handleOpenDetail = useCallback(() => onOpenDetail(postForActions), [onOpenDetail, postForActions]);
-
-  const handleToggleLike = useCallback(async () => {
-    if (!isAuthenticated) return;
-    if (isLikeSubmitting) return;
-
-    const isPrevLiked = isOptimisticLiked;
-    const prevCount = optimisticLikeCount;
-
-    const isNextLiked = !isPrevLiked;
-    const nextCount = prevCount + (isNextLiked ? 1 : -1);
-
-    setIsLikeSubmitting(true);
-
-    // optimistic (로컬)
-    setIsOptimisticLiked(isNextLiked);
-    setOptimisticLikeCount(nextCount);
-
-    // optimistic (전역)
-    setLikeOverride(post.id, { isLiked: isNextLiked, likeCount: nextCount });
-
-    try {
-      if (isNextLiked) await addLike({ postId: post.id });
-      else await removeLike(post.id);
-    } catch {
-      // rollback
-      setIsOptimisticLiked(isPrevLiked);
-      setOptimisticLikeCount(prevCount);
-      setLikeOverride(post.id, { isLiked: isPrevLiked, likeCount: prevCount });
-    } finally {
-      setIsLikeSubmitting(false);
-    }
-  }, [isAuthenticated, isLikeSubmitting, isOptimisticLiked, optimisticLikeCount, post.id, setLikeOverride]);
 
   const openEditPostModal = useCallback(() => {
     openModal(MODAL_TYPES.POST_DETAIL, { postId: post.id, initialIsEditing: true, initialEditingContent: post.content });

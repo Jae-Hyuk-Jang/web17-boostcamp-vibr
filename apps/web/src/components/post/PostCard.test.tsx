@@ -16,12 +16,15 @@ jest.mock('./index', () => ({
   PostContentPreview: () => <div data-testid="post-content-preview" />,
 }));
 
-jest.mock('@/api', () => ({
+// #45: 좋아요 로직이 usePostLikeToggle로 옮겨가며 addLike/removeLike의 실제 import 경로가
+// '@/api' -> '@/api/internal'로 바뀌었다(둘 다 같은 구현을 가리키지만 mock은 실제 import 경로와
+// 일치해야 한다). 관찰 가능한 동작(아래 assertion들)은 리팩터링 전후로 동일하다.
+jest.mock('@/api/internal', () => ({
   addLike: jest.fn(),
   removeLike: jest.fn(),
 }));
 
-const { addLike, removeLike } = jest.requireMock('@/api') as { addLike: jest.Mock; removeLike: jest.Mock };
+const { addLike, removeLike } = jest.requireMock('@/api/internal') as { addLike: jest.Mock; removeLike: jest.Mock };
 
 const mockPost = (overrides: Partial<Post> = {}): Post => ({
   id: 'post-1',
