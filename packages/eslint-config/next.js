@@ -66,8 +66,9 @@ export const nextJsConfig = [
   {
     files: ['**/*.tsx'], // 컴포넌트 파일(.tsx)에만 적용
     rules: {
-      // 1-2. 컴포넌트 파일명: PascalCase 강제 (LoginButton.tsx)
-      'check-file/filename-naming-convention': ['error', { '**/*.tsx': 'PASCAL_CASE' }],
+      // 1-2. 컴포넌트 파일명: PascalCase 강제 (LoginButton.tsx). ignoreMiddleExtensions로
+      // PostCard.test.tsx 같은 테스트 파일의 ".test" 세그먼트는 검사 대상에서 제외.
+      'check-file/filename-naming-convention': ['error', { '**/*.tsx': 'PASCAL_CASE' }, { ignoreMiddleExtensions: true }],
       // 1-2. 폴더명: kebab-case 강제 (Next.js App Router)
       'check-file/folder-naming-convention': ['error', { '**/*': 'KEBAB_CASE' }],
 
