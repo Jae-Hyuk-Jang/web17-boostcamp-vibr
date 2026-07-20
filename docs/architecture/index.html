@@ -223,6 +223,140 @@ stateDiagram-v2
   Paused --> Idle: clearQueue()
   </pre>
 
+  <h2>zustand 스토어 사용 현황 (store별 소비 도메인 — components/hooks fan-in)</h2>
+  <p class="legend">근거: apps/web/src/{components,hooks}에서 각 store 이름을 직접 참조하는 파일을 grep, 최상위 도메인 폴더 단위로 축약. 화살표 = "이 도메인이 이 store를 읽거나 쓴다".</p>
+  <pre class="mermaid">
+graph LR
+  subgraph comp["components/*"]
+    c_login[LoginRequestScreen]
+    c_archive[archive]
+    c_feed[feed]
+    c_layout[layout]
+    c_modals[modals]
+    c_noti[noti]
+    c_player[player]
+    c_post[post]
+    c_profile[profile]
+    c_search[search]
+    c_sidebar[sidebar]
+  end
+
+  subgraph hks["hooks/*"]
+    h_auth[auth]
+    h_noti[noti]
+    h_player[player]
+    h_post[post]
+    h_privacy[privacy]
+    h_queue[queue]
+    h_music[useMusicActions]
+  end
+
+  subgraph st["stores"]
+    s_auth[[useAuthStore]]
+    s_modal[[useModalStore]]
+    s_notiOverlay[[useNotiOverlayStore]]
+    s_noti[[useNotiStore]]
+    s_player[[usePlayerStore]]
+    s_playlistRefresh[[usePlaylistRefreshStore]]
+    s_postReaction[[usePostReactionOverridesStore]]
+    s_profile[[useProfileStore]]
+    s_spotifyAuth[[useSpotifyAuthStore]]
+    s_spotifyPlayer[[useSpotifyPlayerStore]]
+    s_feedRefresh[[useFeedRefreshStore]]
+  end
+
+  c_layout --> s_auth
+  c_modals --> s_auth
+  c_player --> s_auth
+  c_post --> s_auth
+  c_profile --> s_auth
+  c_search --> s_auth
+  c_sidebar --> s_auth
+  h_auth --> s_auth
+  h_noti --> s_auth
+  h_post --> s_auth
+  h_privacy --> s_auth
+
+  c_login --> s_modal
+  c_archive --> s_modal
+  c_feed --> s_modal
+  c_layout --> s_modal
+  c_modals --> s_modal
+  c_noti --> s_modal
+  c_player --> s_modal
+  c_post --> s_modal
+  c_profile --> s_modal
+  c_search --> s_modal
+  c_sidebar --> s_modal
+  h_auth --> s_modal
+  h_privacy --> s_modal
+  h_music --> s_modal
+
+  c_layout --> s_notiOverlay
+
+  c_layout --> s_noti
+  c_noti --> s_noti
+  c_sidebar --> s_noti
+  h_noti --> s_noti
+
+  c_feed --> s_player
+  c_modals --> s_player
+  c_player --> s_player
+  c_profile --> s_player
+  h_auth --> s_player
+  h_player --> s_player
+  h_queue --> s_player
+  h_music --> s_player
+
+  c_archive --> s_playlistRefresh
+  c_modals --> s_playlistRefresh
+
+  c_feed --> s_postReaction
+  c_modals --> s_postReaction
+  c_post --> s_postReaction
+  h_post --> s_postReaction
+
+  c_modals --> s_profile
+  c_profile --> s_profile
+
+  h_auth --> s_spotifyAuth
+  h_auth --> s_spotifyPlayer
+
+  c_feed --> s_feedRefresh
+  c_layout --> s_feedRefresh
+  c_profile --> s_feedRefresh
+  h_post --> s_feedRefresh
+  </pre>
+  <p class="legend">눈에 띄는 지점: <code>useAuthStore</code>·<code>useModalStore</code>는 도메인 10개 이상이 공유(전역 UI/인증이라 예상된 결과), <code>usePostReactionOverridesStore</code>는 4개 도메인(feed/modals/post/hooks-post)이 공유 — post-reaction-state 리팩터링(#48)이 정확히 이 4개의 접근 방식을 통일하려 한 지점입니다. <code>useSpotifyAuthStore</code>/<code>useSpotifyPlayerStore</code>는 hooks/auth 하나만 써서 상대적으로 격리도가 높습니다.</p>
+
+  <h2>usePostReactionOverridesStore 상세 흐름 (post-reaction-state 리팩터링 #48 이후)</h2>
+  <p class="legend">근거: apps/web/src/{stores/usePostReactionOverridesStore.ts, components/post/PostCard.tsx, components/post/partials/PostHeader.tsx, components/modals/PostCardDetailModal/PostCardDetailModal.tsx, components/feed/FeedView.tsx, hooks/post/usePostLikeToggle.ts, hooks/post/usePostReactions.ts} — 파일 단위. 점선 = "내부적으로 사용/합성", 실선 = store에 대한 실제 read/write.</p>
+  <pre class="mermaid">
+graph TD
+  store[["usePostReactionOverridesStore<br/>likesByPostId · commentsByPostId · contentByPostId · deletedPostId"]]
+
+  PostCard["PostCard.tsx<br/>(components/post)"]
+  PostHeader["PostHeader.tsx<br/>(components/post/partials)"]
+  PostCardDetailModal["PostCardDetailModal.tsx<br/>(components/modals)"]
+  FeedView["FeedView.tsx<br/>(components/feed)"]
+  usePostLikeToggle["usePostLikeToggle.ts<br/>(hooks/post) — #45 신설"]
+  usePostReactions["usePostReactions.ts<br/>(hooks/post)"]
+
+  PostCard -.->|사용| usePostLikeToggle
+  usePostLikeToggle -->|"read/write likesByPostId"| store
+
+  PostCardDetailModal -->|"read likesByPostId"| store
+  PostCardDetailModal -->|"write setContentOverride"| store
+  PostCardDetailModal -.->|사용| usePostReactions
+  usePostReactions -.->|"합성 (#46)"| usePostLikeToggle
+  usePostReactions -->|"write setCommentOverride"| store
+
+  PostHeader -->|"write setDeletedPostId"| store
+
+  FeedView -->|"read + clear<br/>contentByPostId · deletedPostId"| store
+  </pre>
+  <p class="legend">좋아요(likesByPostId)는 이제 <code>usePostLikeToggle</code> 하나로 접근이 응집됐지만(#45/#46), 본문수정(contentByPostId)·삭제(deletedPostId)는 여전히 컴포넌트가 store를 직접 read/write합니다 — 이 비대칭이 백로그 #41(PostCardDetailModal 책임 분리)이 다루려는 지점 중 하나입니다.</p>
+
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
     mermaid.initialize({ startOnLoad: true, theme: 'dark' });
