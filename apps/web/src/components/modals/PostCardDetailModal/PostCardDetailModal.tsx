@@ -11,7 +11,7 @@ import useIsMobile from '@/hooks/useIsMobile';
 import { useScrollLock, usePostDetail, useLikedUsers, usePostReactions, usePostDetailUxLog, useSwipeToDismiss } from '@/hooks';
 
 import { EMPTY_POST, DEFAULT_IMAGES } from '@/constants';
-import { LoadingSpinner, PostMedia } from '@/components';
+import { LoadingSpinner, PostMedia, ModalShell } from '@/components';
 import { coalesceImageSrc } from '@/utils';
 import { toast } from 'react-toastify';
 import { updatePost } from '@/api';
@@ -224,16 +224,12 @@ export const PostCardDetailModal = () => {
       </div>
 
       {/* ── 데스크탑: 기존 풀 모달 ── */}
-      <div
-        className="hidden lg:flex fixed inset-0 z-60 items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
-        onClick={handleClose}
-        role="dialog"
-        aria-modal="true"
+      <ModalShell
+        onClose={handleClose}
+        ariaLabel="게시글 상세"
+        className="hidden lg:flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
       >
-        <div
-          className="bg-white w-full max-w-5xl h-full max-h-[85vh] rounded-2xl border-2 border-primary shadow-2xl flex flex-col md:flex-row overflow-hidden animate-scale-up"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="bg-white w-full max-w-5xl h-full max-h-[85vh] rounded-2xl border-2 border-primary shadow-2xl flex flex-col md:flex-row overflow-hidden animate-scale-up">
           {isLoading ? (
             <LoadingSpinner />
           ) : error ? (
@@ -314,7 +310,7 @@ export const PostCardDetailModal = () => {
             />
           </div>
         </div>
-      </div>
+      </ModalShell>
 
       <LikedUsersOverlay
         isOpen={isLikedUsersOpen}
