@@ -28,13 +28,13 @@ describe('PlaylistPickerModal — 배경 클릭/닫기 버튼 특성화 테스�
     useModalStore.setState({ isOpen: true, modalType: MODAL_TYPES.PLAYLIST_PICKER, modalProps: { musics: [mockMusic] } });
   });
 
-  it('배경(overlay div)을 클릭하면 모달이 닫힌다', async () => {
-    const { container } = render(<PlaylistPickerModal />);
+  it('배경을 클릭하면 모달이 닫힌다', async () => {
+    // #68: 별도 overlay div가 ModalShell로 흡수되어, backdrop이 곧 role="dialog" 요소다.
+    render(<PlaylistPickerModal />);
     await waitFor(() => expect(getAllPlaylists).toHaveBeenCalled());
     await screen.findByText('플레이리스트가 없습니다.');
 
-    const overlay = container.querySelector('.absolute.inset-0') as HTMLElement;
-    fireEvent.click(overlay);
+    fireEvent.mouseDown(screen.getByRole('dialog'));
 
     expect(useModalStore.getState().isOpen).toBe(false);
   });
