@@ -29,20 +29,26 @@ jest.mock('@/hooks/useIsMobile', () => ({
   default: () => false,
 }));
 
-// PostCardDetailModal.tsx는 이 5개를 '@/hooks' 루트 배럴에서 가져온다.
-jest.mock('@/hooks', () => ({
-  useScrollLock: () => {},
-  usePostDetail: jest.fn(),
-  useLikedUsers: () => ({ users: [], isLoading: false, errorMsg: null, refetch: jest.fn() }),
-  usePostReactions: jest.fn(),
-  useSwipeToDismiss: (onClose: () => void) => ({
-    sheetRef: { current: null },
-    handleTouchStart: jest.fn(),
-    handleTouchMove: jest.fn(),
-    handleTouchEnd: jest.fn(),
-    __onClose: onClose, // 테스트에서 직접 쓰진 않지만 실제 훅과 동일한 인자를 받는지 형태만 맞춤
-  }),
-}));
+// PostCardDetailModal.tsx는 이 훅들을 '@/hooks' 루트 배럴에서 가져온다.
+// usePostDetailUxLog는 실제 구현을 그대로 쓴다 — 이 파일의 관찰 지점(enqueueLog)이
+// 컴포넌트가 아니라 그 훅 내부에 있으므로, 훅까지 mock하면 특성화 테스트의 의미가 사라진다.
+jest.mock('@/hooks', () => {
+  const actual = jest.requireActual('@/hooks');
+  return {
+    ...actual,
+    useScrollLock: () => {},
+    usePostDetail: jest.fn(),
+    useLikedUsers: () => ({ users: [], isLoading: false, errorMsg: null, refetch: jest.fn() }),
+    usePostReactions: jest.fn(),
+    useSwipeToDismiss: (onClose: () => void) => ({
+      sheetRef: { current: null },
+      handleTouchStart: jest.fn(),
+      handleTouchMove: jest.fn(),
+      handleTouchEnd: jest.fn(),
+      __onClose: onClose, // 테스트에서 직접 쓰진 않지만 실제 훅과 동일한 인자를 받는지 형태만 맞춤
+    }),
+  };
+});
 
 jest.mock('./partials', () => ({
   PostDetailBody: () => <div data-testid="post-detail-body" />,
