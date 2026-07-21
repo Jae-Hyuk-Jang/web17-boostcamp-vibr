@@ -1,5 +1,6 @@
 import ConfirmOverlay from '@/components/ConfirmOverlay';
 import ModalShell from '@/components/ModalShell';
+import ModalPanel from '@/components/ModalPanel';
 import { useModalStore, usePlayerStore, usePlaylistRefreshStore } from '@/stores';
 import type { MusicRequestDto as UnsavedMusic, MusicResponseDto as SavedMusic, GetPlaylistDetailResDto } from '@repo/dto';
 import { useCallback, useEffect, useState } from 'react';
@@ -162,7 +163,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
         ariaLabel="플레이리스트 상세"
         className="flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in"
       >
-        <div className="bg-white w-full max-w-lg rounded-3xl shadow-[8px_8px_0px_0px_#00214D] border-2 border-primary flex flex-col max-h-[85vh] overflow-hidden">
+        <ModalPanel className="w-full max-w-lg shadow-[8px_8px_0px_0px_#00214D] max-h-[85vh]">
           {/* Header Section */}
           <Header
             title={playlist.title}
@@ -187,7 +188,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
 
           {/* Song List */}
           <SongList songs={songs} selectedSongIds={selectedSongIds} toggleSelectSong={toggleSelectSong} moveSong={moveSong} moveSongTo={moveSongTo} />
-        </div>
+        </ModalPanel>
 
         <ConfirmOverlay
           open={isConfirmOpen}

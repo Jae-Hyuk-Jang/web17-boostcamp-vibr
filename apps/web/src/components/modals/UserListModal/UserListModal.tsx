@@ -2,11 +2,12 @@
 
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ModalShell from '@/components/ModalShell';
+import ModalPanel from '@/components/ModalPanel';
+import ModalCloseButton from '@/components/ModalCloseButton';
 import { ProfileActionButton } from '@/components/profile';
 import { DEFAULT_IMAGES } from '@/constants';
 import type { GetUserFollowDto } from '@repo/dto';
 import { useAuthStore, useModalStore, useProfileStore } from '@/stores';
-import { X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
@@ -62,13 +63,15 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
       ariaLabel={title}
       className="flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in"
     >
-      <div className="relative bg-white w-full max-w-sm md:max-w-md rounded-3xl border-2 border-primary flex flex-col h-[50vh] overflow-hidden animate-scale-up z-10">
+      <ModalPanel className="relative w-full max-w-sm md:max-w-md h-[50vh] animate-scale-up z-10">
         {/* 모달 헤더 영역 */}
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-primary bg-white">
           <h2 className="text-xl font-black text-primary">{title}</h2>
-          <button onClick={closeModal} className="p-1 hover:bg-grayish rounded-full transition-colors">
-            <X className="w-6 h-6 text-primary" />
-          </button>
+          <ModalCloseButton
+            onClick={closeModal}
+            className="p-1 hover:bg-grayish rounded-full transition-colors"
+            iconClassName="w-6 h-6 text-primary"
+          />
         </div>
 
         {/* 사용자 목록 */}
@@ -124,7 +127,7 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
             )}
           </div>
         )}
-      </div>
+      </ModalPanel>
     </ModalShell>
   );
 };

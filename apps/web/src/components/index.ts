@@ -17,3 +17,4 @@ export { default as ConfirmOverlay } from './ConfirmOverlay';
 export { default as TickerText } from './TickerText';
 export { default as ModalShell } from './ModalShell';
 export { default as ModalCloseButton } from './ModalCloseButton';
+export { default as ModalPanel } from './ModalPanel';
