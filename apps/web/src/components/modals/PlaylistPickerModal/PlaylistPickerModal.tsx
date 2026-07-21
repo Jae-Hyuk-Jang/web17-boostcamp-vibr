@@ -15,6 +15,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ModalShell from '@/components/ui/ModalShell';
 import ModalPanel from '@/components/ui/ModalPanel';
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
+import Button from '@/components/ui/Button';
 
 type PlaylistBrief = {
   id: string;
@@ -172,16 +173,15 @@ export default function PlaylistPickerModal() {
         </div>
 
         <div className="px-6 py-3 border-b border-gray-100">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={() => void handleCreateAndSave()}
             disabled={!isSubmittable}
-            className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-primary bg-white font-black text-primary py-3
-                       hover:bg-grayish disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-xl bg-white py-3 hover:bg-grayish"
           >
             <Plus className="w-4 h-4" />
             {isCreating ? '생성/저장 중…' : '새 플레이리스트 만들고 저장'}
-          </button>
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
