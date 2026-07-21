@@ -15,3 +15,4 @@ export * from './post';
 export * from './privacy';
 export * from './useSwipeToDismiss';
 export * from './useResizable';
+export * from './useInlineEditField';

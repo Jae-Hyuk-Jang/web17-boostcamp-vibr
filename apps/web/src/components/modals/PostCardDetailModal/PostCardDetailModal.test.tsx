@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import type { PostResponseDto as Post, MusicResponseDto as Music } from '@repo/dto';
 
 import { PostCardDetailModal } from './PostCardDetailModal';
@@ -7,9 +7,13 @@ import { usePlayerStore } from '@/stores/usePlayerStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
 
+const mockPush = jest.fn();
+const mockUsePathname = jest.fn(() => '/');
+const mockUseIsMobile = jest.fn(() => false);
+
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn() }),
-  usePathname: () => '/',
+  useRouter: () => ({ push: mockPush }),
+  usePathname: () => mockUsePathname(),
 }));
 
 jest.mock('react-toastify', () => ({
@@ -26,7 +30,7 @@ jest.mock('@/utils/logQueue', () => ({
 
 jest.mock('@/hooks/useIsMobile', () => ({
   __esModule: true,
-  default: () => false,
+  default: () => mockUseIsMobile(),
 }));
 
 // PostCardDetailModal.tsx는 이 훅들을 '@/hooks' 루트 배럴에서 가져온다.
@@ -50,11 +54,59 @@ jest.mock('@/hooks', () => {
   };
 });
 
-jest.mock('./partials', () => ({
-  PostDetailBody: () => <div data-testid="post-detail-body" />,
-  PostDetailActions: () => <div data-testid="post-detail-actions" />,
-  PostDetailCommentComposer: () => <div data-testid="post-detail-comment-composer" />,
-  LikedUsersOverlay: () => <div data-testid="liked-users-overlay" />,
+// PostCardDetailModalMobileSheet/PostCardDetailModalDesktopShell는 실제 구현을 그대로 써서
+// props 배선(usePostDetailModal → 두 서브컴포넌트)까지 특성화한다. 그 안에서 쓰는 leaf
+// partials만 개별 파일 단위로 mock한다 — 배럴(./partials)을 통째로 mock하면 두 서브컴포넌트
+// 자체가 가짜가 되어 이 이슈(#130)가 만든 배선을 검증할 수 없다.
+jest.mock('./partials/PostDetailBody', () => ({
+  __esModule: true,
+  default: () => <div data-testid="post-detail-body" />,
+}));
+
+jest.mock('./partials/PostDetailActions', () => ({
+  __esModule: true,
+  default: ({ onOpenLikedUsers }: { onOpenLikedUsers: () => void }) => (
+    <button type="button" onClick={onOpenLikedUsers}>
+      open-liked-users
+    </button>
+  ),
+}));
+
+jest.mock('./partials/PostDetailCommentComposer', () => ({
+  __esModule: true,
+  default: () => <div data-testid="post-detail-comment-composer" />,
+}));
+
+jest.mock('./partials/PostDetailEditForm', () => ({
+  __esModule: true,
+  default: ({
+    value,
+    isSaving,
+    onChange,
+    onSave,
+    onCancel,
+  }: {
+    value: string;
+    isSaving: boolean;
+    onChange: (next: string) => void;
+    onSave: () => void;
+    onCancel: () => void;
+  }) => (
+    <div>
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} />
+      <button type="button" onClick={onCancel}>
+        취소
+      </button>
+      <button type="button" onClick={onSave} disabled={isSaving}>
+        {isSaving ? '저장 중...' : '저장'}
+      </button>
+    </div>
+  ),
+}));
+
+jest.mock('./partials/LikedUsersOverlay', () => ({
+  __esModule: true,
+  default: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="liked-users-overlay-open" /> : null),
 }));
 
 // ModalShell/LoadingSpinner는 PostCardDetailModal.tsx가 '@/components/ModalShell',
@@ -65,7 +117,14 @@ jest.mock('./partials', () => ({
 // 실제 모듈(src/components/post/index.ts)로 resolve된다 — 그래서 PostHeader와 함께 이 mock
 // 하나에 정의해야 한다. 따로 mock하면 이 파일 mock이 덮어써져 PostMedia가 undefined가 된다.
 jest.mock('../../post', () => ({
-  PostHeader: () => <div data-testid="post-header" />,
+  PostHeader: ({ onEditPost }: { onEditPost?: () => void }) =>
+    onEditPost ? (
+      <button type="button" onClick={onEditPost}>
+        start-edit
+      </button>
+    ) : (
+      <div data-testid="post-header" />
+    ),
   PostMedia: ({ onPlay, post }: { onPlay: (m: Music) => void; post: Post }) => (
     <button data-testid="play-first-music" onClick={() => post.musics[0] && onPlay(post.musics[0])}>
       play
@@ -78,6 +137,8 @@ const { usePostDetail, usePostReactions } = jest.requireMock('@/hooks') as {
   usePostReactions: jest.Mock;
 };
 const { enqueueLog } = jest.requireMock('@/utils/logQueue') as { enqueueLog: jest.Mock };
+const { updatePost } = jest.requireMock('@/api') as { updatePost: jest.Mock };
+const { toast } = jest.requireMock('react-toastify') as { toast: { success: jest.Mock; error: jest.Mock } };
 
 const mockMusic = (overrides: Partial<Music> = {}): Music => ({
   id: 'music-1',
@@ -264,5 +325,113 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     expect(enqueueLog).toHaveBeenCalledTimes(1);
     const event = enqueueLog.mock.calls[0][0];
     expect(event.meta.playedMusicCount).toBe(1);
+  });
+});
+
+describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자목록 특성화 테스트 (post-detail-modal-responsibility-decomposition #126)', () => {
+  beforeEach(() => {
+    useModalStore.setState({ isOpen: false, modalType: null, modalProps: {} });
+    usePlayerStore.setState({ currentMusic: null, isPlaying: false });
+    usePostReactionOverridesStore.setState({ likesByPostId: {}, commentsByPostId: {}, contentByPostId: {}, deletedPostId: null });
+    useAuthStore.setState({ userId: 'author-1', isAuthenticated: true, isLoading: false });
+
+    usePostReactions.mockReturnValue({ ...defaultReactions });
+    mockPush.mockClear();
+    mockUsePathname.mockReturnValue('/');
+    mockUseIsMobile.mockReturnValue(false);
+    updatePost.mockReset();
+    toast.success.mockClear();
+    toast.error.mockClear();
+  });
+
+  it('편집 시작 후 저장에 성공하면 updatePostContent와 setContentOverride가 갱신되고 편집모드가 종료된다', async () => {
+    const post = mockPost({ content: 'original', author: { id: 'author-1', nickname: 'author', profileImgUrl: null } });
+    const updatePostContent = jest.fn();
+    usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent });
+    updatePost.mockResolvedValue(undefined);
+    openModalFor(post);
+
+    render(<PostCardDetailModal />);
+
+    fireEvent.click(screen.getByText('start-edit'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'updated content' } });
+    fireEvent.click(screen.getByText('저장'));
+
+    // commit()은 onCommit(updatePost→toast→캐시 동기화) 완료 후에야 편집모드를 닫으므로,
+    // textarea가 사라지는 시점을 기다리면 그 이전 단계가 전부 끝났음을 보장한다.
+    await waitFor(() => {
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    });
+
+    expect(updatePost).toHaveBeenCalledWith('post-1', { content: 'updated content' });
+    expect(updatePostContent).toHaveBeenCalledWith('updated content');
+    expect(usePostReactionOverridesStore.getState().contentByPostId['post-1']).toEqual({ content: 'updated content' });
+    expect(toast.success).toHaveBeenCalled();
+  });
+
+  it('편집 저장이 실패하면 토스트 에러가 뜨고 편집모드가 유지된다', async () => {
+    const post = mockPost({ content: 'original', author: { id: 'author-1', nickname: 'author', profileImgUrl: null } });
+    usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
+    updatePost.mockRejectedValue(new Error('fail'));
+    openModalFor(post);
+
+    render(<PostCardDetailModal />);
+
+    fireEvent.click(screen.getByText('start-edit'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'updated content' } });
+    fireEvent.click(screen.getByText('저장'));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+    });
+
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
+
+  it('편집을 취소하면 draft가 원본 content로 복귀하고 편집모드가 종료된다', () => {
+    const post = mockPost({ content: 'original', author: { id: 'author-1', nickname: 'author', profileImgUrl: null } });
+    usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
+    openModalFor(post);
+
+    render(<PostCardDetailModal />);
+
+    fireEvent.click(screen.getByText('start-edit'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'changed' } });
+    fireEvent.click(screen.getByText('취소'));
+
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('start-edit'));
+    expect(screen.getByRole('textbox')).toHaveValue('original');
+  });
+
+  it('리사이즈로 데스크탑→모바일 전환 시 프로필 페이지에서 열린 모달이면 posts 피드로 전환된다', () => {
+    mockUsePathname.mockReturnValue('/profile/author-1');
+    mockUseIsMobile.mockReturnValue(false);
+    const post = mockPost();
+    usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
+    openModalFor(post);
+
+    const { rerender } = render(<PostCardDetailModal />);
+
+    mockUseIsMobile.mockReturnValue(true);
+    rerender(<PostCardDetailModal />);
+
+    expect(mockPush).toHaveBeenCalledWith('/profile/author-1/posts?postId=post-1');
+    expect(useModalStore.getState().isOpen).toBe(false);
+  });
+
+  it('좋아요한 사용자 목록을 열면 LikedUsersOverlay가 열린다', () => {
+    const post = mockPost();
+    usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
+    openModalFor(post);
+
+    render(<PostCardDetailModal />);
+
+    expect(screen.queryByTestId('liked-users-overlay-open')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('open-liked-users'));
+
+    expect(screen.getByTestId('liked-users-overlay-open')).toBeInTheDocument();
   });
 });
