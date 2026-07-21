@@ -41,6 +41,8 @@ export interface UsePostDetailModalResult {
   };
 
   handleClose: () => void;
+  /** UX 로그 emit 없이 즉시 닫기 — 게시글 삭제 성공 콜백 전용(PostHeader.onDeletePost) */
+  closeModal: () => void;
   handleUserClick: (targetUserId: string) => void;
 }
 
@@ -219,6 +221,7 @@ export function usePostDetailModal(): UsePostDetailModalResult {
     },
 
     handleClose,
+    closeModal,
     handleUserClick,
   };
 }

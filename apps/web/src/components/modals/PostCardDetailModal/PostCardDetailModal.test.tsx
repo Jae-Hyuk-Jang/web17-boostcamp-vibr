@@ -62,6 +62,29 @@ jest.mock('./partials', () => ({
     </button>
   ),
   PostDetailCommentComposer: () => <div data-testid="post-detail-comment-composer" />,
+  PostDetailEditForm: ({
+    value,
+    isSaving,
+    onChange,
+    onSave,
+    onCancel,
+  }: {
+    value: string;
+    isSaving: boolean;
+    onChange: (next: string) => void;
+    onSave: () => void;
+    onCancel: () => void;
+  }) => (
+    <div>
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} />
+      <button type="button" onClick={onCancel}>
+        취소
+      </button>
+      <button type="button" onClick={onSave} disabled={isSaving}>
+        {isSaving ? '저장 중...' : '저장'}
+      </button>
+    </div>
+  ),
   LikedUsersOverlay: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="liked-users-overlay-open" /> : null),
 }));
 
@@ -313,14 +336,16 @@ describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자�
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'updated content' } });
     fireEvent.click(screen.getByText('저장'));
 
+    // commit()은 onCommit(updatePost→toast→캐시 동기화) 완료 후에야 편집모드를 닫으므로,
+    // textarea가 사라지는 시점을 기다리면 그 이전 단계가 전부 끝났음을 보장한다.
     await waitFor(() => {
-      expect(updatePost).toHaveBeenCalledWith('post-1', { content: 'updated content' });
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     });
 
+    expect(updatePost).toHaveBeenCalledWith('post-1', { content: 'updated content' });
     expect(updatePostContent).toHaveBeenCalledWith('updated content');
     expect(usePostReactionOverridesStore.getState().contentByPostId['post-1']).toEqual({ content: 'updated content' });
     expect(toast.success).toHaveBeenCalled();
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
   it('편집 저장이 실패하면 토스트 에러가 뜨고 편집모드가 유지된다', async () => {
