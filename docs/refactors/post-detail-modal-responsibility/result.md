@@ -38,6 +38,8 @@ baseline.md의 Behavior Invariants 10개 중 이번 사이클이 직접 다룬 4
 - diagnosis.md의 후보 B(반응형 라우팅 전환 훅 추출)·C(본문 수정 로직 훅 추출)는 Stage 1(GATE 1)에서 YAGNI 기준으로 이미 보류됐다 — 두 로직 모두 이미 충분히 짧고 응집돼 있어, 지금 추출해도 이득이 근거 강도 대비 작다고 판단했다. 이번 사이클 종료 시점에도 이 판단은 유효하다(코드 변경 없음).
 - 후보 E(컨테이너/표현 전면 분리)는 애초에 범위 밖으로 명시됐다(brief-fixed.md Out of Scope) — `PostCardDetailModal.tsx`는 여전히 모달 상태·반응 상태·본문수정·라우팅전환·좋아요유저목록·재생트리거·스와이프 7가지 책임을 갖고 있다(UX 로그를 뺀 나머지). 다음에 이 컴포넌트를 다시 다룰 일이 생기면(예: 실제 변경 압력이 발생하면) diagnosis.md를 다시 실행해 후보 B/C/E를 재평가할 것을 권장한다.
 
+> **후속 갱신(2026-07-21)**: 위에서 예고한 "다시 다룰 시점"이 `post-detail-modal-responsibility-decomposition` 사이클(#125~#131)로 실현됐다. 후보 B(라우팅 전환)·C(본문 편집 로직, `PlaylistDetailModal`과의 구조 중복이 새 근거로 확인되며 재평가)·E(전면 분리)를 전부 처리해 `PostCardDetailModal.tsx`가 329→69줄로 줄었다. 상세는 `docs/refactors/post-detail-modal-responsibility-decomposition/result.md` 참고.
+
 ## Follow-ups
 
 - 이번 사이클에서 새로 발견한 문제는 없다(#39류의 버그, #43/#53/#54/#55류의 아키텍처 논의와 달리, 이번 대상은 계획대로 좁게 마무리됨).
