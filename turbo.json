@@ -3,6 +3,7 @@
   "ui": "tui",
   "globalEnv": [
     "NODE_ENV",
+    "CI",
     "PORT",
     "NCP_BUCKET_NAME",
     "NCP_ACCESS_KEY",
