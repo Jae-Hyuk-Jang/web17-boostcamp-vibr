@@ -24,7 +24,7 @@ interface MiniPlayerBarProps {
   onPrev: () => void;
   onNext: () => void;
 
-  onToggleQueue: () => void;
+  onOpenQueue: () => void;
   onOpenFullPlayer: () => void;
 }
 
@@ -37,7 +37,7 @@ export default function MiniPlayerBar({
   onTogglePlay,
   onPrev,
   onNext,
-  onToggleQueue,
+  onOpenQueue,
   onOpenFullPlayer,
 }: MiniPlayerBarProps) {
   const isPlayable = Boolean(currentMusic);
@@ -75,8 +75,8 @@ export default function MiniPlayerBar({
     onNext();
   };
 
-  const handleToggleQueueClick = () => {
-    onToggleQueue();
+  const handleOpenQueueClick = () => {
+    onOpenQueue();
   };
 
   const handlePostClick = async () => {
@@ -162,7 +162,7 @@ export default function MiniPlayerBar({
         {/* 재생목록 열기/닫기 */}
         <button
           type="button"
-          onClick={handleToggleQueueClick}
+          onClick={handleOpenQueueClick}
           title={queueTitle}
           className="p-2 text-primary hover:bg-gray-4 rounded-full transition-colors hidden 2xs:block"
         >

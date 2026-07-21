@@ -69,4 +69,28 @@ describe('RightPanel — 풀플레이어 오버레이 열기/닫기 특성화 �
 
     expect(screen.getByText('재생 목록')).toBeInTheDocument();
   });
+
+  it('ListPlus 버튼을 클릭하면 풀플레이어가 열리고 재생목록 위치로 스크롤한다 (#120)', () => {
+    const scrollIntoViewMock = jest.fn();
+    Element.prototype.scrollIntoView = scrollIntoViewMock;
+
+    render(<RightPanel />);
+
+    fireEvent.click(screen.getByTitle('현재 재생목록 열기'));
+
+    expect(screen.getByTitle('닫기')).toBeInTheDocument();
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ block: 'start' });
+  });
+
+  it('앨범아트 탭으로 열었을 때는 스크롤하지 않는다 (#120)', () => {
+    const scrollIntoViewMock = jest.fn();
+    Element.prototype.scrollIntoView = scrollIntoViewMock;
+
+    render(<RightPanel />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Test Song/ }));
+
+    expect(screen.getByTitle('닫기')).toBeInTheDocument();
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
+  });
 });

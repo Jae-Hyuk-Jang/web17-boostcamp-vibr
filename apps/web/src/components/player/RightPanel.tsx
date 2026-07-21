@@ -21,7 +21,7 @@ export default function RightPanel() {
   useQueueSync({ enabled: isServerSyncEnabled });
   useGuestQueueSession(isGuestSessionEnabled);
 
-  const { openModal, closeModal, isOpen, modalType } = useModalStore();
+  const { isOpen, modalType } = useModalStore();
   const isQueueOpen = isOpen && modalType === MODAL_TYPES.MOBILE_QUEUE;
 
   const currentMusic = usePlayerStore((s) => s.currentMusic);
@@ -49,14 +49,28 @@ export default function RightPanel() {
     togglePlay();
   }, [currentMusic, togglePlay]);
 
-  const handleToggleQueue = useCallback(() => {
-    if (isQueueOpen) return closeModal();
-    openModal(MODAL_TYPES.MOBILE_QUEUE);
-  }, [isQueueOpen, closeModal, openModal]);
-
   const [isFullPlayerOpen, setIsFullPlayerOpen] = useState(false);
   const isFullPlayerOpenRef = useRef(isFullPlayerOpen);
   isFullPlayerOpenRef.current = isFullPlayerOpen;
+
+  const queueSectionRef = useRef<HTMLDivElement>(null);
+  const [shouldScrollToQueue, setShouldScrollToQueue] = useState(false);
+
+  // ListPlus 버튼으로 열렸을 때만 QueueList 위치로 스크롤한다
+  useEffect(() => {
+    if (!isFullPlayerOpen || !shouldScrollToQueue) return;
+    queueSectionRef.current?.scrollIntoView({ block: 'start' });
+    setShouldScrollToQueue(false);
+  }, [isFullPlayerOpen, shouldScrollToQueue]);
+
+  const handleOpenFullPlayer = useCallback(() => {
+    setIsFullPlayerOpen(true);
+  }, []);
+
+  const handleOpenQueue = useCallback(() => {
+    setShouldScrollToQueue(true);
+    setIsFullPlayerOpen(true);
+  }, []);
 
   // 데스크탑 크기로 커지면 풀 플레이어 닫기
   useEffect(() => {
@@ -137,16 +151,18 @@ export default function RightPanel() {
           onNext={playNext}
         />
 
-        <QueueList
-          queue={queue}
-          currentMusicId={currentMusic?.id ?? null}
-          onClear={clearQueue}
-          onRemove={removeFromQueue}
-          onMoveUp={moveUp}
-          onMoveDown={moveDown}
-          onMove={moveTo}
-          onSelect={selectMusic}
-        />
+        <div ref={queueSectionRef}>
+          <QueueList
+            queue={queue}
+            currentMusicId={currentMusic?.id ?? null}
+            onClear={clearQueue}
+            onRemove={removeFromQueue}
+            onMoveUp={moveUp}
+            onMoveDown={moveDown}
+            onMove={moveTo}
+            onSelect={selectMusic}
+          />
+        </div>
       </div>
     </section>
   );
@@ -162,8 +178,8 @@ export default function RightPanel() {
         onTogglePlay={handleTogglePlay}
         onPrev={playPrev}
         onNext={playNext}
-        onToggleQueue={handleToggleQueue}
-        onOpenFullPlayer={() => setIsFullPlayerOpen(true)}
+        onOpenQueue={handleOpenQueue}
+        onOpenFullPlayer={handleOpenFullPlayer}
       />
 
       {section}
