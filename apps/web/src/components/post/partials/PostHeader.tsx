@@ -7,7 +7,7 @@ import { coalesceImageSrc, formatRelativeTime } from '@/utils';
 import type { PostResponseDto } from '@repo/dto';
 import { DEFAULT_IMAGES } from '@/constants';
 import { usePostReactionOverridesStore } from '@/stores';
-import { showConfirmToast } from '@/components/ConfirmToast';
+import { showConfirmToast } from '@/components/ui/ConfirmToast';
 import { deletePost } from '@/api';
 import { toast } from 'react-toastify';
 

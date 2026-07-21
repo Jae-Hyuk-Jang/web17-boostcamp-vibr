@@ -4,7 +4,8 @@ import { Trash2, ChevronUp, ChevronDown, XCircle, ListPlus } from 'lucide-react'
 import Image from 'next/image';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 import { usePlayerStore } from '@/stores';
-import ModalCloseButton from '@/components/ModalCloseButton';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
+import Button from '@/components/ui/Button';
 import type { MusicResponseDto as Music } from '@repo/dto';
 
 type MobileQueueRowProps = {
@@ -91,16 +92,16 @@ export default function MobileNowPlaylistModal() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={clearQueue}
               disabled={queue.length === 0}
               title={queue.length === 0 ? '큐가 비어있습니다' : '전체 비우기'}
-              className="flex items-center gap-1 px-3 py-2 rounded-md border-2 border-primary text-primary font-bold text-sm hover:bg-gray-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-md px-3 py-2 text-sm hover:bg-gray-4"
             >
               <XCircle className="w-4 h-4" />
               Clear
-            </button>
+            </Button>
 
             <ModalCloseButton onClick={closeModal} title="닫기" className="p-2 text-primary hover:bg-gray-4 rounded-full" iconClassName="w-5 h-5" />
           </div>

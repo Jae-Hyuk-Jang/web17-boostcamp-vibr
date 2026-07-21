@@ -9,7 +9,7 @@ import { enqueueLog } from '@/utils';
 import { makeArchiveAddMusicLog, makePostAddMusicLog } from '@/api';
 import { useAuthStore } from '@/stores';
 
-import TickerText from '@/components/TickerText';
+import TickerText from '@/components/ui/TickerText';
 
 interface MiniPlayerBarProps {
   currentMusic: Music | null;

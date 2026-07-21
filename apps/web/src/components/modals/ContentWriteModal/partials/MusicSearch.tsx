@@ -13,7 +13,7 @@ import { BriefItemList, EmptyPlaylist, LoadingMessage } from './PlaylistSectionI
 import { SearchMode } from '@/types';
 import { SEARCH_TAB_ENTRIES } from '@/components/search/SearchDrawerContent';
 
-import TickerText from '@/components/TickerText';
+import TickerText from '@/components/ui/TickerText';
 
 interface MusicSearchProps {
   searchQuery: string;

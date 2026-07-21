@@ -1,6 +1,6 @@
 'use client';
 
-import LoginRequestScreen from '@/components/LoginRequestScreen';
+import LoginRequestScreen from '@/components/ui/LoginRequestScreen';
 import { ProfileSkeleton } from '@/components/skeleton';
 import { useAuthStore } from '@/stores';
 import { useRouter } from 'next/navigation';

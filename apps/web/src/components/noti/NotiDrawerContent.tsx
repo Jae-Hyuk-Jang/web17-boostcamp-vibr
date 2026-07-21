@@ -8,7 +8,8 @@ import { NotiView } from './noti.types';
 import { MODAL_TYPES, useModalStore } from '@/stores';
 import { useRouter } from 'next/navigation';
 import { useNotiStore } from '@/stores/useNotiStore';
-import ConfirmOverlay from '@/components/ConfirmOverlay';
+import ConfirmOverlay from '@/components/ui/ConfirmOverlay';
+import Button from '@/components/ui/Button';
 
 export default function NotiDrawerContent({ onNavigate }: { onNavigate?: () => void }) {
   const openModal = useModalStore((s) => s.openModal);
@@ -68,15 +69,14 @@ export default function NotiDrawerContent({ onNavigate }: { onNavigate?: () => v
     <div className="flex flex-col h-full">
       {hasNotis && (
         <div className="flex justify-end gap-4 px-3 py-2">
-          <button
-            type="button"
+          <Button
             onClick={() => readAllNotis()}
             disabled={!hasUnread}
-            className="flex items-center gap-1 rounded-full bg-primary/80 px-3 py-1 text-s text-white hover:bg-primary disabled:opacity-40 disabled:cursor-default disabled:hover:bg-primary/85 transition-colors"
+            className="border-0 bg-primary/80 px-3 py-1 text-s hover:bg-primary hover:text-white disabled:cursor-default disabled:opacity-40 disabled:hover:bg-primary/85"
           >
             <CheckCheck className="w-4 h-4" />
             모두 읽음
-          </button>
+          </Button>
           <button
             type="button"
             onClick={() => setIsConfirmOpen(true)}

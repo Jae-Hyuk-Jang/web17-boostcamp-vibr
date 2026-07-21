@@ -3,7 +3,8 @@
 import type { MusicResponseDto as Music } from '@repo/dto';
 import React, { memo } from 'react';
 import { Box, Plus } from 'lucide-react';
-import TickerText from '@/components/TickerText';
+import TickerText from '@/components/ui/TickerText';
+import Button from '@/components/ui/Button';
 
 type Props = {
   currentMusic: Music | null;
@@ -38,25 +39,20 @@ function NowPlayingMetaActionsBase({ currentMusic, playError, onPost, onSave }: 
 
       {isEnabled && (
         <div className="flex items-center justify-center gap-2 mb-3">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={onSave}
             title="보관함에 추가"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full border-2 border-primary text-primary font-bold text-xs cursor-pointer transition-all hover:shadow-[2px_2px_0px_0px_#00ebc7]"
+            className="px-3 py-1.5 text-xs hover:bg-transparent hover:shadow-[2px_2px_0px_0px_#00ebc7]"
           >
             <Box className="w-4 h-4" />
             저장
-          </button>
+          </Button>
 
-          <button
-            type="button"
-            onClick={onPost}
-            title="추천 글 작성"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full border-2 border-primary bg-accent-pink text-white font-bold text-xs cursor-pointer transition-all hover:shadow-[2px_2px_0px_0px_#00ebc7]"
-          >
+          <Button variant="danger" onClick={onPost} title="추천 글 작성" className="px-3 py-1.5 text-xs hover:shadow-[2px_2px_0px_0px_#00ebc7]">
             <Plus className="w-4 h-4" />
             추천
-          </button>
+          </Button>
         </div>
       )}
     </>

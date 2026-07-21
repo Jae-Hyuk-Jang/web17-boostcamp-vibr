@@ -4,7 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { useFeedInfiniteScroll } from '@/hooks';
 import { getFeedPosts } from '@/api';
 import { FeedSkeleton } from '../skeleton';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../ui/LoadingSpinner';
 import FeedList from './FeedList';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 

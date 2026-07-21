@@ -1,8 +1,9 @@
 import React from 'react';
 
-import ModalShell from '@/components/ModalShell';
-import ModalPanel from '@/components/ModalPanel';
-import ModalCloseButton from '@/components/ModalCloseButton';
+import ModalShell from '@/components/ui/ModalShell';
+import ModalPanel from '@/components/ui/ModalPanel';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
+import Button from '@/components/ui/Button';
 import { useModalStore } from '@/stores';
 import { CoverImgUploader } from './partials/CoverImgUploader';
 import { MusicSearch } from './partials/MusicSearch';
@@ -93,14 +94,13 @@ export const ContentWriteModal = ({ initialMusic, initialMusics }: Props) => {
         </div>
 
         <div className="p-6 border-t-2 border-primary bg-white shrink-0 flex items-center flex-row-reverse">
-          <button
-            type="button"
-            className="px-8 py-2.5 rounded-full font-bold bg-primary text-white border-2 border-primary hover:bg-white hover:text-primary hover:shadow-[4px_4px_0px_0px_var(--color-accent-cyan)] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+          <Button
+            className="px-8 hover:shadow-[4px_4px_0px_0px_var(--color-accent-cyan)] disabled:shadow-none"
             disabled={isSubmitDisabled}
             onClick={() => void onSubmit()}
           >
             등록
-          </button>
+          </Button>
         </div>
       </ModalPanel>
     </ModalShell>

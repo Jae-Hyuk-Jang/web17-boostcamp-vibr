@@ -12,7 +12,8 @@ import { useState } from 'react';
 import { enqueueLog } from '@/utils/logQueue';
 import { makeArchiveAddMusicLog, makePostAddMusicLog } from '@/api/internal/logging';
 
-import TickerText from '@/components/TickerText';
+import TickerText from '@/components/ui/TickerText';
+import Button from '@/components/ui/Button';
 
 interface QueueListProps {
   queue: Music[];
@@ -77,36 +78,38 @@ export default function QueueList({ queue, currentMusicId, onClear, onRemove, on
         </h3>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="icon"
             onClick={handleArchive}
             disabled={isEmpty}
             title={'현재 재생목록을 보관함에 추가'}
-            className="p-2 bg-white border-2 border-primary rounded-md transition-all enabled:hover:shadow-[2px_2px_0px_0px_#00ebc7] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md bg-white enabled:hover:shadow-[2px_2px_0px_0px_#00ebc7]"
           >
             <Box className="w-4 h-4" />
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button
+            variant="danger"
+            size="icon"
             onClick={handleAdd}
             disabled={isEmpty}
             title={'현재 재생목록으로 추천 글 작성'}
-            className="p-2 bg-accent-pink text-white border-2 border-primary rounded-md transition-all enabled:hover:shadow-[2px_2px_0px_0px_#00ebc7] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md enabled:hover:shadow-[2px_2px_0px_0px_#00ebc7]"
           >
             <Plus className="w-4 h-4" />
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={handleClearClick}
             disabled={isEmpty}
             title={isEmpty ? '큐가 비어있습니다' : '전체 비우기'}
-            className="flex items-center gap-1 px-3 py-2 rounded-md border-2 border-primary text-primary font-bold text-sm transition-all hover:bg-white enabled:hover:shadow-[2px_2px_0px_0px_#00ebc7] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md px-3 py-2 text-sm enabled:hover:shadow-[2px_2px_0px_0px_#00ebc7]"
           >
             <XCircle className="w-4 h-4" />
             Clear
-          </button>
+          </Button>
         </div>
       </div>
 

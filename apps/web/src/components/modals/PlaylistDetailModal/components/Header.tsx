@@ -1,6 +1,7 @@
 import { MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
 import { Check, Pencil, Play, Trash2, X } from 'lucide-react';
 import Image from 'next/image';
+import Button from '@/components/ui/Button';
 
 type Props = {
   title: string;
@@ -68,43 +69,41 @@ export function Header({
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  className="p-1 rounded-md border-2 border-primary text-primary hover:bg-gray-50"
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-md p-1 hover:bg-gray-50"
                   onClick={onCommitRename}
                   aria-label="Confirm rename"
                 >
                   <Check className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  className="p-1 rounded-md border-2 border-primary text-primary hover:bg-gray-50"
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-md p-1 hover:bg-gray-50"
                   onClick={onCancelRename}
                   aria-label="Cancel rename"
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             ) : (
               <>
                 <h2 className="text-2xl font-black text-primary leading-tight">{title}</h2>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="p-1 rounded-md border-2 border-primary text-primary hover:bg-gray-50"
-                    onClick={onStartRename}
-                    aria-label="Edit title"
-                  >
+                  <Button variant="secondary" size="icon" className="rounded-md p-1 hover:bg-gray-50" onClick={onStartRename} aria-label="Edit title">
                     <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    className="p-1 rounded-md border-2 border-primary text-accent-pink hover:bg-gray-50"
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="rounded-md p-1 text-accent-pink hover:bg-gray-50"
                     onClick={onDelete}
                     aria-label="Delete playlist"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -112,13 +111,13 @@ export function Header({
           <p className="text-sm font-bold text-gray-500 mb-3">Created by Me</p>
 
           <div className="flex items-center space-x-2">
-            <button
-              className="flex-1 bg-primary text-white py-1.5 px-4 rounded-lg font-bold text-sm flex items-center justify-center space-x-2 hover:bg-secondary border-2 border-transparent hover:border-black transition-all shadow-sm hover:shadow-md"
+            <Button
+              className="flex-1 rounded-lg border-transparent px-4 py-1.5 text-sm shadow-sm hover:border-black hover:bg-secondary hover:shadow-md"
               onClick={() => tracksCount > 0 && onPlayTotalSongs()}
             >
               <Play className="w-4 h-4 fill-current" />
               <span>재생</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

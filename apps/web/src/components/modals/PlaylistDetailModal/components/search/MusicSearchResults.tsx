@@ -1,7 +1,7 @@
 import type { MusicResponseDto as Music } from '@repo/dto';
 import type { MusicRequestDto as UnsavedMusic } from '@repo/dto';
 import Image from 'next/image';
-import TickerText from '@/components/TickerText';
+import TickerText from '@/components/ui/TickerText';
 
 type Props = {
   items: Music[];
