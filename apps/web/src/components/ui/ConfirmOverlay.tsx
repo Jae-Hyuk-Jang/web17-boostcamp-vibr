@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import Button from './Button';
 
 type Props = {
   open: boolean;
@@ -48,15 +49,12 @@ export default function ConfirmOverlay({
         {description && <div className="text-xs text-gray-500 mt-1">{description}</div>}
 
         <div className="flex gap-2 mt-3">
-          <button className="flex-1 py-1.5 text-sm font-bold border-2 border-primary rounded-md hover:bg-gray-50" onClick={onCancel}>
+          <Button variant="secondary" className="flex-1 rounded-md py-1.5 text-sm hover:bg-gray-50" onClick={onCancel}>
             {cancelLabel}
-          </button>
-          <button
-            className="flex-1 py-1.5 text-sm font-bold rounded-md text-white bg-[var(--color-accent-pink)] hover:opacity-90"
-            onClick={onConfirm}
-          >
+          </Button>
+          <Button variant="danger" className="flex-1 rounded-md border-0 py-1.5 text-sm hover:opacity-90" onClick={onConfirm}>
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
