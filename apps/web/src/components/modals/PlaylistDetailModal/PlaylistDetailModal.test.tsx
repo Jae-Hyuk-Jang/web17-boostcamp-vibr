@@ -13,7 +13,6 @@ jest.mock('@/api', () => ({
 
 jest.mock('./components', () => ({
   Header: () => <div data-testid="header" />,
-  SearchDropdown: () => <div data-testid="search-dropdown" />,
   Toolbar: () => <div data-testid="toolbar" />,
   SongList: () => <div data-testid="song-list" />,
 }));
