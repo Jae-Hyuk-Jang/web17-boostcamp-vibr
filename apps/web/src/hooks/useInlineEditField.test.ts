@@ -95,6 +95,13 @@ describe('useInlineEditField', () => {
     expect(result.current.draft).toBe('original');
   });
 
+  it('initialSeed가 있으면 최초 렌더부터 편집 모드로 시작한다', () => {
+    const { result } = renderHook(() => useInlineEditField<string>({ onCommit: jest.fn(), initialSeed: 'seeded content' }));
+
+    expect(result.current.isEditing).toBe(true);
+    expect(result.current.draft).toBe('seeded content');
+  });
+
   it('커스텀 isNoOpChange를 넘기면 그 판정을 따른다', async () => {
     const onCommit = jest.fn().mockResolvedValue(undefined);
     const isNoOpChange = jest.fn(() => true);

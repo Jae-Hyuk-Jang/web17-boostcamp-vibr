@@ -7,6 +7,8 @@ export interface UseInlineEditFieldOptions<T> {
   onCommitError?: (error: unknown) => void;
   /** 기본값: Object.is(next, seed) — draft가 편집 시작 시점 값과 같으면 커밋을 건너뛴다 */
   isNoOpChange?: (next: T, seed: T) => boolean;
+  /** 있으면 최초 렌더부터 편집 모드로 시작한다(예: 목록에서 곧바로 편집 진입) */
+  initialSeed?: T;
 }
 
 export interface UseInlineEditFieldResult<T> {
@@ -28,11 +30,12 @@ export function useInlineEditField<T>({
   onCommit,
   onCommitError,
   isNoOpChange = Object.is,
+  initialSeed,
 }: UseInlineEditFieldOptions<T>): UseInlineEditFieldResult<T> {
-  const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraftState] = useState<T | undefined>(undefined);
+  const [isEditing, setIsEditing] = useState(initialSeed !== undefined);
+  const [draft, setDraftState] = useState<T | undefined>(initialSeed);
   const [isSaving, setIsSaving] = useState(false);
-  const seedRef = useRef<T | undefined>(undefined);
+  const seedRef = useRef<T | undefined>(initialSeed);
 
   const startEdit = useCallback((seed: T) => {
     seedRef.current = seed;
