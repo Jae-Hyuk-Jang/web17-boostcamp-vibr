@@ -1,11 +1,12 @@
 import ConfirmOverlay from '@/components/ui/ConfirmOverlay';
 import ModalShell from '@/components/ui/ModalShell';
 import ModalPanel from '@/components/ui/ModalPanel';
+import MusicPickerSearch from '@/components/search/picker/MusicPickerSearch';
 import { useModalStore, usePlayerStore, usePlaylistRefreshStore } from '@/stores';
 import type { MusicRequestDto as UnsavedMusic, MusicResponseDto as SavedMusic, GetPlaylistDetailResDto } from '@repo/dto';
 import { useCallback, useEffect, useState } from 'react';
 import { DEFAULT_IMAGES, MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
-import { Header, SearchDropdown, SongList, Toolbar } from './components';
+import { Header, SongList, Toolbar } from './components';
 import { addMusicsToPlaylist, changeMusicOrderOfPlaylist, deletePlaylist, editTitleOfPlaylist, getPlaylistDetail } from '@/api';
 import { reorder } from '@/utils';
 import { toast } from 'react-toastify';
@@ -25,6 +26,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const [isInvalidTitle, setIsInvalidTitle] = useState(false);
+  const [musicQuery, setMusicQuery] = useState('');
 
   const initialFetchPlaylist = useCallback(async () => {
     try {
@@ -181,7 +183,14 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
           />
 
           {/* Search Dropdown Area */}
-          {<SearchDropdown handleAddSong={handleAddSong} />}
+          <div className="border-b-2 border-primary bg-accent/10 p-4 animate-fade-in">
+            <MusicPickerSearch
+              query={musicQuery}
+              onQueryChange={setMusicQuery}
+              onSelect={(music) => handleAddSong({ ...music, id: undefined })}
+              placeholder="추가할 음악 검색..."
+            />
+          </div>
 
           {/* Toolbar (Delete) */}
           {selectedSongIds.size > 0 && <Toolbar selectedSongIds={selectedSongIds} deleteSelectedSongs={deleteSelectedSongs} />}
