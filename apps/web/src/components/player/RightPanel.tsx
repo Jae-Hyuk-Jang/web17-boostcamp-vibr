@@ -171,7 +171,6 @@ export default function RightPanel() {
         isPlaying={isPlaying}
         canPrev={isPrevAvailable}
         canNext={isNextAvailable}
-        isQueueOpen={isFullPlayerOpen}
         onTogglePlay={handleTogglePlay}
         onPrev={playPrev}
         onNext={playNext}

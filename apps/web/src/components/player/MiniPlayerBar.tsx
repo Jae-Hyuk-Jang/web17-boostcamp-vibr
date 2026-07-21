@@ -18,8 +18,6 @@ interface MiniPlayerBarProps {
   canPrev: boolean;
   canNext: boolean;
 
-  isQueueOpen: boolean;
-
   onTogglePlay: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -33,7 +31,6 @@ export default function MiniPlayerBar({
   isPlaying,
   canPrev,
   canNext,
-  isQueueOpen,
   onTogglePlay,
   onPrev,
   onNext,
@@ -104,7 +101,7 @@ export default function MiniPlayerBar({
     await addMusicToArchive(currentMusic);
   };
 
-  const queueTitle = isQueueOpen ? '현재 재생목록 닫기' : '현재 재생목록 열기';
+  const queueTitle = '재생목록 보기';
 
   return (
     <section className="relative z-20 flex lg:hidden h-full items-center gap-3 px-4 bg-white">

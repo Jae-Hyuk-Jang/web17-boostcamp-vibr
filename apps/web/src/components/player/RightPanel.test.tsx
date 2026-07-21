@@ -76,7 +76,7 @@ describe('RightPanel — 풀플레이어 오버레이 열기/닫기 특성화 �
 
     render(<RightPanel />);
 
-    fireEvent.click(screen.getByTitle('현재 재생목록 열기'));
+    fireEvent.click(screen.getByTitle('재생목록 보기'));
 
     expect(screen.getByTitle('닫기')).toBeInTheDocument();
     expect(scrollIntoViewMock).toHaveBeenCalledWith({ block: 'start' });
