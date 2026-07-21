@@ -2,11 +2,11 @@
 
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ModalShell from '@/components/ModalShell';
+import ModalCloseButton from '@/components/ModalCloseButton';
 import { ProfileActionButton } from '@/components/profile';
 import { DEFAULT_IMAGES } from '@/constants';
 import type { GetUserFollowDto } from '@repo/dto';
 import { useAuthStore, useModalStore, useProfileStore } from '@/stores';
-import { X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
@@ -66,9 +66,11 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
         {/* 모달 헤더 영역 */}
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-primary bg-white">
           <h2 className="text-xl font-black text-primary">{title}</h2>
-          <button onClick={closeModal} className="p-1 hover:bg-grayish rounded-full transition-colors">
-            <X className="w-6 h-6 text-primary" />
-          </button>
+          <ModalCloseButton
+            onClick={closeModal}
+            className="p-1 hover:bg-grayish rounded-full transition-colors"
+            iconClassName="w-6 h-6 text-primary"
+          />
         </div>
 
         {/* 사용자 목록 */}
