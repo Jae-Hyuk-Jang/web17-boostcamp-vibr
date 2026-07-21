@@ -26,7 +26,7 @@ AC(Acceptance Criteria)는 "무엇이 되어야 하는가"만 말하고 "어떤 
 
 ## 시작하기 전에
 
-이 스킬은 **feature-planner가 만든 이슈 전용**입니다. `refactoring-planner`가 만든 이슈(`docs/refactors/{name}/`)나 그 외 임의의 이슈는 범위 밖입니다 — 다루는 대상이 다르기 때문입니다: refactoring-planner 이슈는 이미 `plan.md`/`regression-plan.md`로 동작 보존 계획을 갖고 있지만, feature-planner 이슈는 이제 막 "무엇을 만들지"만 정해진 상태라 시그니처가 비어 있습니다.
+이 스킬은 **feature-planner가 만든 이슈 전용**입니다. `refactoring-planner`가 만든 이슈(`docs/refactors/{name}/`)나 그 외 임의의 이슈는 범위 밖입니다 — 다루는 대상이 다르기 때문입니다: refactoring-planner 이슈는 이미 `adr.md`로 동작 보존 계획과 회귀 안전망을 갖고 있지만, feature-planner 이슈는 이제 막 "무엇을 만들지"만 정해진 상태라 시그니처가 비어 있습니다.
 
 1. `gh issue view <issue-number> --json title,body,labels`로 이슈를 읽으세요.
 2. 본문에서 `📄 관련 기획 문서: docs/features/{name}/prd.md` 마커를 찾아 `{name}`을 추출하세요.
@@ -114,5 +114,5 @@ AC(Acceptance Criteria)는 "무엇이 되어야 하는가"만 말하고 "어떤 
 ## 다른 스킬과의 관계
 
 - **feature-planner**의 단계 3(이슈 분해) 바로 다음, TDD 구현 이전 단계입니다. feature-planner가 만든 이슈가 아니면 대상이 아닙니다.
-- **refactoring-planner**의 이슈는 대상이 아닙니다 — 그쪽은 `plan.md`/`regression-plan.md`로 이미 동작 보존 계획과 회귀 시나리오를 갖고 있어서, 이 스킬이 처리하려는 "새 기능의 시그니처가 아직 없는" 문제 자체가 없습니다.
+- **refactoring-planner**의 이슈는 대상이 아닙니다 — 그쪽은 `adr.md`로 이미 동작 보존 계획과 회귀 시나리오를 갖고 있어서, 이 스킬이 처리하려는 "새 기능의 시그니처가 아직 없는" 문제 자체가 없습니다.
 - 근거 문서(`docs/features/feature-planning-workflow.md`)는 feature-planner와 공유합니다 — 이 스킬만의 별도 workflow 문서를 만들지 않은 이유는, 이 단계가 feature 기획 파이프라인의 자연스러운 연장선(단계 4)이기 때문입니다. 별도 슬래시 커맨드로 분리한 이유는 실행 시점이 다르기 때문입니다(단계 1~3은 기획 시점에 몰아서, 단계 4는 이슈를 실제로 구현하려는 시점에 이슈 단위로).
