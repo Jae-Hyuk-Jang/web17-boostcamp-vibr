@@ -57,25 +57,20 @@ jest.mock('./partials', () => ({
   LikedUsersOverlay: () => <div data-testid="liked-users-overlay" />,
 }));
 
-// ModalShell은 실제 구현을 그대로 쓴다(#70) — 데스크탑 backdrop의 role="dialog"/닫기 판정이
-// 이제 ModalShell 내부에 있으므로, 통째로 mock하면 이 파일의 특성화 테스트가 무의미해진다.
-// '@/components' 배럴 전체를 requireActual하면 player 등 무관한 하위 트리까지 평가되며
-// 순환 참조 오류가 나므로, ModalShell 파일만 개별적으로 requireActual한다.
-jest.mock('@/components', () => {
-  const { default: ModalShell } = jest.requireActual('@/components/ModalShell');
-  return {
-    ModalShell,
-    LoadingSpinner: () => <div data-testid="loading-spinner" />,
-    PostMedia: ({ onPlay, post }: { onPlay: (m: Music) => void; post: Post }) => (
-      <button data-testid="play-first-music" onClick={() => post.musics[0] && onPlay(post.musics[0])}>
-        play
-      </button>
-    ),
-  };
-});
-
+// ModalShell/LoadingSpinner는 PostCardDetailModal.tsx가 '@/components/ModalShell',
+// '@/components/LoadingSpinner' 개별 경로에서 직접 import하므로 mock하지 않고 실제 구현을 쓴다
+// (ModalShell은 #70의 데스크탑 backdrop role="dialog"/닫기 판정을 그대로 검증하기 위함).
+//
+// PostMedia는 '@/components/post'에서 import하는데, 이는 아래 '../../post' mock과 동일한
+// 실제 모듈(src/components/post/index.ts)로 resolve된다 — 그래서 PostHeader와 함께 이 mock
+// 하나에 정의해야 한다. 따로 mock하면 이 파일 mock이 덮어써져 PostMedia가 undefined가 된다.
 jest.mock('../../post', () => ({
   PostHeader: () => <div data-testid="post-header" />,
+  PostMedia: ({ onPlay, post }: { onPlay: (m: Music) => void; post: Post }) => (
+    <button data-testid="play-first-music" onClick={() => post.musics[0] && onPlay(post.musics[0])}>
+      play
+    </button>
+  ),
 }));
 
 const { usePostDetail, usePostReactions } = jest.requireMock('@/hooks') as {

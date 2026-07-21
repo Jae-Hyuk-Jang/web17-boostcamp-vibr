@@ -2,16 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import {
-  ContentWriteModal,
-  PostCardDetailModal,
-  LoginModal,
-  MobileNowPlaylistModal,
-  UserListModal,
-  PlaylistDetailModal,
-  PlaylistPickerModal,
-  PrivacyConsentModal,
-} from './index';
+import { ContentWriteModal } from './ContentWriteModal';
+import { PostCardDetailModal } from './PostCardDetailModal';
+import { LoginModal } from './LoginModal';
+import { MobileNowPlaylistModal } from './MobileNowPlaylistModal';
+import { UserListModal } from './UserListModal';
+import { PlaylistDetailModal } from './PlaylistDetailModal';
+import { PlaylistPickerModal } from './PlaylistPickerModal';
+import { PrivacyConsentModal } from './PrivacyConsentModal';
 import { getFollowerUsers, getFollowingUsers } from '@/api';
 import type { MusicResponseDto as Music } from '@repo/dto';
 

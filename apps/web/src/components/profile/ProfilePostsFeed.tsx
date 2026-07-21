@@ -8,7 +8,7 @@ import { getUserProfilePosts, getPostDetail } from '@/api';
 import { useInfiniteScroll } from '@/hooks';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useModalStore, MODAL_TYPES, usePlayerStore } from '@/stores';
-import { PostCard } from '@/components';
+import { PostCard } from '@/components/post';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import type { PostResponseDto as Post, MusicResponseDto as Music } from '@repo/dto';
 

@@ -2,7 +2,7 @@
 
 import type { GetCommentsResDto } from '@repo/dto';
 import Image from 'next/image';
-import { LoadingSpinner } from '@/components';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc, formatRelativeTime } from '@/utils';
 

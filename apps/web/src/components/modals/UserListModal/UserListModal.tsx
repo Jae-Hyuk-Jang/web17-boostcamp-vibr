@@ -1,7 +1,7 @@
 'use client';
 
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { ModalShell } from '@/components';
+import ModalShell from '@/components/ModalShell';
 import { ProfileActionButton } from '@/components/profile';
 import { DEFAULT_IMAGES } from '@/constants';
 import type { GetUserFollowDto } from '@repo/dto';

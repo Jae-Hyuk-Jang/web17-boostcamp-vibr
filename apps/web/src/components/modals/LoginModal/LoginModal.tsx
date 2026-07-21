@@ -5,7 +5,7 @@ import { useModalStore } from '@/stores/useModalStore';
 import { X } from 'lucide-react';
 import { getAuthErrorMessage } from '@/hooks/auth/client/authErrorMessage';
 import { GoogleLoginButton, TmpLoginButton } from './loginButtons';
-import { ModalShell } from '@/components';
+import ModalShell from '@/components/ModalShell';
 
 type LoginModalProps = {
   authError?: string;

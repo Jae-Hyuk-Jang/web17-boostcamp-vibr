@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-import { ModalShell } from '@/components';
+import ModalShell from '@/components/ModalShell';
 import { useModalStore } from '@/stores';
 import { CoverImgUploader, MusicSearch, SelectedMusicList } from './index';
 

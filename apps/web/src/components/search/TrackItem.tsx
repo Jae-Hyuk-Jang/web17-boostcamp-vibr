@@ -7,7 +7,7 @@ import { useModalStore, MODAL_TYPES } from '@/stores';
 import { useMusicActions } from '@/hooks';
 import { ContentSearchMode } from '@/types';
 import type { MusicResponseDto as Music } from '@repo/dto';
-import { TickerText } from '@/components';
+import TickerText from '@/components/TickerText';
 
 interface TrackItemProps {
   mode: ContentSearchMode;

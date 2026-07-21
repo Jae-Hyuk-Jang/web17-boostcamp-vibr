@@ -1,6 +1,7 @@
 'use client';
 
-import { LoginRequestScreen, ProfileSkeleton } from '@/components';
+import LoginRequestScreen from '@/components/LoginRequestScreen';
+import { ProfileSkeleton } from '@/components/skeleton';
 import { useAuthStore } from '@/stores';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';

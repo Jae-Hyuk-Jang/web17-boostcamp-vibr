@@ -3,7 +3,9 @@
 import { PropsWithChildren, ReactNode, Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
-import { ErrorScreen, LoadingSpinner, ResizeHandle } from '@/components';
+import ErrorScreen from '@/components/ErrorScreen';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { ResizeHandle } from '@/components/layout';
 import { DRAWER_LEFT_EXPANDED, DRAWER_LEFT_SHRINKED } from '@/constants';
 
 type DrawerProps = PropsWithChildren<{

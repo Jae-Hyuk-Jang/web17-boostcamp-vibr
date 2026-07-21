@@ -2,7 +2,7 @@
 
 import { usePlayerStore } from '@/stores';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import { PostCard } from '@/components';
+import { PostCard } from '@/components/post';
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
 import { useRouter } from 'next/navigation';
 

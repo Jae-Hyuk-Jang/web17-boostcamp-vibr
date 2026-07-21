@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components';
+import ModalShell from '@/components/ModalShell';
 import { useModalStore } from '@/stores/useModalStore';
 import { X } from 'lucide-react';
 import { PrivacyConsentForm } from './PrivacyConsentForm';
