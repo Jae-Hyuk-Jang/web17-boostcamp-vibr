@@ -1,6 +1,8 @@
 import type { ButtonHTMLAttributes } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { BUTTON_DISABLED_CLASSNAME } from '@/constants';
+
 export type ButtonVariant = 'primary' | 'secondary' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'icon';
 
@@ -9,8 +11,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
 }
 
-const BASE_CLASSNAME =
-  'inline-flex items-center justify-center gap-2 rounded-full font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed';
+const BASE_CLASSNAME = `inline-flex items-center justify-center gap-2 rounded-full font-bold transition-all ${BUTTON_DISABLED_CLASSNAME}`;
 
 const VARIANT_CLASSNAME: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-white border-2 border-primary hover:bg-white hover:text-primary',

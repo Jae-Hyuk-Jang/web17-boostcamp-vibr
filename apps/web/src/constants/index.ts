@@ -1,5 +1,6 @@
 export * from './sidebar';
 export * from './modal';
+export * from './button';
 export * from './mock';
 export * from './emptyPost';
 export * from './defaultImages';
