@@ -3,7 +3,9 @@ import { X } from 'lucide-react';
 
 import ModalShell from '@/components/ModalShell';
 import { useModalStore } from '@/stores';
-import { CoverImgUploader, MusicSearch, SelectedMusicList } from './index';
+import { CoverImgUploader } from './partials/CoverImgUploader';
+import { MusicSearch } from './partials/MusicSearch';
+import { SelectedMusicList } from './partials/SelectedMusicList';
 
 import type { MusicResponseDto as Music } from '@repo/dto';
 import { useContentWrite } from '@/hooks';
