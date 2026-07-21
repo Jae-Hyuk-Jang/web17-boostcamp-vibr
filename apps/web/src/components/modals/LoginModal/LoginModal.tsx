@@ -5,6 +5,7 @@ import { useModalStore } from '@/stores/useModalStore';
 import { getAuthErrorMessage } from '@/hooks/auth/client/authErrorMessage';
 import { GoogleLoginButton, TmpLoginButton } from './loginButtons';
 import ModalShell from '@/components/ModalShell';
+import ModalPanel from '@/components/ModalPanel';
 import ModalCloseButton from '@/components/ModalCloseButton';
 
 type LoginModalProps = {
@@ -22,7 +23,7 @@ export const LoginModal = () => {
       ariaLabel="로그인"
       className="flex items-center justify-center bg-primary/40 backdrop-blur-sm p-4 animate-fade-in"
     >
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-[8px_8px_0px_0px_var(--color-primary)] border-2 border-primary flex flex-col overflow-hidden transition-all">
+      <ModalPanel className="w-full max-w-md shadow-[8px_8px_0px_0px_var(--color-primary)] transition-all">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-primary bg-white z-10 shrink-0">
           <h2 className="text-xl font-black text-primary">로그인</h2>
@@ -38,7 +39,7 @@ export const LoginModal = () => {
           {/* <SpotifyLoginButton /> */}
           {process.env.NODE_ENV !== 'production' && <TmpLoginButton />}
         </div>
-      </div>
+      </ModalPanel>
     </ModalShell>
   );
 };
