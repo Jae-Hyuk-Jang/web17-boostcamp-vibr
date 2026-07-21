@@ -74,7 +74,7 @@
 - **`packages/ui`로의 이동**: 하지 않는다. 12개 컴포넌트 + `Button` 전부 `apps/web/src/components/ui/`에 둔다(다른 프론트엔드 앱이 없어 실제 재사용 필요가 없음).
 - **`ModalCloseButton`과 새 `Button`의 통합 여부**: 이번 PRD에서 결론내지 않고 ADR 3안 비교에서 다룬다.
 - **저장소 전역 순환 참조 12건(#96), `docs/conventions.md` §3.1 재정의(#97)**: 별도 이슈로 유지.
-- 새 라이브러리 도입(`class-variance-authority` 등): 불허, 자체 구현만 사용.
+- ~~새 라이브러리 도입(`class-variance-authority` 등): 불허, 자체 구현만 사용.~~ **[개정, 이슈 #104 착수 중]** `Button` 구현 중 className 병합이 속성별로 예측 불가능하게 충돌한다는 것을 컴파일된 CSS로 직접 확인했다(`adr.md`의 "구현 중 발견한 문제와 결정 변경" 참고). `tailwind-merge`(단일 목적 클래스 병합 유틸리티)에 한해 도입을 허용하도록 변경한다. `class-variance-authority` 등 variant 정의 라이브러리는 여전히 불허.
 - 데이터 마이그레이션/배포 호환성 대응: 해당 없음(순수 프론트엔드 리팩터링).
 
 ## Behavior Invariants

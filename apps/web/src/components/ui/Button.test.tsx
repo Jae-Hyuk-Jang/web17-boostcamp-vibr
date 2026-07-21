@@ -36,6 +36,14 @@ describe('Button', () => {
     expect(button).toHaveClass('bg-primary', 'w-full');
   });
 
+  it('className이 같은 속성을 겨냥한 기본 클래스를 안전하게 오버라이드한다(twMerge)', () => {
+    render(<Button className="rounded-none px-10">전체 너비</Button>);
+
+    const button = screen.getByRole('button', { name: '전체 너비' });
+    expect(button).toHaveClass('rounded-none', 'px-10');
+    expect(button).not.toHaveClass('rounded-full', 'px-6');
+  });
+
   it('onClick과 disabled 등 표준 button 속성이 그대로 전달된다', () => {
     const onClick = jest.fn();
     render(
