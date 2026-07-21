@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { tmpLogin } from '@/api/internal/auth';
 import { APP_ACCESS_TOKEN_STORAGE_KEY } from '@/constants/auth';
 
+import LoginActionButton from './LoginActionButton';
+
 // DEV 전용 시드 유저 (apps/api SEED_USERS와 동일)
 const DEV_USERS = [
   { id: '019be163-4b37-76ad-aeb3-6986a3489de6', label: '테스트 사용자 1' },
@@ -31,32 +33,16 @@ export const TmpLoginButton = () => {
     <div className="flex flex-col gap-2 border-t border-dashed border-primary/30 pt-4">
       <span className="text-xs font-bold text-secondary">DEV 임시 로그인</span>
       {DEV_USERS.map((user) => (
-        <button
+        <LoginActionButton
           key={user.id}
-          type="button"
           onClick={() => handleTmpLogin(user.id)}
+          isLoading={loadingId === user.id}
           disabled={loadingId !== null}
-          aria-busy={loadingId === user.id}
-          className="
-            w-full flex items-center justify-center gap-3
-            px-6 py-3 rounded-full font-bold text-sm
-            border border-dashed border-primary
-            bg-white text-primary
-            hover:bg-gray-50
-            active:scale-[0.98]
-            transition-all
-            disabled:opacity-60 disabled:cursor-not-allowed
-          "
-        >
-          {loadingId === user.id ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              로그인 중…
-            </>
-          ) : (
-            <>{user.label}로 로그인</>
-          )}
-        </button>
+          className="px-6 py-3 font-bold text-sm border border-dashed border-primary bg-white text-primary hover:bg-gray-50"
+          spinnerClassName="border-primary"
+          label={`${user.label}로 로그인`}
+          loadingLabel="로그인 중…"
+        />
       ))}
     </div>
   );

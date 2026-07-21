@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 
+import LoginActionButton from './LoginActionButton';
+
 export const SpotifyLoginButton = () => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -16,33 +18,14 @@ export const SpotifyLoginButton = () => {
   };
 
   return (
-    <button
-      type="button"
+    <LoginActionButton
       onClick={handleSpotifyLogin}
-      disabled={isLoading}
-      aria-busy={isLoading}
-      className={`
-        w-full flex items-center justify-center gap-3
-        px-6 py-4 rounded-full font-black
-        border-none
-        bg-[#1ED760] text-black
-        hover:bg-[#1DB954]
-        active:scale-[0.98]
-        transition-all
-        disabled:opacity-60 disabled:cursor-not-allowed
-      `}
-    >
-      {isLoading ? (
-        <>
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
-          Spotify로 이동 중…
-        </>
-      ) : (
-        <>
-          <Image src="/SpotifyLogo.svg" alt="Spotify" width={27} height={27} className="shrink-0" />
-          Spotify로 로그인
-        </>
-      )}
-    </button>
+      isLoading={isLoading}
+      className="px-6 py-4 font-black border-none bg-[#1ED760] text-black hover:bg-[#1DB954]"
+      spinnerClassName="border-black"
+      icon={<Image src="/SpotifyLogo.svg" alt="Spotify" width={27} height={27} className="shrink-0" />}
+      label="Spotify로 로그인"
+      loadingLabel="Spotify로 이동 중…"
+    />
   );
 };
