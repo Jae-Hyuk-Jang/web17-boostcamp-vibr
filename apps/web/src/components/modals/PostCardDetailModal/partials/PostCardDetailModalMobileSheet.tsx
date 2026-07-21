@@ -1,7 +1,6 @@
 'use client';
 
 import type { RefObject, TouchEvent } from 'react';
-import type { PostResponseDto as Post } from '@repo/dto';
 
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import type { UsePostDetailModalResult } from '@/hooks/post/usePostDetailModal';
@@ -15,7 +14,9 @@ type CommentReactions = Pick<
 >;
 
 interface PostCardDetailModalMobileSheetProps {
-  post: Post;
+  /** 작성자 닉네임 — Post 전체가 아니라 실제로 쓰는 필드만 받는다 */
+  nickname: string;
+  content: string;
   profileImg: string;
   /** 댓글 관련 필드만 쓴다 — 좋아요 관련 필드(isLiked 등)는 이 화면에서 쓰지 않아 타입에서 제외 */
   reactions: CommentReactions;
@@ -27,7 +28,8 @@ interface PostCardDetailModalMobileSheetProps {
 }
 
 export default function PostCardDetailModalMobileSheet({
-  post,
+  nickname,
+  content,
   profileImg,
   reactions,
   onClose,
@@ -59,8 +61,8 @@ export default function PostCardDetailModalMobileSheet({
         {/* 댓글 목록 */}
         <PostDetailBody
           profileImg={profileImg}
-          nickname={post.author.nickname}
-          content={post.content}
+          nickname={nickname}
+          content={content}
           comments={reactions.comments}
           commentsLoading={reactions.isCommentsLoading}
         />

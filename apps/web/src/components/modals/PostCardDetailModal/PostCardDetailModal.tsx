@@ -30,7 +30,8 @@ export const PostCardDetailModal = () => {
   return (
     <>
       <PostCardDetailModalMobileSheet
-        post={safePost}
+        nickname={safePost.author.nickname}
+        content={safePost.content}
         profileImg={profileImg}
         reactions={reactions}
         onClose={handleClose}
