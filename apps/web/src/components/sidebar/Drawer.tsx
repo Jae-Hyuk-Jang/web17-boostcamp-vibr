@@ -3,8 +3,8 @@
 import { PropsWithChildren, ReactNode, Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
-import ErrorScreen from '@/components/ErrorScreen';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import ErrorScreen from '@/components/ui/ErrorScreen';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { ResizeHandle } from '@/components/layout';
 import { DRAWER_LEFT_EXPANDED, DRAWER_LEFT_SHRINKED } from '@/constants';
 

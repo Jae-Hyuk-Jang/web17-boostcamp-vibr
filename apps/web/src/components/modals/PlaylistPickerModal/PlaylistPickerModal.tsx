@@ -11,10 +11,10 @@ import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc } from '@/utils';
 
 import type { MusicRequestDto, MusicResponseDto as Music } from '@repo/dto';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import ModalShell from '@/components/ModalShell';
-import ModalPanel from '@/components/ModalPanel';
-import ModalCloseButton from '@/components/ModalCloseButton';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ModalShell from '@/components/ui/ModalShell';
+import ModalPanel from '@/components/ui/ModalPanel';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 
 type PlaylistBrief = {
   id: string;

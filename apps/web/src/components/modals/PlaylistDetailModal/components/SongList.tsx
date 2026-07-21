@@ -5,7 +5,7 @@ import Image from 'next/image';
 import type { DragEvent } from 'react';
 import { useState } from 'react';
 
-import TickerText from '@/components/TickerText';
+import TickerText from '@/components/ui/TickerText';
 
 function SongItem({
   song,

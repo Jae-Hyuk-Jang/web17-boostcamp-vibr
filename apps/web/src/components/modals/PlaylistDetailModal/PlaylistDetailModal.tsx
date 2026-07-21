@@ -1,6 +1,6 @@
-import ConfirmOverlay from '@/components/ConfirmOverlay';
-import ModalShell from '@/components/ModalShell';
-import ModalPanel from '@/components/ModalPanel';
+import ConfirmOverlay from '@/components/ui/ConfirmOverlay';
+import ModalShell from '@/components/ui/ModalShell';
+import ModalPanel from '@/components/ui/ModalPanel';
 import { useModalStore, usePlayerStore, usePlaylistRefreshStore } from '@/stores';
 import type { MusicRequestDto as UnsavedMusic, MusicResponseDto as SavedMusic, GetPlaylistDetailResDto } from '@repo/dto';
 import { useCallback, useEffect, useState } from 'react';

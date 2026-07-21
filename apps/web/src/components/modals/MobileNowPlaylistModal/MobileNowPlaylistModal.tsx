@@ -4,7 +4,7 @@ import { Trash2, ChevronUp, ChevronDown, XCircle, ListPlus } from 'lucide-react'
 import Image from 'next/image';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 import { usePlayerStore } from '@/stores';
-import ModalCloseButton from '@/components/ModalCloseButton';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import type { MusicResponseDto as Music } from '@repo/dto';
 
 type MobileQueueRowProps = {

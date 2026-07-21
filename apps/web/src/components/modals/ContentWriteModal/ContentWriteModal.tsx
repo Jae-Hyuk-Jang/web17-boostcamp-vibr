@@ -1,8 +1,8 @@
 import React from 'react';
 
-import ModalShell from '@/components/ModalShell';
-import ModalPanel from '@/components/ModalPanel';
-import ModalCloseButton from '@/components/ModalCloseButton';
+import ModalShell from '@/components/ui/ModalShell';
+import ModalPanel from '@/components/ui/ModalPanel';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import { useModalStore } from '@/stores';
 import { CoverImgUploader } from './partials/CoverImgUploader';
 import { MusicSearch } from './partials/MusicSearch';

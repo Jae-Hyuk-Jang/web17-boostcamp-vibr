@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { PrivacyConsentForm } from '../modals/PrivacyConsentModal';
 import { toast } from 'react-toastify';
 import { ConsentType } from '@repo/dto/values';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../ui/LoadingSpinner';
 import { getRecentConsents } from '@/api';
 import { ConsentItemDto } from '@repo/dto';
 

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 
-import LoadingSpinner from '@/components/LoadingSpinner';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { SearchInput, SearchStateMessage, MusicSearchResults, UserSearchResults } from './index';
 
 import { getHintMessage } from '@/utils';

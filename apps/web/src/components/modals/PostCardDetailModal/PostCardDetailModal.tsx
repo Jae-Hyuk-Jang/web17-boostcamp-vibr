@@ -10,10 +10,10 @@ import useIsMobile from '@/hooks/useIsMobile';
 import { useScrollLock, usePostDetail, useLikedUsers, usePostReactions, usePostDetailUxLog, useSwipeToDismiss } from '@/hooks';
 
 import { EMPTY_POST, DEFAULT_IMAGES } from '@/constants';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { PostMedia } from '@/components/post';
-import ModalShell from '@/components/ModalShell';
-import ModalCloseButton from '@/components/ModalCloseButton';
+import ModalShell from '@/components/ui/ModalShell';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import { coalesceImageSrc } from '@/utils';
 import { toast } from 'react-toastify';
 import { updatePost } from '@/api';

@@ -6,7 +6,7 @@ import { Home, Box, Plus, Search, User } from 'lucide-react';
 
 import { SidebarItemType } from '@/types';
 import { useModalStore, MODAL_TYPES, useAuthStore } from '@/stores';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import MobileBottomSheet from './MobileBottomSheet';
 
 const SearchDrawerContent = lazy(() => import('@/components/search/SearchDrawerContent'));

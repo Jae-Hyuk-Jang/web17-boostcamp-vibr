@@ -7,7 +7,7 @@ import { useAuthStore, useFeedRefreshStore, useProfileStore } from '@/stores';
 import { ProfileSkeleton } from '../skeleton';
 import { ProfileInfo } from './ProfileInfo';
 import ProfilePosts from './ProfilePosts';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../ui/LoadingSpinner';
 
 export default function ProfileView({ userId }: { userId: string }) {
   const loggedInUserId = useAuthStore((s) => s.userId);

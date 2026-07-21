@@ -4,9 +4,9 @@ import React from 'react';
 import { useModalStore } from '@/stores/useModalStore';
 import { getAuthErrorMessage } from '@/hooks/auth/client/authErrorMessage';
 import { GoogleLoginButton, TmpLoginButton } from './loginButtons';
-import ModalShell from '@/components/ModalShell';
-import ModalPanel from '@/components/ModalPanel';
-import ModalCloseButton from '@/components/ModalCloseButton';
+import ModalShell from '@/components/ui/ModalShell';
+import ModalPanel from '@/components/ui/ModalPanel';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 
 type LoginModalProps = {
   authError?: string;

@@ -1,8 +1,8 @@
 'use client';
 
-import ModalShell from '@/components/ModalShell';
-import ModalPanel from '@/components/ModalPanel';
-import ModalCloseButton from '@/components/ModalCloseButton';
+import ModalShell from '@/components/ui/ModalShell';
+import ModalPanel from '@/components/ui/ModalPanel';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import { useModalStore } from '@/stores/useModalStore';
 import { PrivacyConsentForm } from './PrivacyConsentForm';
 

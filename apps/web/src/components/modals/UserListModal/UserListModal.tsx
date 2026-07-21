@@ -1,9 +1,9 @@
 'use client';
 
-import LoadingSpinner from '@/components/LoadingSpinner';
-import ModalShell from '@/components/ModalShell';
-import ModalPanel from '@/components/ModalPanel';
-import ModalCloseButton from '@/components/ModalCloseButton';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ModalShell from '@/components/ui/ModalShell';
+import ModalPanel from '@/components/ui/ModalPanel';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import { ProfileActionButton } from '@/components/profile';
 import { DEFAULT_IMAGES } from '@/constants';
 import type { GetUserFollowDto } from '@repo/dto';

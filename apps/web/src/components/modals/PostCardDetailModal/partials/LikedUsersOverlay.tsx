@@ -7,7 +7,7 @@ import type { LikedUserDto } from '@repo/dto';
 
 import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc } from '@/utils';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 type Props = {
   isOpen: boolean;

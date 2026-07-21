@@ -8,7 +8,7 @@ import { NotiView } from './noti.types';
 import { MODAL_TYPES, useModalStore } from '@/stores';
 import { useRouter } from 'next/navigation';
 import { useNotiStore } from '@/stores/useNotiStore';
-import ConfirmOverlay from '@/components/ConfirmOverlay';
+import ConfirmOverlay from '@/components/ui/ConfirmOverlay';
 
 export default function NotiDrawerContent({ onNavigate }: { onNavigate?: () => void }) {
   const openModal = useModalStore((s) => s.openModal);

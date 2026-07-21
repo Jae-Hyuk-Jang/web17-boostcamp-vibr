@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 
 import { useNotiOverlayStore } from '@/stores/useNotiOverlayStore';
 import { NotiDrawerContent } from '@/components/noti';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function MobileNotiOverlay() {
   const { isOpen, close } = useNotiOverlayStore();
