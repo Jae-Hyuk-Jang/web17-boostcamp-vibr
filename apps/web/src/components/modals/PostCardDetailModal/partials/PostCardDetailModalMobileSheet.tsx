@@ -9,10 +9,16 @@ import type { UsePostDetailModalResult } from '@/hooks/post/usePostDetailModal';
 import PostDetailBody from './PostDetailBody';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 
+type CommentReactions = Pick<
+  UsePostDetailModalResult['reactions'],
+  'comments' | 'isCommentsLoading' | 'isAuthenticated' | 'isSubmittingComment' | 'commentText' | 'setCommentText' | 'submitComment'
+>;
+
 interface PostCardDetailModalMobileSheetProps {
   post: Post;
   profileImg: string;
-  reactions: UsePostDetailModalResult['reactions'];
+  /** 댓글 관련 필드만 쓴다 — 좋아요 관련 필드(isLiked 등)는 이 화면에서 쓰지 않아 타입에서 제외 */
+  reactions: CommentReactions;
   onClose: () => void;
   sheetRef: RefObject<HTMLElement>;
   onTouchStart: (e: TouchEvent) => void;

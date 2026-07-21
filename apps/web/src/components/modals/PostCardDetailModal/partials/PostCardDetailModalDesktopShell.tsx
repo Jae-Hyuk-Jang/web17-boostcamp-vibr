@@ -13,6 +13,21 @@ import PostDetailActions from './PostDetailActions';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 import PostDetailEditForm from './PostDetailEditForm';
 
+type PostDetailReactions = Pick<
+  UsePostDetailModalResult['reactions'],
+  | 'comments'
+  | 'isCommentsLoading'
+  | 'isAuthenticated'
+  | 'isSubmittingLike'
+  | 'isLiked'
+  | 'likeCount'
+  | 'toggleLike'
+  | 'isSubmittingComment'
+  | 'commentText'
+  | 'setCommentText'
+  | 'submitComment'
+>;
+
 interface PostCardDetailModalDesktopShellProps {
   post: Post;
   postId: string;
@@ -20,7 +35,8 @@ interface PostCardDetailModalDesktopShellProps {
   error: string | null;
   isOwner: boolean;
   profileImg: string;
-  reactions: UsePostDetailModalResult['reactions'];
+  /** commentCount/refetchComments는 이 화면에서 쓰지 않아 타입에서 제외 */
+  reactions: PostDetailReactions;
   editing: UsePostDetailModalResult['editing'];
   player: UsePostDetailModalResult['player'];
   onClose: () => void;
