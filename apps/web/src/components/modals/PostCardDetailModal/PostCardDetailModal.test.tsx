@@ -54,15 +54,32 @@ jest.mock('@/hooks', () => {
   };
 });
 
-jest.mock('./partials', () => ({
-  PostDetailBody: () => <div data-testid="post-detail-body" />,
-  PostDetailActions: ({ onOpenLikedUsers }: { onOpenLikedUsers: () => void }) => (
+// PostCardDetailModalMobileSheet/PostCardDetailModalDesktopShell는 실제 구현을 그대로 써서
+// props 배선(usePostDetailModal → 두 서브컴포넌트)까지 특성화한다. 그 안에서 쓰는 leaf
+// partials만 개별 파일 단위로 mock한다 — 배럴(./partials)을 통째로 mock하면 두 서브컴포넌트
+// 자체가 가짜가 되어 이 이슈(#130)가 만든 배선을 검증할 수 없다.
+jest.mock('./partials/PostDetailBody', () => ({
+  __esModule: true,
+  default: () => <div data-testid="post-detail-body" />,
+}));
+
+jest.mock('./partials/PostDetailActions', () => ({
+  __esModule: true,
+  default: ({ onOpenLikedUsers }: { onOpenLikedUsers: () => void }) => (
     <button type="button" onClick={onOpenLikedUsers}>
       open-liked-users
     </button>
   ),
-  PostDetailCommentComposer: () => <div data-testid="post-detail-comment-composer" />,
-  PostDetailEditForm: ({
+}));
+
+jest.mock('./partials/PostDetailCommentComposer', () => ({
+  __esModule: true,
+  default: () => <div data-testid="post-detail-comment-composer" />,
+}));
+
+jest.mock('./partials/PostDetailEditForm', () => ({
+  __esModule: true,
+  default: ({
     value,
     isSaving,
     onChange,
@@ -85,7 +102,11 @@ jest.mock('./partials', () => ({
       </button>
     </div>
   ),
-  LikedUsersOverlay: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="liked-users-overlay-open" /> : null),
+}));
+
+jest.mock('./partials/LikedUsersOverlay', () => ({
+  __esModule: true,
+  default: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="liked-users-overlay-open" /> : null),
 }));
 
 // ModalShell/LoadingSpinner는 PostCardDetailModal.tsx가 '@/components/ModalShell',
