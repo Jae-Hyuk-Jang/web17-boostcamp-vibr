@@ -3,6 +3,8 @@
 import type { ReactNode } from 'react';
 import { twMerge } from 'tailwind-merge';
 
+import { BUTTON_DISABLED_CLASSNAME } from '@/constants';
+
 interface LoginActionButtonProps {
   onClick: () => void;
   isLoading: boolean;
@@ -14,8 +16,7 @@ interface LoginActionButtonProps {
   spinnerClassName?: string;
 }
 
-const BASE_CLASSNAME =
-  'w-full flex items-center justify-center gap-3 rounded-full transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed';
+const BASE_CLASSNAME = `w-full flex items-center justify-center gap-3 rounded-full transition-all active:scale-[0.98] ${BUTTON_DISABLED_CLASSNAME}`;
 
 export default function LoginActionButton({
   onClick,
