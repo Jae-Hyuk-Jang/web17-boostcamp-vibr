@@ -1,7 +1,7 @@
 import React from 'react';
-import { X } from 'lucide-react';
 
 import ModalShell from '@/components/ModalShell';
+import ModalCloseButton from '@/components/ModalCloseButton';
 import { useModalStore } from '@/stores';
 import { CoverImgUploader } from './partials/CoverImgUploader';
 import { MusicSearch } from './partials/MusicSearch';
@@ -59,9 +59,7 @@ export const ContentWriteModal = ({ initialMusic, initialMusics }: Props) => {
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-[8px_8px_0px_0px_var(--color-primary)] border-2 border-primary flex flex-col max-h-[90vh] overflow-hidden transition-all">
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-primary bg-white z-10 shrink-0">
           <h2 className="text-xl font-black text-primary">새 게시물 만들기</h2>
-          <button type="button" onClick={closeModal} className="p-1 hover:bg-gray-4 rounded-full transition-colors group" aria-label="close">
-            <X className="w-6 h-6 text-primary group-hover:text-accent-pink transition-colors" />
-          </button>
+          <ModalCloseButton onClick={closeModal} ariaLabel="close" />
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col">
