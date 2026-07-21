@@ -1,5 +1,7 @@
 # 검색(search) 설계 분석 — 왜 3번 다시 구현됐는가
 
+> **후속 조치 완료**: 이 문서에서 지적한 `MusicSearch`↔`SearchDropdown` 중복과 `components/search/index.ts` 순환참조는 `search-widget-duplication` 리팩터링 사이클(#110~#115)에서 해소했다. 아래 1~2절은 착수 전 상태를 기록한 것이고, 결과는 `docs/refactors/search-widget-duplication/result.md`를 참고한다. `SearchDrawerContent`(nav 드로어) 재구성과 오버레이 열림 상태(zustand `useModalStore`/로컬 state) 통합은 해당 사이클에서 의도적으로 범위 밖으로 남겼다(3절 참고).
+
 `components/search/` 폴더가 있어서 "검색은 이미 공용화돼 있다"고 오해하기 쉽지만, 실제로는 폴더 안 컴포넌트 대부분이 `SearchDrawerContent` 하나만을 위한 내부 분해다. 진짜 문제는 그 폴더 밖, 즉 모달 안에서 검색 UI가 손으로 다시 짜인 데 있다.
 
 ## 1. `components/search/`의 실제 소비 구조
@@ -41,9 +43,10 @@
 
 ## 결론
 
-버튼 중복이 "스타일 반복"이었다면, 검색 중복은 "도메인 기능 하나가 아키텍처적으로 한 번도 통합된 적 없음"에 가깝다. 개선 순서 후보:
+버튼 중복이 "스타일 반복"이었다면, 검색 중복은 "도메인 기능 하나가 아키텍처적으로 한 번도 통합된 적 없음"에 가까웠다. `search-widget-duplication` 사이클에서 실제로 내린 결정:
 
-1. 열림 상태부터 통일할지 결정 — `useModalStore`에 검색을 편입할지, 별도 스토어를 둘지.
-2. 그 위에서 입력+탭+상태메시지+결과리스트를 하나의 프레젠테이션 계층으로 뽑아 `MusicSearch`/`SearchDropdown`이 그걸 소비하도록 전환.
+1. **열림 상태는 손대지 않았다** — `MusicSearch`/`SearchDropdown`의 열림 상태는 모달 내부 인라인 드롭다운이라 `useModalStore`가 다루는 화면 중앙 오버레이와 계층이 다르다고 판단했다(PRD 목표 인터뷰 Q2).
+2. **입력+탭+상태메시지+결과리스트는 `components/search/picker/MusicPickerSearch.tsx`로 통합했다.** `MusicSearch`/`SearchDropdown`이 이를 소비하도록 전환했고, `PlaylistDetailModal/components/search/`(구 `SearchDropdown` 계열)는 폴더째 삭제됐다.
+3. `components/search/index.ts`의 자기참조 순환참조 3건(`MusicSearchResults`/`SearchDrawerContent`/`UserSearchResults`)도 개별 경로 import로 바꿔 함께 제거했다.
 
-실제 결정과 구현은 `docs/refactors/search-widget-duplication/`의 `/refactoring-planner` 사이클에서 진행한다.
+상세 진행 기록은 `docs/refactors/search-widget-duplication/{prd,adr,result}.md`를 참고한다.
