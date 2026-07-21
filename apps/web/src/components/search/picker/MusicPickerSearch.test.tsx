@@ -79,4 +79,11 @@ describe('MusicPickerSearch — 계약/상태전이 테스트 (search-widget-dup
 
     expect(onQueryChange).toHaveBeenCalledWith('song');
   });
+
+  it('showInput=false면 입력창 없이 탭/결과만 렌더링한다', () => {
+    render(<MusicPickerSearch query="song" onQueryChange={jest.fn()} onSelect={jest.fn()} showInput={false} />);
+
+    expect(screen.queryByPlaceholderText('음악 검색')).not.toBeInTheDocument();
+    expect(screen.getByText('Music Result')).toBeInTheDocument();
+  });
 });

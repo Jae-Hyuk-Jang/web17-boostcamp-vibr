@@ -24,6 +24,11 @@ export interface MusicPickerSearchProps {
   placeholder?: string;
   onFocus?: () => void;
   className?: string;
+  /**
+   * false면 입력창 없이 탭+상태분기+결과 리스트만 렌더링한다.
+   * 소비처가 자기만의 입력창(포커스 시 열림 등 고유 동작 포함)을 이미 갖고 있을 때 쓴다.
+   */
+  showInput?: boolean;
 }
 
 /**
@@ -39,6 +44,7 @@ export default function MusicPickerSearch({
   placeholder = '음악 검색',
   onFocus,
   className = '',
+  showInput = true,
 }: MusicPickerSearchProps) {
   const [mode, setMode] = useState<ContentSearchMode>('music');
 
@@ -90,31 +96,33 @@ export default function MusicPickerSearch({
 
   return (
     <div className={className}>
-      <div className="relative">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          onFocus={onFocus}
-          placeholder={placeholder}
-          className="w-full pl-10 pr-9 py-2 rounded-xl border-2 border-primary focus:outline-none bg-white font-medium"
-        />
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-2" />
-        {query.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => onQueryChange('')}
-            title="검색어 지우기"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-2 hover:text-primary"
-          >
-            <XCircle className="w-5 h-5" />
-          </button>
-        ) : null}
-      </div>
+      {showInput ? (
+        <div className="relative">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            onFocus={onFocus}
+            placeholder={placeholder}
+            className="w-full pl-10 pr-9 py-2 rounded-xl border-2 border-primary focus:outline-none bg-white font-medium"
+          />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-2" />
+          {query.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => onQueryChange('')}
+              title="검색어 지우기"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-2 hover:text-primary"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {query ? (
         <>
-          <div className="flex text-center gap-1 mt-2">
+          <div className={`flex text-center gap-1 ${showInput ? 'mt-2' : ''}`}>
             {SEARCH_TAB_ENTRIES.map(([tabMode, tabTitle]) => (
               <button
                 key={tabMode}

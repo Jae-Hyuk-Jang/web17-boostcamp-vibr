@@ -1,19 +1,14 @@
 'use client';
 
-import { useMemo, useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
-import { Music as MusicIcon, Search, Sparkles, X } from 'lucide-react';
+import { useMemo, useRef, useEffect } from 'react';
+import { Search, Sparkles, X } from 'lucide-react';
 
-import { ITUNES_SEARCH } from '@/constants';
-import { useItunesSearch, usePlaylistRecommendations, useYoutubeSearch, type PlaylistDetail } from '@/hooks';
+import { usePlaylistRecommendations, type PlaylistDetail } from '@/hooks';
 
 import type { MusicResponseDto as Music } from '@repo/dto';
 import { BriefItemList, EmptyPlaylist, LoadingMessage } from './PlaylistSectionInner';
 
-import { SearchMode } from '@/types';
-import { SEARCH_TAB_ENTRIES } from '@/components/search/SearchDrawerContent';
-
-import TickerText from '@/components/ui/TickerText';
+import MusicPickerSearch from '@/components/search/picker/MusicPickerSearch';
 
 interface MusicSearchProps {
   searchQuery: string;
@@ -26,10 +21,7 @@ interface MusicSearchProps {
   onAddPlaylist: (playlist: PlaylistDetail) => void;
 }
 
-const MIN_QUERY_HINT = `${ITUNES_SEARCH.MIN_QUERY_LENGTH}글자 이상 입력해주세요.`;
-
 export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSearchOpen, onAddMusic, onAddPlaylist }: MusicSearchProps) => {
-  const [mode, setMode] = useState<SearchMode>('music');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,27 +35,7 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, [isSearchOpen, setIsSearchOpen]);
 
-  const itunes = useItunesSearch({
-    query: searchQuery,
-    enabled: isSearchOpen && mode === 'music',
-  });
-  const videos = useYoutubeSearch({
-    query: searchQuery,
-    enabled: isSearchOpen && mode === 'video',
-  });
-  const active = useMemo(() => (mode === 'video' ? videos : itunes), [mode, itunes, videos]);
-
-  const handleChangeMode = (newMode: SearchMode) => {
-    if (mode === newMode || newMode === 'user') return;
-    setMode(newMode);
-  };
-
-  const hasQuery = useMemo(() => active.trimmedQuery.length > 0, [active.trimmedQuery]);
-  const isBelowMinQuery = useMemo(
-    () => active.trimmedQuery.length > 0 && active.trimmedQuery.length < ITUNES_SEARCH.MIN_QUERY_LENGTH,
-    [active.trimmedQuery],
-  );
-
+  const hasQuery = useMemo(() => searchQuery.trim().length > 0, [searchQuery]);
   const isRecommendEnabled = useMemo(() => isSearchOpen && !hasQuery, [isSearchOpen, hasQuery]);
 
   const {
@@ -114,75 +86,6 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
     );
   };
 
-  const renderTabs = () => (
-    <div className="px-2 pb-2">
-      <div className="rounded-lg border border-gray-100 bg-white/70 p-1 shadow-sm">
-        <div className="flex text-center gap-1">
-          {SEARCH_TAB_ENTRIES.map(([tabMode, tabTitle]) => {
-            if (tabMode === 'user') return;
-            const isActive = mode === tabMode;
-            return (
-              <button
-                key={tabMode}
-                type="button"
-                title={`${tabTitle} 검색`}
-                aria-pressed={isActive}
-                onClick={() => handleChangeMode(tabMode)}
-                className={`flex-1 rounded-md px-3 py-2 text-sm sm:text-base transition-colors ${
-                  isActive ? 'bg-primary font-bold text-white shadow' : 'text-gray-500 hover:text-gray-700 hover:bg-white/60'
-                }`}
-              >
-                {tabTitle}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderSearchResults = () => {
-    if (isBelowMinQuery) return <div className="p-4 text-center text-gray-2 text-sm">{MIN_QUERY_HINT}</div>;
-    if (active.status === 'loading') return <div className="p-4 text-center text-gray-2 text-sm">검색 중...</div>;
-    if (active.status === 'error')
-      return <div className="p-4 text-center text-gray-2 text-sm">{active.errorMessage ?? '검색 중 오류가 발생했습니다.'}</div>;
-    if (active.status === 'empty') return <div className="p-4 text-center text-gray-2 text-sm">검색 결과가 없습니다.</div>;
-
-    return (
-      <>
-        <div className="px-4 py-2 flex items-center text-xs font-bold text-gray-1 uppercase tracking-wider bg-gray-4/50 border-b border-gray-3 mb-1">
-          <MusicIcon className="w-3 h-3 mr-1" />
-          검색 결과
-        </div>
-
-        {active.results.map((music) => (
-          <button
-            key={music.id}
-            type="button"
-            onClick={() => onAddMusic(music)}
-            className="w-full flex items-center px-4 py-2 hover:bg-gray-4 transition-colors text-left group"
-          >
-            <Image src={music.albumCoverUrl} alt="art" width={40} height={40} className="w-10 h-10 rounded object-cover mr-3 border border-gray-3" />
-            <div className="min-w-0 flex-1">
-              <TickerText text={music.title} className="font-bold text-sm text-primary group-hover:text-accent-cyan transition-colors" />
-              <TickerText text={music.artistName} className="text-xs text-gray-1" />
-            </div>
-          </button>
-        ))}
-      </>
-    );
-  };
-
-  const renderBody = () => {
-    if (!hasQuery) return renderPlaylistSection();
-    return (
-      <>
-        {renderTabs()}
-        {renderSearchResults()}
-      </>
-    );
-  };
-
   return (
     <div ref={containerRef} className="relative mb-6">
       <label htmlFor="musicQuery" className="text-sm font-bold text-gray-1 mb-2 block">
@@ -217,11 +120,13 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
       </div>
 
       {isSearchOpen ? (
-        <>
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-primary rounded-xl shadow-lg max-h-60 overflow-y-auto overscroll-contain custom-scrollbar z-20 py-2">
-            {renderBody()}
-          </div>
-        </>
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-primary rounded-xl shadow-lg max-h-60 overflow-y-auto overscroll-contain custom-scrollbar z-20 py-2">
+          {hasQuery ? (
+            <MusicPickerSearch showInput={false} query={searchQuery} onQueryChange={setSearchQuery} onSelect={onAddMusic} />
+          ) : (
+            renderPlaylistSection()
+          )}
+        </div>
       ) : null}
     </div>
   );
