@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { X } from 'lucide-react';
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -14,6 +13,7 @@ import { EMPTY_POST, DEFAULT_IMAGES } from '@/constants';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { PostMedia } from '@/components/post';
 import ModalShell from '@/components/ModalShell';
+import ModalCloseButton from '@/components/ModalCloseButton';
 import { coalesceImageSrc } from '@/utils';
 import { toast } from 'react-toastify';
 import { updatePost } from '@/api';
@@ -199,9 +199,11 @@ export const PostCardDetailModal = () => {
             <div className="flex-1" />
             <div className="w-10 h-1 rounded-full bg-gray-3" />
             <div className="flex-1 flex justify-end">
-              <button type="button" onClick={handleClose} className="p-2 rounded-full hover:bg-gray-4 text-primary transition-colors">
-                <X className="w-5 h-5" />
-              </button>
+              <ModalCloseButton
+                onClick={handleClose}
+                className="p-2 rounded-full hover:bg-gray-4 text-primary transition-colors"
+                iconClassName="w-5 h-5"
+              />
             </div>
           </div>
 
