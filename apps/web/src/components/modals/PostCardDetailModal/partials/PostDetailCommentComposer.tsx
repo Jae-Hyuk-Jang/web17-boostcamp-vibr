@@ -3,6 +3,7 @@
 import { Send } from 'lucide-react';
 import { useAutoResizeTextarea } from '@/hooks';
 import { handleEnterSubmitWithShiftNewline } from '@/utils';
+import Button from '@/components/ui/Button';
 
 type Props = {
   isAuthenticated: boolean;
@@ -34,17 +35,16 @@ export default function PostDetailCommentComposer({ isAuthenticated, isSubmittin
                    focus:outline-none focus:border-primary focus:ring-0 bg-background disabled:opacity-60"
       />
 
-      <button
-        type="button"
+      <Button
+        size="icon"
         onClick={() => onSubmit()}
         disabled={!isAuthenticated || !value.trim() || isSubmitting}
         aria-busy={isSubmitting}
         title={isAuthenticated ? '전송' : '로그인 후 사용 가능'}
-        className="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-primary bg-primary text-white
-                   hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="h-10 w-10 rounded-xl hover:bg-secondary hover:text-white disabled:opacity-30"
       >
         <Send className="w-4 h-4" />
-      </button>
+      </Button>
     </div>
   );
 }

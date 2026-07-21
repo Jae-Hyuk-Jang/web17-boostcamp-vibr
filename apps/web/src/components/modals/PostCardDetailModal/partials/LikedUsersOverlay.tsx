@@ -1,6 +1,5 @@
 'use client';
 
-import { X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { LikedUserDto } from '@repo/dto';
@@ -8,6 +7,7 @@ import type { LikedUserDto } from '@repo/dto';
 import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc } from '@/utils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 
 type Props = {
   isOpen: boolean;
@@ -30,9 +30,7 @@ export default function LikedUsersOverlay({ isOpen, onClose, users, isLoading, e
       <div className="relative bg-white w-full max-w-md rounded-3xl border-2 border-primary flex flex-col max-h-[60vh] overflow-hidden animate-scale-up z-10">
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-primary bg-white">
           <h2 className="text-xl font-black text-primary">좋아요</h2>
-          <button onClick={onClose} className="p-1 hover:bg-grayish rounded-full transition-colors">
-            <X className="w-6 h-6 text-primary" />
-          </button>
+          <ModalCloseButton onClick={onClose} className="p-1 hover:bg-grayish rounded-full transition-colors" iconClassName="w-6 h-6 text-primary" />
         </div>
 
         <div className="flex-1 overflow-y-auto p-2">
