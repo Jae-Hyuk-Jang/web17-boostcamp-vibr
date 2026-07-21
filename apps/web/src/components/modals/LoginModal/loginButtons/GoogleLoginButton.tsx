@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 
+import LoginActionButton from './LoginActionButton';
+
 const GOOGLE_AUTH_START_PATH = '/auth/google';
 
 export const GoogleLoginButton = () => {
@@ -15,33 +17,14 @@ export const GoogleLoginButton = () => {
   };
 
   return (
-    <button
-      type="button"
+    <LoginActionButton
       onClick={handleGoogleLogin}
-      disabled={isLoading}
-      aria-busy={isLoading}
-      className="
-        w-full flex items-center justify-center gap-3
-        px-6 py-4 rounded-full font-black
-        border border-primary
-        bg-white text-primary
-        hover:bg-gray-50
-        active:scale-[0.98]
-        transition-all
-        disabled:opacity-60 disabled:cursor-not-allowed
-      "
-    >
-      {isLoading ? (
-        <>
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          Google로 이동 중…
-        </>
-      ) : (
-        <>
-          <Image src="/Google.svg" alt="Spotify" width={27} height={27} className="shrink-0" />
-          Google로 로그인
-        </>
-      )}
-    </button>
+      isLoading={isLoading}
+      className="px-6 py-4 font-black border border-primary bg-white text-primary hover:bg-gray-50"
+      spinnerClassName="border-primary"
+      icon={<Image src="/Google.svg" alt="Google" width={27} height={27} className="shrink-0" />}
+      label="Google로 로그인"
+      loadingLabel="Google로 이동 중…"
+    />
   );
 };
