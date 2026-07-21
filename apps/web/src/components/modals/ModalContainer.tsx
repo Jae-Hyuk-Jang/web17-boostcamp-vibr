@@ -5,7 +5,6 @@ import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 import { ContentWriteModal } from './ContentWriteModal';
 import { PostCardDetailModal } from './PostCardDetailModal';
 import { LoginModal } from './LoginModal';
-import { MobileNowPlaylistModal } from './MobileNowPlaylistModal';
 import { UserListModal } from './UserListModal';
 import { PlaylistDetailModal } from './PlaylistDetailModal';
 import { PlaylistPickerModal } from './PlaylistPickerModal';
@@ -59,22 +58,19 @@ export default function ModalContainer() {
       {/* 3. 포스트 상세 모달 */}
       {modalType === MODAL_TYPES.POST_DETAIL && <PostCardDetailModal />}
 
-      {/* 4. 모바일 재생목록 모달 */}
-      {modalType === MODAL_TYPES.MOBILE_QUEUE && <MobileNowPlaylistModal />}
-
-      {/* 5. 팔로워 사용자 목록 모달 */}
+      {/* 4. 팔로워 사용자 목록 모달 */}
       {modalType === MODAL_TYPES.FOLLOWER_USER && <UserListModal title="팔로워 목록" fetchFn={getFollowerUsers} />}
 
-      {/* 6. 팔로잉 사용자 목록 모달 */}
+      {/* 5. 팔로잉 사용자 목록 모달 */}
       {modalType === MODAL_TYPES.FOLLOWING_USER && <UserListModal title="팔로잉 목록" fetchFn={getFollowingUsers} />}
 
-      {/* 7. 플레이리스트 상세 모달 */}
+      {/* 6. 플레이리스트 상세 모달 */}
       {modalType === MODAL_TYPES.PLAYLIST_DETAIL && <PlaylistDetailModal playlistId={modalProps.playlistId as string} />}
 
-      {/* 8. 보관함 저장(플레이리스트 선택) 모달 */}
+      {/* 7. 보관함 저장(플레이리스트 선택) 모달 */}
       {modalType === MODAL_TYPES.PLAYLIST_PICKER && <PlaylistPickerModal />}
 
-      {/* 9. 개인정보수집동의 모달 */}
+      {/* 8. 개인정보수집동의 모달 */}
       {modalType === MODAL_TYPES.PRIVACY_CONCENT && <PrivacyConsentModal />}
     </>
   );

@@ -1,5 +1,7 @@
 # 모달 8개 설계 분석
 
+> **후속 변경**: `mobile-queue-view-duplication` 사이클(#118~#122)에서 `MobileNowPlaylistModal`을 제거했다. 모바일 재생목록은 이제 `RightPanel`의 풀플레이어 오버레이(`QueueList`) 경로 하나만 존재한다(`docs/refactors/mobile-queue-view-duplication/result.md` 참고). 아래 표와 분석은 착수 전 8개 모달 기준 기록이라 `MobileNowPlaylistModal` 행은 더 이상 유효하지 않다.
+
 `apps/web/src/components/modals/`, `ModalContainer.tsx`(`app/layout.tsx`에 상시 마운트)가 `useModalStore`의 `modalType`에 따라 8개 모달 중 하나를 렌더링한다. 전부 `ModalShell`(백드롭·배경 클릭 판정·`role="dialog"`·z-index 캡슐화, `modal-shell-duplication` 사이클 산출물) 위에서 동작하지만 그 이후는 모달마다 다르다.
 
 ## 한눈에 보기
