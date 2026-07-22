@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { authMe } from '@/api';
+import { useAuthMeQuery } from './useAuthMeQuery';
 
 type AuthMeState = {
   userId: string | null;
@@ -10,30 +9,9 @@ type AuthMeState = {
 };
 
 export function useAuthMe(): AuthMeState {
-  const [state, setState] = useState<AuthMeState>({
-    userId: null,
-    isAuthenticated: false,
-    isLoading: true,
-  });
+  const { data, isPending, isError } = useAuthMeQuery();
 
-  useEffect(() => {
-    let isAlive = true;
-
-    (async () => {
-      try {
-        const data = await authMe();
-        if (!isAlive) return;
-        setState({ userId: data.id, isAuthenticated: true, isLoading: false });
-      } catch {
-        if (!isAlive) return;
-        setState({ userId: null, isAuthenticated: false, isLoading: false });
-      }
-    })();
-
-    return () => {
-      isAlive = false;
-    };
-  }, []);
-
-  return state;
+  if (isPending) return { userId: null, isAuthenticated: false, isLoading: true };
+  if (isError || !data) return { userId: null, isAuthenticated: false, isLoading: false };
+  return { userId: data.id, isAuthenticated: true, isLoading: false };
 }

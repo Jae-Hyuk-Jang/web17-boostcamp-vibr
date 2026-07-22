@@ -2,6 +2,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 
 import usePostReactions from './usePostReactions';
 import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
+import { createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api/internal', () => ({
   addLike: jest.fn(),
@@ -33,7 +34,9 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
   it('[카드 ↔ 모달 동기화] toggleLike 성공 시 전역 store의 likesByPostId를 갱신하고, 이는 카드가 읽는 것과 동일한 키·형태다', async () => {
     addLike.mockResolvedValue({});
 
-    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 }));
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 }), {
+      wrapper: createQueryClientWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
@@ -52,7 +55,9 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
   it('toggleLike 실패 시 로컬 상태와 store 모두 롤백된다', async () => {
     removeLike.mockRejectedValue(new Error('network error'));
 
-    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: true, initialLikeCount: 5 }));
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: true, initialLikeCount: 5 }), {
+      wrapper: createQueryClientWrapper(),
+    });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
     await act(async () => {
@@ -73,7 +78,9 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
       }),
     );
 
-    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 }));
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 }), {
+      wrapper: createQueryClientWrapper(),
+    });
 
     // authMe()가 아직 resolve되지 않은 시점 — isAuthenticated는 초기값 false를 유지 중
     expect(result.current.isAuthenticated).toBe(false);
@@ -97,7 +104,9 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
   it('[카드 ↔ 모달 동기화] 댓글 작성 성공 시(서버가 read-after-write를 보장하는 경우) commentsByPostId override를 갱신한다 — 카드가 읽는 것과 동일한 키·형태다', async () => {
     createComment.mockResolvedValue({ id: 'server-comment-1' });
 
-    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }));
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }), {
+      wrapper: createQueryClientWrapper(),
+    });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
     act(() => {
@@ -133,7 +142,9 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     createComment.mockResolvedValue({ id: 'server-comment-1' });
     getComments.mockResolvedValue({ comments: [] }); // 최초 로드 + submitComment 내부의 refetchComments 둘 다 빈 목록
 
-    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }));
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }), {
+      wrapper: createQueryClientWrapper(),
+    });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
     act(() => {
@@ -156,7 +167,9 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
   it('댓글 작성 실패 시 낙관적으로 추가했던 임시 댓글이 제거되고 store의 댓글 수도 되돌아간다', async () => {
     createComment.mockRejectedValue(new Error('network error'));
 
-    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }));
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }), {
+      wrapper: createQueryClientWrapper(),
+    });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
     act(() => {
@@ -178,7 +191,9 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
       }),
     );
 
-    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 }));
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 }), {
+      wrapper: createQueryClientWrapper(),
+    });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
     let firstCall!: Promise<void>;
@@ -198,7 +213,9 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
   });
 
   it('[회귀 안전망 #44] usePostReactions의 반환 객체는 고정된 13개 필드를 그대로 유지한다 (usePostLikeToggle 합성 전환 시 계약)', async () => {
-    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }));
+    const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }), {
+      wrapper: createQueryClientWrapper(),
+    });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
     const expectedKeys = [
