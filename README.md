@@ -87,97 +87,103 @@ pnpm format
 
 ## ☁️ 인프라 아키텍처
 
-### 런타임
-
 ```mermaid
-flowchart TD
-    subgraph ClientLayer["🖥️ 클라이언트"]
-        Browser["브라우저"]
+flowchart LR
+  %% --- Style Definitions ---
+  classDef actorNode fill:#ffffff,stroke:#333333,stroke-width:2px,shape:circle;
+  classDef lb fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,rx:5,ry:5;
+  classDef compute fill:#f5f5f5,stroke:#616161,stroke-width:2px,rx:5,ry:5;
+  classDef db fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,shape:cylinder;
+  classDef external fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,rx:5,ry:5;
+  classDef cicd fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,rx:5,ry:5;
+
+  %% 1. CI/CD Pipeline (Top Layer)
+  subgraph CICD ["⚙️ CI/CD Pipeline (Deployment)"]
+    direction LR
+    style CICD fill:none,stroke:none
+    GH["🐱 GitHub Actions"]:::cicd
+    NCR["📦 Container Registry<br/>(NCP NCR)"]:::cicd
+  end
+
+  %% 2. External Actors (Left Layer)
+  subgraph ExternalAccess ["👤 External Access"]
+    direction TB
+    style ExternalAccess fill:none,stroke:none
+    User["User<br/>(Client)"]:::actorNode
+    Admin["Admin<br/>(DevOps)"]:::actorNode
+  end
+
+  %% 3. Main Cloud Infrastructure (Center Layer)
+  subgraph VPC ["☁️ Naver Cloud Platform (VPC)"]
+    direction LR
+    style VPC fill:#f8fcfd,stroke:#00a4d8,stroke-width:2px,rx:10,ry:10
+
+    %% Tier 1: Public
+    subgraph PubSubnet ["🌐 Public Subnet (DMZ)"]
+      direction TB
+      style PubSubnet fill:#f1f8e9,stroke:#558b2f,stroke-width:1px,stroke-dasharray: 5 5
+      ALB["ALB<br/>(Load Balancer)"]:::lb
+      Bastion["Bastion Host<br/>(SSH Gateway)"]:::compute
+      NAT["NAT Gateway<br/>(Outbound)"]:::lb
     end
 
-    subgraph AppLayer["⚙️ 애플리케이션"]
-        Web["apps/web (Next.js)<br/>:3000"]
-        Api["apps/api (NestJS)<br/>:3002 /api"]
+    %% Tier 2: Application
+    subgraph AppSubnet ["⚙️ Private Subnet (App Layer)"]
+      direction TB
+      style AppSubnet fill:#fff8e1,stroke:#fbc02d,stroke-width:1px,stroke-dasharray: 5 5
+      FE["FE Container<br/>(Nginx/Next.js)"]:::compute
+      BE["BE Container<br/>(NestJS)"]:::compute
+      WT["Watchtower<br/>(Auto-Deploy)"]:::compute
     end
 
-    subgraph DataLayer["🗄️ 데이터 저장소"]
-        MySQL[("MySQL<br/>핵심 관계형 데이터")]
-        Redis[("Redis<br/>캐시 + Streams 이벤트 버스")]
-        Neo4j[("Neo4j<br/>사람 관계 그래프")]
-        Storage[("오브젝트 스토리지 (NCP)<br/>업로드 파일")]
+    %% Tier 3: Data
+    subgraph DBSubnet ["🗄️ Private Subnet (Data Layer)"]
+      direction TB
+      style DBSubnet fill:#efebe9,stroke:#5d4037,stroke-width:1px,stroke-dasharray: 5 5
+      DB[("MySQL VM<br/>(RDBMS)")]:::db
+      RedisDB[("Redis VM<br/>(Cache)")]:::db
+      Neo4jDB[("Neo4j VM<br/>(Graph DB)")]:::db
     end
+  end
 
-    subgraph AsyncLayer["🔄 비동기 컨슈머"]
-        TrendingConsumer["Trending Stream<br/>Consumer"]
-        AlgorithmConsumer["Algorithm Stream<br/>Consumer"]
-    end
+  %% 4. External APIs (Right Layer)
+  subgraph ThirdParty ["🔌 External Services (3rd Party)"]
+    direction TB
+    style ThirdParty fill:none,stroke:none
+    ITunes["🎵 iTunes API"]:::external
+    YouTube["▶️ YouTube API"]:::external
+  end
 
-    subgraph ExternalLayer["🔑 외부 OAuth"]
-        Google["Google"]
-        Spotify["Spotify"]
-    end
+  %% ==========================================
+  %% Connections & Traffic Flows
+  %% ==========================================
 
-    Browser --> Web --> Api
-    Api --> MySQL
-    Api --> Redis
-    Api --> Neo4j
-    Api --> Storage
-    Api --> Google
-    Api --> Spotify
-    Redis -. "이벤트 push/consume" .-> TrendingConsumer
-    TrendingConsumer --> Redis
-    Redis -. "이벤트 push/consume" .-> AlgorithmConsumer
-    AlgorithmConsumer --> Neo4j
+  %% [CI/CD Flow]
+  GH -->|"1. Build & Push"| NCR
+  WT -.->|"2. Poll for new image"| NCR
+  WT -.->|"3. Restart container"| FE & BE
 
-    classDef client fill:#E7F5FF,stroke:#1971C2,color:#1864AB
-    classDef app fill:#4C6EF5,stroke:#364FC7,color:#fff
-    classDef data fill:#0CA678,stroke:#087F5B,color:#fff
-    classDef consumer fill:#845EF7,stroke:#5F3DC4,color:#fff
-    classDef external fill:#F59F00,stroke:#E67700,color:#fff
+  %% [Primary User Flow] (Bold lines)
+  User ==>|"HTTPS (443)"| ALB
+  ALB ==>|"Route /"| FE
+  ALB ==>|"Route /api"| BE
 
-    class Browser client
-    class Web,Api app
-    class MySQL,Redis,Neo4j,Storage data
-    class TrendingConsumer,AlgorithmConsumer consumer
-    class Google,Spotify external
+  %% [Internal App Logic] (Bold lines)
+  BE ==>|"TCP 3306"| DB
+  BE ==>|"TCP 6379"| RedisDB
+  BE ==>|"Graph Query"| Neo4jDB
+
+  %% [Outbound Flow] (Dashed lines)
+  FE & BE -.->|"API Request"| NAT
+  NAT -.->|"Public IP"| ITunes & YouTube
+
+  %% [Management Flow] (Dashed lines)
+  Admin -.->|"SSH (22)"| Bastion
+  Bastion -.->|"SSH Tunnel"| FE & BE
+  Bastion -.->|"SSH Tunnel"| DB & RedisDB & Neo4jDB
 ```
 
-### CI/CD
-
-```mermaid
-flowchart TD
-    subgraph CIGroup["✅ CI (push / PR → main)"]
-        Push["push / PR"] --> CI["lint → check-types → test"]
-    end
-
-    subgraph BuildGroup["📦 빌드 (workflow_dispatch, 수동 실행)"]
-        Manual["수동 실행 트리거"] --> Secret["시크릿 저장소에서<br/>SSL 인증서 조회"]
-        Secret --> BuildFE["FE 이미지 빌드<br/>(apps/web/Dockerfile)"]
-        Manual --> BuildBE["BE 이미지 빌드<br/>(apps/api/Dockerfile)"]
-        BuildFE --> RegFE["컨테이너 레지스트리 (FE)"]
-        BuildBE --> RegBE["컨테이너 레지스트리 (BE)"]
-    end
-
-    subgraph DeployGroup["🚀 배포 트리거 (빌드 완료 시 체이닝)"]
-        RegFE -. "체이닝" .-> Force["컨테이너 오케스트레이션 서비스<br/>강제 재배포 (FE·BE)"]
-        RegBE -. "체이닝" .-> Force
-        Force --> Wait["새 Task RUNNING 대기"]
-        Wait --> IP["새 Task의 Public IP 조회"]
-        IP --> DNS["DNS 레코드 갱신<br/>(A 레코드 UPSERT)"]
-    end
-
-    classDef ci fill:#E7F5FF,stroke:#1971C2,color:#1864AB
-    classDef manual fill:#F59F00,stroke:#E67700,color:#fff
-    classDef build fill:#4C6EF5,stroke:#364FC7,color:#fff
-    classDef deploy fill:#0CA678,stroke:#087F5B,color:#fff
-
-    class Push,CI ci
-    class Manual manual
-    class Secret,BuildFE,BuildBE,RegFE,RegBE build
-    class Force,Wait,IP,DNS deploy
-```
-
-> ⚠️ 현재는 대상 인프라가 없어 CI(`ci.yml`)만 push/PR 시 자동 실행되고, 배포·트리거 워크플로우(`deploy.yml`, `ecsTrigger.yml`)는 수동 실행으로 전환된 상태입니다.
+> 위 다이어그램은 원래 설계된 배포 아키텍처를 옮긴 것입니다. **현재는 대상 인프라가 없어** 배포·트리거 워크플로우(`deploy.yml`, `ecsTrigger.yml`)는 수동 실행(`workflow_dispatch`)으로 전환된 상태이며, CI(`ci.yml`)만 push/PR 시 자동 실행됩니다.
 
 자세한 내용은 [배포/인프라 설계서](https://github.com/boostcampwm2025/web17-Busy/wiki/%EB%B0%B0%ED%8F%AC---%EC%9D%B8%ED%94%84%EB%9D%BC)를 참고해주세요.
 
