@@ -89,18 +89,18 @@ pnpm format
 
 ```mermaid
 flowchart LR
-  %% --- Style Definitions ---
-  classDef actorNode fill:#ffffff,stroke:#333333,stroke-width:2px,shape:circle;
-  classDef lb fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,rx:5,ry:5;
-  classDef compute fill:#f5f5f5,stroke:#616161,stroke-width:2px,rx:5,ry:5;
-  classDef db fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,shape:cylinder;
-  classDef external fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,rx:5,ry:5;
-  classDef cicd fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,rx:5,ry:5;
+  %% --- Style Definitions (High Contrast) ---
+  classDef actorNode fill:#ffffff,stroke:#333333,stroke-width:2px,shape:circle,color:#000000;
+  classDef lb fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,rx:5,ry:5,color:#000000;
+  classDef compute fill:#f5f5f5,stroke:#616161,stroke-width:2px,rx:5,ry:5,color:#000000;
+  classDef db fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,shape:cylinder,color:#000000;
+  classDef external fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,rx:5,ry:5,color:#000000;
+  classDef cicd fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,rx:5,ry:5,color:#000000;
 
   %% 1. CI/CD Pipeline (Top Layer)
   subgraph CICD ["⚙️ CI/CD Pipeline (Deployment)"]
     direction LR
-    style CICD fill:none,stroke:none
+    style CICD fill:none,stroke:none,color:#333333
     GH["🐱 GitHub Actions"]:::cicd
     NCR["📦 Container Registry<br/>(NCP NCR)"]:::cicd
   end
@@ -108,7 +108,7 @@ flowchart LR
   %% 2. External Actors (Left Layer)
   subgraph ExternalAccess ["👤 External Access"]
     direction TB
-    style ExternalAccess fill:none,stroke:none
+    style ExternalAccess fill:none,stroke:none,color:#333333
     User["User<br/>(Client)"]:::actorNode
     Admin["Admin<br/>(DevOps)"]:::actorNode
   end
@@ -116,12 +116,12 @@ flowchart LR
   %% 3. Main Cloud Infrastructure (Center Layer)
   subgraph VPC ["☁️ Naver Cloud Platform (VPC)"]
     direction LR
-    style VPC fill:#f8fcfd,stroke:#00a4d8,stroke-width:2px,rx:10,ry:10
+    style VPC fill:#f8fcfd,stroke:#00a4d8,stroke-width:2px,rx:10,ry:10,color:#000000
 
     %% Tier 1: Public
     subgraph PubSubnet ["🌐 Public Subnet (DMZ)"]
       direction TB
-      style PubSubnet fill:#f1f8e9,stroke:#558b2f,stroke-width:1px,stroke-dasharray: 5 5
+      style PubSubnet fill:#f1f8e9,stroke:#558b2f,stroke-width:1px,stroke-dasharray: 5 5,color:#000000
       ALB["ALB<br/>(Load Balancer)"]:::lb
       Bastion["Bastion Host<br/>(SSH Gateway)"]:::compute
       NAT["NAT Gateway<br/>(Outbound)"]:::lb
@@ -130,7 +130,7 @@ flowchart LR
     %% Tier 2: Application
     subgraph AppSubnet ["⚙️ Private Subnet (App Layer)"]
       direction TB
-      style AppSubnet fill:#fff8e1,stroke:#fbc02d,stroke-width:1px,stroke-dasharray: 5 5
+      style AppSubnet fill:#fff8e1,stroke:#fbc02d,stroke-width:1px,stroke-dasharray: 5 5,color:#000000
       FE["FE Container<br/>(Nginx/Next.js)"]:::compute
       BE["BE Container<br/>(NestJS)"]:::compute
       WT["Watchtower<br/>(Auto-Deploy)"]:::compute
@@ -139,7 +139,7 @@ flowchart LR
     %% Tier 3: Data
     subgraph DBSubnet ["🗄️ Private Subnet (Data Layer)"]
       direction TB
-      style DBSubnet fill:#efebe9,stroke:#5d4037,stroke-width:1px,stroke-dasharray: 5 5
+      style DBSubnet fill:#efebe9,stroke:#5d4037,stroke-width:1px,stroke-dasharray: 5 5,color:#000000
       DB[("MySQL VM<br/>(RDBMS)")]:::db
       RedisDB[("Redis VM<br/>(Cache)")]:::db
       Neo4jDB[("Neo4j VM<br/>(Graph DB)")]:::db
@@ -149,7 +149,7 @@ flowchart LR
   %% 4. External APIs (Right Layer)
   subgraph ThirdParty ["🔌 External Services (3rd Party)"]
     direction TB
-    style ThirdParty fill:none,stroke:none
+    style ThirdParty fill:none,stroke:none,color:#333333
     ITunes["🎵 iTunes API"]:::external
     YouTube["▶️ YouTube API"]:::external
   end
