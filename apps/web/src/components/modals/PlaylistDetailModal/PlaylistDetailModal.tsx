@@ -1,8 +1,11 @@
+import { useQueryClient } from '@tanstack/react-query';
+
 import ConfirmOverlay from '@/components/ui/ConfirmOverlay';
 import ModalShell from '@/components/ui/ModalShell';
 import ModalPanel from '@/components/ui/ModalPanel';
 import MusicPickerSearch from '@/components/search/picker/MusicPickerSearch';
-import { useModalStore, usePlayerStore, usePlaylistRefreshStore } from '@/stores';
+import { useModalStore, usePlayerStore } from '@/stores';
+import { PLAYLISTS_QUERY_KEY } from '@/hooks/playlist/usePlaylists';
 import type { MusicRequestDto as UnsavedMusic, MusicResponseDto as SavedMusic, GetPlaylistDetailResDto } from '@repo/dto';
 import { useCallback, useEffect, useState } from 'react';
 import { DEFAULT_IMAGES, MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
@@ -13,10 +16,11 @@ import { toast } from 'react-toastify';
 
 export default function PlaylistDetailModal({ playlistId }: { playlistId: string }) {
   const { closeModal } = useModalStore();
+  const queryClient = useQueryClient();
 
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const selectMusic = usePlayerStore((s) => s.selectMusic);
-  const bumpPlaylistRefresh = usePlaylistRefreshStore((s) => s.bump);
+  const bumpPlaylistRefresh = () => queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
 
   const [playlist, setPlaylist] = useState<GetPlaylistDetailResDto | null>(null);
   const [songs, setSongs] = useState<SavedMusic[]>([]);

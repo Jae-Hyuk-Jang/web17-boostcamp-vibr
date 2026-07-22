@@ -1,36 +1,31 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
+
 import { PlaylistItem } from './PlaylistItems';
 import ArchiveViewHeader from './ArchiveViewHeader';
-import { deletePlaylist, editTitleOfPlaylist, getAllPlaylists } from '@/api';
-import { usePlaylistRefreshStore } from '@/stores';
+import { deletePlaylist, editTitleOfPlaylist } from '@/api';
+import { usePlaylists, PLAYLISTS_QUERY_KEY } from '@/hooks/playlist/usePlaylists';
 import { useEffect, useState } from 'react';
-import type { PlaylistBriefResDto } from '@repo/dto';
 import { toast } from 'react-toastify';
 
 export default function ArchiveView() {
-  const [playlists, setPlaylists] = useState<PlaylistBriefResDto[]>([]);
+  const queryClient = useQueryClient();
+  const { data: playlists = [], isError, error } = usePlaylists();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const playlistNonce = usePlaylistRefreshStore((s) => s.nonce);
-  const bumpPlaylistRefresh = usePlaylistRefreshStore((s) => s.bump);
-
-  const fetchInitialPlaylists = async () => {
-    try {
-      setPlaylists(await getAllPlaylists());
-    } catch (e) {
-      toast.error('플레이리스트 목록을 불러오지 못했습니다.');
-      console.error(e);
-    }
-  };
 
   useEffect(() => {
-    fetchInitialPlaylists();
-  }, [playlistNonce]);
+    if (!isError) return;
+    toast.error('플레이리스트 목록을 불러오지 못했습니다.');
+    console.error(error);
+  }, [isError, error]);
+
+  const invalidatePlaylists = () => queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
 
   const handleRename = async (id: string, title: string) => {
     try {
       await editTitleOfPlaylist(id, title);
-      bumpPlaylistRefresh();
+      await invalidatePlaylists();
     } catch (e) {
       toast.error('플레이리스트 이름 변경에 실패했습니다.');
       console.error(e);
@@ -40,7 +35,7 @@ export default function ArchiveView() {
   const handleDelete = async (id: string) => {
     try {
       await deletePlaylist(id);
-      bumpPlaylistRefresh();
+      await invalidatePlaylists();
     } catch (e) {
       toast.error('플레이리스트 삭제에 실패했습니다.');
       console.error(e);

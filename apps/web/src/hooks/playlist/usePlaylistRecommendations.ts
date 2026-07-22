@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { GetAllPlaylistsResDto, GetPlaylistDetailResDto } from '@repo/dto';
-import { getAllPlaylists, getPlaylistDetail } from '@/api/internal';
+import { getPlaylistDetail } from '@/api/internal';
 import { MOCK_PLAYLIST_BRIEFS, MOCK_PLAYLIST_DETAILS } from '@/constants';
+import { usePlaylists } from './usePlaylists';
 
 export type PlaylistBrief = GetAllPlaylistsResDto['playlists'][number];
 export type PlaylistDetail = Pick<GetPlaylistDetailResDto, 'id' | 'title' | 'musics'>;
@@ -40,37 +41,20 @@ const toFallbackListMessage = (): string => `${toListErrorMessage()} ${FALLBACK_
 const toFallbackDetailMessage = (): string => `${toDetailErrorMessage()} ${FALLBACK_HINT}`;
 
 export const usePlaylistRecommendations = ({ enabled }: Options): State => {
-  const [status, setStatus] = useState<ListStatus>('idle');
-  const [briefs, setBriefs] = useState<PlaylistBrief[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const query = usePlaylists(enabled);
 
+  const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(null);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
 
-  const isFetching = useMemo(() => status === 'loading', [status]);
+  const status: ListStatus = !enabled ? 'idle' : query.isPending ? 'loading' : 'success';
+  const briefs = query.isError ? MOCK_PLAYLIST_BRIEFS : (query.data ?? []);
+  const errorMessage = detailErrorMessage ?? (query.isError ? toFallbackListMessage() : null);
 
+  const { refetch: queryRefetch } = query;
   const refetch = useCallback(async () => {
-    setStatus('loading');
-    setErrorMessage(null);
-
-    try {
-      const data = await getAllPlaylists();
-      setBriefs(data);
-      setStatus('success');
-    } catch {
-      /**
-       * TODO(BE): 백엔드 연결 완료 후 아래 fallback 제거
-       * - 에러 메시지 정책(토스트/재시도 버튼)을 UI에서 확정
-       */
-      setBriefs(MOCK_PLAYLIST_BRIEFS);
-      setStatus('success');
-      setErrorMessage(toFallbackListMessage());
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!enabled) return;
-    void refetch();
-  }, [enabled, refetch]);
+    setDetailErrorMessage(null);
+    await queryRefetch();
+  }, [queryRefetch]);
 
   const selectPlaylist = useCallback(async (playlistId: string): Promise<PlaylistDetail | null> => {
     setSelectedPlaylistId(playlistId);
@@ -83,7 +67,7 @@ export const usePlaylistRecommendations = ({ enabled }: Options): State => {
        * TODO(BE): 백엔드 연결 완료 후 아래 fallback 제거
        * - 에러 메시지 정책(토스트/재시도 버튼)을 UI에서 확정
        */
-      setErrorMessage(toFallbackDetailMessage());
+      setDetailErrorMessage(toFallbackDetailMessage());
 
       const fallback = MOCK_PLAYLIST_DETAILS[playlistId as keyof typeof MOCK_PLAYLIST_DETAILS];
       if (!fallback) return null;
@@ -98,7 +82,7 @@ export const usePlaylistRecommendations = ({ enabled }: Options): State => {
     status,
     briefs,
     errorMessage,
-    isFetching,
+    isFetching: query.isFetching,
     selectedPlaylistId,
     refetch,
     selectPlaylist,

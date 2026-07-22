@@ -2,6 +2,7 @@ import { render, fireEvent } from '@testing-library/react';
 
 import PlaylistDetailModal from './PlaylistDetailModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
+import { createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api', () => ({
   getPlaylistDetail: jest.fn(),
@@ -26,7 +27,7 @@ describe('PlaylistDetailModal — 배경 클릭 특성화 테스트 (#66)', () =
   });
 
   it('배경을 클릭하면 모달이 닫힌다', async () => {
-    const { container, findByTestId } = render(<PlaylistDetailModal playlistId="pl-1" />);
+    const { container, findByTestId } = render(<PlaylistDetailModal playlistId="pl-1" />, { wrapper: createQueryClientWrapper() });
     await findByTestId('header');
 
     fireEvent.mouseDown(container.firstChild as HTMLElement);
