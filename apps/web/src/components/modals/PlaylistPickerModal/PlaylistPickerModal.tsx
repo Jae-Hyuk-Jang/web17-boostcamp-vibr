@@ -6,7 +6,8 @@ import { Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 import { useModalStore } from '@/stores/useModalStore';
-import { getAllPlaylists, addMusicsToPlaylist, createNewPlaylist } from '@/api';
+import { addMusicsToPlaylist, createNewPlaylist } from '@/api';
+import { usePlaylists } from '@/hooks/playlist/usePlaylists';
 import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc } from '@/utils';
 
@@ -16,13 +17,6 @@ import ModalShell from '@/components/ui/ModalShell';
 import ModalPanel from '@/components/ui/ModalPanel';
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import Button from '@/components/ui/Button';
-
-type PlaylistBrief = {
-  id: string;
-  title: string;
-  tracksCount: number;
-  firstAlbumCoverUrl: string;
-};
 
 const toMusicRequestDto = (m: Music): MusicRequestDto => ({
   id: m.id,
@@ -50,50 +44,21 @@ export default function PlaylistPickerModal() {
   const isEnabled = isOpen && modalType === 'PLAYLIST_PICKER';
 
   const musics = isEnabled ? (modalProps?.musics as Music[] | undefined) : undefined;
+  const hasMusics = Boolean(musics && musics.length > 0);
 
-  const [playlists, setPlaylists] = useState<PlaylistBrief[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { data: playlists = [], isLoading, isError } = usePlaylists(isEnabled && hasMusics);
+  const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null);
+  const errorMsg = submitErrorMsg ?? (isError ? '플레이리스트 목록을 불러오지 못했습니다.' : null);
 
   const [submittingPlaylistId, setSubmittingPlaylistId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  const isSubmittable = Boolean(musics && musics.length > 0) && !submittingPlaylistId && !isCreating;
+  const isSubmittable = hasMusics && !submittingPlaylistId && !isCreating;
 
   useEffect(() => {
     if (!isEnabled) return;
-
-    if (!musics || musics.length === 0) {
-      closeModal();
-      return;
-    }
-
-    let isAlive = true;
-
-    const run = async () => {
-      setIsLoading(true);
-      setErrorMsg(null);
-
-      try {
-        const list = await getAllPlaylists();
-        if (!isAlive) return;
-        setPlaylists(list);
-      } catch {
-        if (!isAlive) return;
-        setPlaylists([]);
-        setErrorMsg('플레이리스트 목록을 불러오지 못했습니다.');
-      } finally {
-        if (isAlive) setIsLoading(false);
-      }
-    };
-
-    void run();
-
-    return () => {
-      isAlive = false;
-    };
-  }, [isEnabled, musics, closeModal]);
+    if (!hasMusics) closeModal();
+  }, [isEnabled, hasMusics, closeModal]);
 
   const handleSaveResultToast = (addedCount: number) => {
     if (addedCount === 0) toast.info('이미 플레이리스트에 있는 곡이에요.');
@@ -118,12 +83,12 @@ export default function PlaylistPickerModal() {
     if (!isSubmittable) return;
 
     setSubmittingPlaylistId(playlistId);
-    setErrorMsg(null);
+    setSubmitErrorMsg(null);
 
     try {
       await saveToPlaylist(playlistId);
     } catch {
-      setErrorMsg('플레이리스트에 저장하지 못했습니다. 잠시 후 다시 시도해주세요.');
+      setSubmitErrorMsg('플레이리스트에 저장하지 못했습니다. 잠시 후 다시 시도해주세요.');
       toast.error('저장에 실패했습니다.');
     } finally {
       setSubmittingPlaylistId(null);
@@ -134,13 +99,13 @@ export default function PlaylistPickerModal() {
     if (!isSubmittable) return;
 
     setIsCreating(true);
-    setErrorMsg(null);
+    setSubmitErrorMsg(null);
 
     try {
       const created = await createNewPlaylist();
       await saveToPlaylist(created.id);
     } catch {
-      setErrorMsg('새 플레이리스트를 만들지 못했습니다.');
+      setSubmitErrorMsg('새 플레이리스트를 만들지 못했습니다.');
       toast.error('플레이리스트 생성에 실패했습니다.');
     } finally {
       setIsCreating(false);

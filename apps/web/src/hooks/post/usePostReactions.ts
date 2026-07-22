@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GetCommentsResDto, UserDto } from '@repo/dto';
 
 import { getComments, createComment } from '@/api/internal';
-import { authMe } from '@/api/internal/auth';
+import { useAuthMeQuery } from '@/hooks/auth/client/useAuthMeQuery';
 import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
 import usePostLikeToggle from './usePostLikeToggle';
 
@@ -70,7 +70,7 @@ const getEffectivePollMs = (base: number) => {
 };
 
 export default function usePostReactions({ enabled, postId, initialIsLiked, initialLikeCount, pollMs = 5000 }: Options): Result {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { data: me, isSuccess: isAuthenticated } = useAuthMeQuery(enabled);
 
   const {
     isLiked,
@@ -102,6 +102,10 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
   }, [comments]);
 
   const meRef = useRef<UserDto | null>(null);
+  useEffect(() => {
+    meRef.current = me ?? null;
+  }, [me]);
+
   const timerRef = useRef<number | null>(null);
   const onlineRef = useRef<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
@@ -147,32 +151,6 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
 
     clearTimer();
   }, [postId, clearTimer, applyComments]);
-
-  // 내 정보 로드(댓글 optimistic author + 로그인 여부)
-  useEffect(() => {
-    if (!enabled) return;
-
-    let isAlive = true;
-
-    const run = async () => {
-      try {
-        const me = await authMe();
-        if (!isAlive) return;
-        meRef.current = me;
-        setIsAuthenticated(true);
-      } catch {
-        if (!isAlive) return;
-        meRef.current = null;
-        setIsAuthenticated(false);
-      }
-    };
-
-    void run();
-
-    return () => {
-      isAlive = false;
-    };
-  }, [enabled, postId]);
 
   const refetchComments = useCallback(async () => {
     if (!enabled) return;

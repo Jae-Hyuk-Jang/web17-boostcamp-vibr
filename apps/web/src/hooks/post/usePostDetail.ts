@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PostResponseDto as Post } from '@repo/dto';
 import { getPostDetail } from '@/api/internal/post';
 
@@ -17,76 +17,47 @@ type Result = {
   updatePostContent: (newContent: string) => void;
 };
 
+// 게시글 상세 데이터는 세션 중 잦은 재편집 대상이 아니므로, 같은 postId를 다른 진입점(모달/편집 등)에서
+// 다시 열어도 이 시간 내에는 캐시를 그대로 재사용한다(불필요한 재요청 방지).
+const POST_DETAIL_STALE_TIME_MS = 60 * 1000;
+
+export const postDetailQueryKey = (postId: string) => ['postDetail', postId] as const;
+
 export function usePostDetail({ enabled, postId, passedPost }: Params): Result {
-  const matchedPost = useMemo(() => {
-    if (!postId || !passedPost) return null;
-    return passedPost.id === postId ? passedPost : null;
-  }, [postId, passedPost]);
+  const queryClient = useQueryClient();
 
-  const [post, setPost] = useState<Post | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const matchedPost = postId && passedPost && passedPost.id === postId ? passedPost : undefined;
 
-  const requestIdRef = useRef(0);
+  const {
+    data,
+    isPending,
+    isError,
+    error: queryError,
+  } = useQuery({
+    queryKey: postDetailQueryKey(postId ?? ''),
+    queryFn: () => getPostDetail(postId as string),
+    // passedPost가 이미 일치하면 fetch 자체를 건너뛴다(initialData는 fetch 없이도 캐시를 시딩함).
+    enabled: enabled && Boolean(postId) && !matchedPost,
+    initialData: matchedPost,
+    staleTime: POST_DETAIL_STALE_TIME_MS,
+  });
+
+  const post = enabled && postId ? (data ?? null) : null;
+  const isLoading = enabled && Boolean(postId) && !matchedPost && isPending;
+  const error = !enabled
+    ? null
+    : !postId
+      ? 'postId is missing'
+      : isError
+        ? queryError instanceof Error
+          ? queryError.message
+          : 'failed to fetch post detail'
+        : null;
 
   const updatePostContent = (newContent: string) => {
-    setPost((prev) => {
-      if (!prev) return null;
-      return { ...prev, content: newContent };
-    });
+    if (!postId) return;
+    queryClient.setQueryData(postDetailQueryKey(postId), (prev: Post | undefined) => (prev ? { ...prev, content: newContent } : prev));
   };
-
-  useEffect(() => {
-    if (!enabled) {
-      setPost(null);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
-
-    if (!postId) {
-      setPost(null);
-      setIsLoading(false);
-      setError('postId is missing');
-      return;
-    }
-
-    // passedPost가 정확히 일치하면 즉시 사용 (fetch skip)
-    if (matchedPost) {
-      setPost(matchedPost);
-      setIsLoading(false);
-      setError(null);
-      return;
-    }
-
-    // postId 기준으로 항상 새 요청 보장
-    setPost(null);
-    setError(null);
-    setIsLoading(true);
-
-    const myReqId = ++requestIdRef.current;
-
-    const run = async () => {
-      try {
-        const detail = await getPostDetail(postId);
-        if (requestIdRef.current !== myReqId) return;
-
-        setPost(detail);
-        setError(null);
-      } catch (e) {
-        if (requestIdRef.current !== myReqId) return;
-
-        setPost(null);
-        setError(e instanceof Error ? e.message : 'failed to fetch post detail');
-      } finally {
-        if (requestIdRef.current === myReqId) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void run();
-  }, [enabled, postId, matchedPost]);
 
   return { post, isLoading, error, updatePostContent };
 }

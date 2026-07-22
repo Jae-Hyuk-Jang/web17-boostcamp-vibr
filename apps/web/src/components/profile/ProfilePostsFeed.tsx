@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { getUserProfilePosts, getPostDetail } from '@/api';
-import { useInfiniteScroll } from '@/hooks';
+import { useInfiniteScroll, postDetailQueryKey } from '@/hooks';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useModalStore, MODAL_TYPES, usePlayerStore } from '@/stores';
 import { PostCard } from '@/components/post';
@@ -19,6 +20,7 @@ interface Props {
 
 export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const openModal = useModalStore((s) => s.openModal);
   const playMusic = usePlayerStore((s) => s.playMusic);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
@@ -38,10 +40,18 @@ export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
   const fetchFn = useCallback(
     async (cursor?: string) => {
       const { items: previews, hasNext, nextCursor } = await getUserProfilePosts(userId, cursor);
-      const fullPosts = await Promise.all(previews.map((p) => getPostDetail(p.postId)));
+      const fullPosts = await Promise.all(
+        previews.map(async (p) => {
+          const detail = await getPostDetail(p.postId);
+          // 다른 진입점(ProfilePosts 그리드, 알림 등)이 postId만으로 같은 게시글을 열 때
+          // 이 요청 결과를 캐시로 재사용하도록, usePostDetail과 동일한 queryKey로 시딩한다.
+          queryClient.setQueryData(postDetailQueryKey(p.postId), detail);
+          return detail;
+        }),
+      );
       return { items: fullPosts, hasNext, nextCursor };
     },
-    [userId],
+    [userId, queryClient],
   );
 
   const { items, hasNext, isInitialLoading, errorMsg, ref } = useInfiniteScroll({ fetchFn });
