@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VIBR 컴포넌트 쇼케이스</title>
+<style>
+  :root {
+    --color-primary: #00214d;
+    --color-accent-cyan: #00ebc7;
+    --color-accent-pink: #ff5470;
+    --color-accent-yellow: #fde24f;
+    --color-darkblue: #1b2d45;
+    --color-gray-1: #828282;
+    --color-gray-2: #bdbdbd;
+    --color-gray-3: #e0e0e0;
+    --color-gray-4: #f5f5f7;
+    --color-white: #fffffe;
+    --color-black: #191414;
+    --color-spotify-green: #1db954;
+    --color-error: #ca2a30;
+    --sidebar-w: 260px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Roboto, sans-serif;
+    color: var(--color-primary);
+    background: var(--color-gray-4);
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ---------- 사이드 네비 ---------- */
+  nav.sidebar {
+    position: sticky;
+    top: 0;
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--color-primary);
+    color: white;
+    padding: 24px 20px;
+  }
+  nav.sidebar h1 {
+    font-size: 17px;
+    margin: 0 0 4px;
+  }
+  nav.sidebar .sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 24px;
+  }
+  nav.sidebar a {
+    display: block;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 7px 10px;
+    border-radius: 8px;
+    margin-bottom: 2px;
+  }
+  nav.sidebar a:hover { background: rgba(255,255,255,0.1); color: white; }
+  nav.sidebar .count {
+    color: var(--color-accent-cyan);
+    font-weight: 400;
+    font-size: 12px;
+  }
+
+  /* ---------- 메인 ---------- */
+  main {
+    flex: 1;
+    min-width: 0;
+    padding: 40px 48px 120px;
+    max-width: 1080px;
+  }
+
+  section { margin-bottom: 72px; scroll-margin-top: 24px; }
+  section > h2 {
+    font-size: 24px;
+    border-bottom: 3px solid var(--color-primary);
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+  }
+  section > .lede {
+    color: var(--color-gray-1);
+    font-size: 14.5px;
+    line-height: 1.7;
+    margin-bottom: 28px;
+    max-width: 760px;
+  }
+  section > .lede code, main p code, main li code {
+    background: var(--color-gray-3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.92em;
+  }
+
+  header.hero {
+    background: white;
+    border: 2px solid var(--color-primary);
+    border-radius: 24px;
+    box-shadow: 8px 8px 0px 0px var(--color-primary);
+    padding: 32px 36px;
+    margin-bottom: 56px;
+  }
+  header.hero h1 { margin: 0 0 10px; font-size: 30px; }
+  header.hero p { color: var(--color-gray-1); font-size: 14.5px; line-height: 1.8; max-width: 720px; }
+  header.hero .src-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  header.hero .src-list span {
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--color-gray-4);
+    border: 1px solid var(--color-gray-3);
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+
+  .card {
+    background: white;
+    border: 2px solid var(--color-primary);
+    border-radius: 16px;
+    padding: 20px 22px;
+  }
+
+  /* ---------- 토큰 팔레트 ---------- */
+  .token-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+  }
+  .token {
+    border: 2px solid var(--color-primary);
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+  }
+  .token .swatch { height: 56px; }
+  .token .label { padding: 8px 10px; font-size: 12px; }
+  .token .label b { display: block; font-size: 12.5px; }
+  .token .label span { color: var(--color-gray-1); font-family: ui-monospace, monospace; font-size: 11px; }
+
+  /* ---------- 버튼 매트릭스 ---------- */
+  table.matrix { border-collapse: collapse; width: 100%; background: white; border: 2px solid var(--color-primary); border-radius: 12px; overflow: hidden; }
+  table.matrix th, table.matrix td { padding: 16px; text-align: center; border: 1px solid var(--color-gray-3); vertical-align: middle; }
+  table.matrix th { background: var(--color-gray-4); font-size: 13px; }
+  table.matrix td:first-child, table.matrix th:first-child { text-align: left; font-weight: 700; font-size: 13px; background: var(--color-gray-4); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 999px;
+    font-weight: 700;
+    transition: all .2s;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: var(--color-primary); color: white; border: 2px solid var(--color-primary); }
+  .btn-primary:hover { background: white; color: var(--color-primary); }
+  .btn-secondary { border: 2px solid var(--color-primary); color: var(--color-primary); background: transparent; }
+  .btn-secondary:hover { background: white; }
+  .btn-danger { background: var(--color-accent-pink); color: white; border: 2px solid var(--color-primary); }
+  .btn-danger:hover { opacity: .9; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  .btn-md { padding: 10px 24px; font-size: 15px; }
+  .btn-icon { padding: 8px; }
+
+  /* ---------- shape 4분류 카드 ---------- */
+  .shape-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+  .shape-card { background: white; border: 2px solid var(--color-primary); border-radius: 14px; padding: 18px; }
+  .shape-card h4 { margin: 0 0 4px; font-size: 15px; }
+  .shape-card .pct { font-size: 12px; color: var(--color-gray-1); margin-bottom: 14px; }
+  .shape-card .demo-row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; min-height: 40px; flex-wrap: wrap; }
+  .shape-card p.note { font-size: 12px; color: var(--color-gray-1); margin: 0; line-height: 1.6; }
+  .badge-covered { display: inline-block; font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 999px; }
+  .badge-yes { background: #d7f7ee; color: #036b52; }
+  .badge-no { background: #ffe1e6; color: #b3123a; }
+
+  /* shape demo buttons (raw, not using Button.tsx) */
+  .demo-filled { background: var(--color-primary); color: white; border-radius: 999px; padding: 8px 18px; font-weight: 700; font-size: 13px; border: none; }
+  .demo-outline { background: transparent; color: var(--color-primary); border: 2px solid var(--color-primary); border-radius: 999px; padding: 7px 16px; font-weight: 700; font-size: 13px; }
+  .demo-ghost { background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 7px; color: var(--color-gray-1); transition: all .2s; }
+  .demo-ghost:hover { border-color: var(--color-accent-cyan); }
+  .demo-bare { background: none; border: none; color: var(--color-gray-1); font-size: 13px; font-weight: 600; padding: 4px 6px; }
+  .demo-bare:hover { color: var(--color-primary); }
+
+  /* ---------- 로그인 버튼 ---------- */
+  .login-demo { background: white; border: 2px solid var(--color-primary); border-radius: 24px; box-shadow: 8px 8px 0px 0px var(--color-primary); max-width: 420px; }
+  .login-demo .head { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 2px solid var(--color-primary); }
+  .login-demo .head h3 { margin: 0; font-size: 19px; font-weight: 900; }
+  .login-demo .body { padding: 40px 40px; display: flex; flex-direction: column; gap: 16px; }
+  .close-x { width: 24px; height: 24px; border-radius: 999px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--color-primary); font-weight: 700; background: none; border: none; font-size: 16px; }
+  .close-x:hover { background: var(--color-gray-4); color: var(--color-accent-pink); }
+
+  .login-action-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-radius: 999px;
+    transition: all .2s;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .login-action-btn:active { transform: scale(0.98); }
+  .lab-google { padding: 16px 24px; font-weight: 900; border: 1px solid var(--color-primary); background: white; color: var(--color-primary); }
+  .lab-google:hover { background: #fafafa; }
+  .lab-spotify { padding: 16px 24px; font-weight: 900; border: none; background: var(--color-spotify-green); color: black; }
+  .lab-spotify:hover { background: #1ED760; }
+  .lab-tmp { padding: 12px 24px; font-weight: 700; font-size: 13.5px; border: 1px dashed var(--color-primary); background: white; color: var(--color-primary); }
+  .lab-tmp:hover { background: #fafafa; }
+  .icon-circle { width: 22px; height: 22px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; color: white; flex-shrink: 0; }
+  .ic-google { background: linear-gradient(135deg,#4285F4,#EA4335,#FBBC05,#34A853); }
+  .ic-spotify { background: black; color: var(--color-spotify-green); }
+  .dev-label { font-size: 11px; font-weight: 700; color: var(--color-gray-1); border-top: 1px dashed rgba(0,33,77,0.25); padding-top: 12px; margin-top: 2px; }
+
+  .spinner { display: inline-block; border-radius: 999px; border-style: solid; animation: spin 0.8s linear infinite; }
+  .spinner-primary { width: 16px; height: 16px; border-width: 2px; border-color: var(--color-primary); border-top-color: transparent; }
+  .spinner-black { width: 16px; height: 16px; border-width: 2px; border-color: black; border-top-color: transparent; }
+  .spinner-lg { width: 32px; height: 32px; border-width: 4px; border-color: var(--color-gray-3); border-top-color: black; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- ui/ 카드 그리드 ---------- */
+  .ui-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .ui-card { background: white; border: 2px solid var(--color-primary); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+  .ui-card .demo { background: var(--color-gray-4); min-height: 96px; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .ui-card .info { padding: 16px 18px; }
+  .ui-card .info .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .ui-card .info h4 { margin: 0; font-size: 15.5px; font-family: ui-monospace, monospace; }
+  .ui-card .consumers { font-size: 11.5px; font-weight: 800; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .consumers-many { background: #d7f7ee; color: #036b52; }
+  .consumers-mid { background: #fff3cd; color: #8a6d00; }
+  .consumers-one { background: #ffe1e6; color: #b3123a; }
+  .ui-card .info p { font-size: 12.5px; color: var(--color-gray-1); line-height: 1.6; margin: 0; }
+
+  /* ---------- 모달 구조 ---------- */
+  .modal-mockup-wrap { background: #b9c2ce; border-radius: 16px; padding: 48px 24px; display: flex; justify-content: center; }
+  .modal-mockup { background: white; border: 2px solid var(--color-primary); border-radius: 24px; box-shadow: 8px 8px 0px 0px var(--color-primary); width: 380px; overflow: hidden; }
+  .modal-mockup .mm-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 2px solid var(--color-primary); }
+  .modal-mockup .mm-head h3 { margin: 0; font-size: 17px; font-weight: 900; }
+  .modal-mockup .mm-body { padding: 24px; font-size: 13px; color: var(--color-gray-1); }
+  .layer-tag { position: absolute; font-size: 10px; font-weight: 800; background: var(--color-primary); color: white; padding: 2px 8px; border-radius: 999px; }
+  .modal-mockup-outer { position: relative; }
+
+  table.modal-table { border-collapse: collapse; width: 100%; font-size: 12.5px; background: white; border: 2px solid var(--color-primary); border-radius: 12px; overflow: hidden; }
+  table.modal-table th, table.modal-table td { padding: 10px 12px; border: 1px solid var(--color-gray-3); text-align: left; }
+  table.modal-table th { background: var(--color-gray-4); }
+  .tick { color: #036b52; font-weight: 900; }
+  .cross { color: #b3123a; font-weight: 900; }
+
+  /* ---------- 검색 위젯 ---------- */
+  .search-mockup { background: white; border: 2px solid var(--color-primary); border-radius: 16px; max-width: 420px; overflow: hidden; }
+  .search-input-row { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--color-gray-3); }
+  .search-input-row input { border: none; outline: none; font-size: 14px; flex: 1; font-family: inherit; }
+  .search-tabs { display: flex; border-bottom: 1px solid var(--color-gray-3); }
+  .search-tabs div { flex: 1; text-align: center; padding: 10px; font-size: 13px; font-weight: 700; color: var(--color-gray-1); cursor: pointer; }
+  .search-tabs div.active { color: var(--color-primary); border-bottom: 2px solid var(--color-primary); }
+  .track-row { display: flex; align-items: center; padding: 10px 14px; gap: 12px; }
+  .track-row:hover { background: var(--color-gray-4); }
+  .track-thumb { width: 44px; height: 44px; border-radius: 8px; background: linear-gradient(135deg,#ccd6e8,#8fa3c4); flex-shrink: 0; border: 1px solid var(--color-gray-3); }
+  .track-meta { min-width: 0; flex: 1; }
+  .track-meta .t { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-meta .a { font-size: 11.5px; color: var(--color-gray-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track-actions { display: flex; gap: 6px; color: var(--color-gray-1); font-size: 16px; }
+
+  .marquee-wrap { overflow: hidden; white-space: nowrap; width: 220px; }
+  .marquee-wrap .track { display: inline-block; animation: marquee 6s linear infinite; }
+  .marquee-wrap:hover .track { animation-play-state: running; }
+  @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+  footer.page-footer { border-top: 2px solid var(--color-gray-3); padding-top: 24px; font-size: 12.5px; color: var(--color-gray-1); }
+  footer.page-footer ul { padding-left: 18px; line-height: 1.9; }
+  footer.page-footer code { background: var(--color-gray-3); padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <h1>VIBR 컴포넌트</h1>
+  <div class="sub">apps/web 쇼케이스 · 2026-07-21</div>
+  <a href="#tokens">디자인 토큰</a>
+  <a href="#button">Button <span class="count">variant×size</span></a>
+  <a href="#shapes">버튼 4가지 생김새</a>
+  <a href="#login-buttons">LoginActionButton</a>
+  <a href="#ui-components">components/ui/ <span class="count">13개</span></a>
+  <a href="#modal">모달 구성</a>
+  <a href="#search">검색 위젯</a>
+</nav>
+
+<main>
+
+  <header class="hero">
+    <h1>VIBR 컴포넌트 쇼케이스</h1>
+    <p>
+      <code>apps/web/src/components/</code>에서 실제로 파악한 공용/재사용 컴포넌트를 설명과 함께 실제 모양(색상·간격·상태)까지 재현해 정리한 문서입니다.
+      Tailwind 클래스 대신 <code>apps/web/app/globals.css</code>의 실제 디자인 토큰 값으로 CSS를 다시 작성해 외부 의존성 없이 이 파일 하나로 렌더링됩니다 — 실제 컴포넌트와 100% 동일한 렌더러는 아니고, 구조·색·상태 전이를 눈으로 확인하기 위한 참고용 재현입니다.
+    </p>
+    <div class="src-list">
+      <span>docs/component-design/shared-ui.md</span>
+      <span>docs/component-design/buttons.md</span>
+      <span>docs/component-design/modals.md</span>
+      <span>docs/component-design/search.md</span>
+      <span>apps/web/app/globals.css</span>
+    </div>
+  </header>
+
+  <!-- ===================== 디자인 토큰 ===================== -->
+  <section id="tokens">
+    <h2>디자인 토큰</h2>
+    <p class="lede"><code>globals.css</code> <code>@theme</code> 블록에 정의된 색상 팔레트. 아래 모든 컴포넌트 재현이 이 값들을 그대로 씁니다.</p>
+    <div class="token-grid">
+      <div class="token"><div class="swatch" style="background:#00214d"></div><div class="label"><b>primary</b><span>#00214d</span></div></div>
+      <div class="token"><div class="swatch" style="background:#00ebc7"></div><div class="label"><b>accent-cyan</b><span>#00ebc7</span></div></div>
+      <div class="token"><div class="swatch" style="background:#ff5470"></div><div class="label"><b>accent-pink</b><span>#ff5470</span></div></div>
+      <div class="token"><div class="swatch" style="background:#fde24f"></div><div class="label"><b>accent-yellow</b><span>#fde24f</span></div></div>
+      <div class="token"><div class="swatch" style="background:#1b2d45"></div><div class="label"><b>darkblue</b><span>#1b2d45</span></div></div>
+      <div class="token"><div class="swatch" style="background:#828282"></div><div class="label"><b>gray-1</b><span>#828282</span></div></div>
+      <div class="token"><div class="swatch" style="background:#bdbdbd"></div><div class="label"><b>gray-2</b><span>#bdbdbd</span></div></div>
+      <div class="token"><div class="swatch" style="background:#e0e0e0"></div><div class="label"><b>gray-3</b><span>#e0e0e0</span></div></div>
+      <div class="token"><div class="swatch" style="background:#f5f5f7"></div><div class="label"><b>gray-4</b><span>#f5f5f7</span></div></div>
+      <div class="token"><div class="swatch" style="background:#fffffe;border-bottom:1px solid #e0e0e0"></div><div class="label"><b>white</b><span>#fffffe</span></div></div>
+      <div class="token"><div class="swatch" style="background:#191414"></div><div class="label"><b>black</b><span>#191414</span></div></div>
+      <div class="token"><div class="swatch" style="background:#1db954"></div><div class="label"><b>spotify-green</b><span>#1db954</span></div></div>
+      <div class="token"><div class="swatch" style="background:#ca2a30"></div><div class="label"><b>error</b><span>#ca2a30</span></div></div>
+    </div>
+    <p class="lede" style="margin-top:14px; font-size:13px;">
+      ⚠️ 코드에서 <code>text-secondary</code>/<code>border-secondary</code>가 여러 곳(예: <code>LoginModal.tsx</code>의 에러 메시지)에서 쓰이지만 <code>--color-secondary</code> 토큰은 <code>globals.css</code>에 정의돼 있지 않습니다 — 이번 문서 작성 중 확인한 사실이며, 별도 확인이 필요해 보입니다.
+    </p>
+  </section>
+
+  <!-- ===================== Button ===================== -->
+  <section id="button">
+    <h2>Button <span style="font-weight:400;font-size:15px;color:var(--color-gray-1)">components/ui/Button.tsx · 9곳에서 사용</span></h2>
+    <p class="lede">
+      <code>variant</code>(primary/secondary/danger) × <code>size</code>(sm/md/icon) 조합의 공용 CTA 버튼. <code>tailwind-merge</code>로 className을 병합해 소비처가 필요한 부분만 안전하게 오버라이드합니다(단순 문자열 이어붙이기는 Tailwind 클래스 등록 순서에 따라 승패가 예측 불가능해 <code>twMerge</code>를 씀 — <code>docs/refactors/shared-component-duplication/adr.md</code> 참고).
+    </p>
+    <table class="matrix">
+      <tr><th></th><th>sm</th><th>md (기본)</th><th>icon</th></tr>
+      <tr>
+        <td>primary</td>
+        <td><button class="btn btn-primary btn-sm">확인</button></td>
+        <td><button class="btn btn-primary btn-md">등록</button></td>
+        <td><button class="btn btn-primary btn-icon">＋</button></td>
+      </tr>
+      <tr>
+        <td>secondary</td>
+        <td><button class="btn btn-secondary btn-sm">취소</button></td>
+        <td><button class="btn btn-secondary btn-md">수정</button></td>
+        <td><button class="btn btn-secondary btn-icon">✎</button></td>
+      </tr>
+      <tr>
+        <td>danger</td>
+        <td><button class="btn btn-danger btn-sm">삭제</button></td>
+        <td><button class="btn btn-danger btn-md">탈퇴</button></td>
+        <td><button class="btn btn-danger btn-icon">✕</button></td>
+      </tr>
+      <tr>
+        <td>disabled</td>
+        <td><button class="btn btn-primary btn-sm" disabled>확인</button></td>
+        <td><button class="btn btn-secondary btn-md" disabled>수정</button></td>
+        <td><button class="btn btn-danger btn-icon" disabled>✕</button></td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- ===================== 버튼 4가지 생김새 ===================== -->
+  <section id="shapes">
+    <h2>저장소 전체 버튼 — 4가지 생김새(shape)</h2>
+    <p class="lede">
+      <code>buttons.md</code> 실태 조사 결과: 저장소 전체 버튼 66개 중 <b>82%(54개)가 배경도 테두리도 없는 "bare" 버튼</b>입니다. <code>Button</code>은 filled/outline 2개 shape만 지원해 구조적으로 이 82%를 커버할 수 없습니다.
+    </p>
+    <div class="shape-grid">
+      <div class="shape-card">
+        <h4>filled <span class="badge-covered badge-yes">Button 지원</span></h4>
+        <div class="pct">8개 확인 · variant="primary"/"danger"</div>
+        <div class="demo-row"><button class="demo-filled">등록</button></div>
+        <p class="note">배경색 꽉 참, 보통 text-white. ContentWriteModal 등록, PlaylistPickerModal 생성 등</p>
+      </div>
+      <div class="shape-card">
+        <h4>outline <span class="badge-covered badge-yes">Button 지원</span></h4>
+        <div class="pct">8개 확인 · variant="secondary"</div>
+        <div class="demo-row"><button class="demo-outline">취소</button></div>
+        <p class="note">배경 없음, border-2 border-primary. ConfirmOverlay 취소, GoogleLoginButton 등(단 1px 테두리라 완전히 일치하진 않음)</p>
+      </div>
+      <div class="shape-card">
+        <h4>ghost <span class="badge-covered badge-no">미지원</span></h4>
+        <div class="pct">최소 4개 확인 · 0개 전환</div>
+        <div class="demo-row"><button class="demo-ghost">♡</button><button class="demo-ghost">＋</button></div>
+        <p class="note">평소엔 배경·테두리 투명, hover에서만 border/shadow로 드러남. MiniPlayerBar 저장/추천 아이콘 등</p>
+      </div>
+      <div class="shape-card">
+        <h4>bare <span class="badge-covered badge-no">미지원 · 82%</span></h4>
+        <div class="pct">54개 · 압도적 다수</div>
+        <div class="demo-row"><button class="demo-bare">더보기</button><button class="demo-bare">✕</button></div>
+        <p class="note">배경·테두리 전혀 없음. 체크박스, chevron 이동, 탭 전환, 텍스트 링크 등</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LoginActionButton ===================== -->
+  <section id="login-buttons">
+    <h2>LoginActionButton <span style="font-weight:400;font-size:15px;color:var(--color-gray-1)">modals/LoginModal/loginButtons/ (신규, 이번 세션)</span></h2>
+    <p class="lede">
+      Google/Spotify/DEV 임시 로그인 버튼 3종이 각각 반복하던 쉘 클래스+로딩 스피너를 로컬 래퍼로 추출했습니다. 브랜드 색상(Google 흰색, Spotify <code>#1ED760</code>)은 이 3개 파일 밖에서 재사용되지 않는 1회성 스타일이라 공용 <code>Button</code>의 variant로 승격하지 않고 <code>className</code> 오버라이드로 유지합니다.
+    </p>
+    <div class="login-demo">
+      <div class="head"><h3>로그인</h3><button class="close-x">✕</button></div>
+      <div class="body">
+        <button class="login-action-btn lab-google"><span class="icon-circle ic-google">G</span>Google로 로그인</button>
+        <button class="login-action-btn lab-spotify"><span class="icon-circle ic-spotify">♫</span>Spotify로 로그인</button>
+        <div class="dev-label">DEV 임시 로그인</div>
+        <button class="login-action-btn lab-tmp">테스트 사용자 1로 로그인</button>
+        <button class="login-action-btn lab-tmp" disabled style="opacity:.7"><span class="spinner spinner-primary"></span>로그인 중…</button>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:14px;font-size:13px;">
+      마지막 버튼이 <code>isLoading</code> 상태 재현입니다 — 클릭된 버튼만 스피너로 바뀌고(<code>isLoading</code>), 나머지는 그대로 disabled만 됩니다(<code>disabled</code> prop을 <code>isLoading</code>과 분리한 이유).
+    </p>
+  </section>
+
+  <!-- ===================== ui/ 13개 ===================== -->
+  <section id="ui-components">
+    <h2>components/ui/ <span style="font-weight:400;font-size:15px;color:var(--color-gray-1)">13개 · 배럴 없음(개별 경로 import)</span></h2>
+    <p class="lede">
+      <code>shared-component-duplication</code> 사이클(#101~#108)에서 <code>components/</code> 최상위에 흩어져 있던 12개 loose 컴포넌트를 모으고 <code>Button</code>을 더했습니다. 배럴(<code>index.ts</code>)이 없는 이유는 PR #84/#94에서 두 번 겪은 자기참조 순환참조 전례 때문입니다.
+      절반(6/13)은 소비처가 정확히 1곳뿐입니다.
+    </p>
+    <div class="ui-grid">
+
+      <div class="ui-card">
+        <div class="demo"><div class="spinner spinner-lg"></div></div>
+        <div class="info">
+          <div class="top"><h4>LoadingSpinner</h4><span class="consumers consumers-many">13곳</span></div>
+          <p>로딩 스피너. <code>hStyle</code> prop으로 높이만 조절하는 7줄짜리 최소 컴포넌트.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo"><button class="close-x" style="font-size:22px;background:white;border:1px solid var(--color-gray-3)">✕</button></div>
+        <div class="info">
+          <div class="top"><h4>ModalCloseButton</h4><span class="consumers consumers-many">8곳</span></div>
+          <p>모달 X 닫기 버튼. <code>aria-label</code> 기본값 "닫기", <code>className</code>/<code>iconClassName</code>으로 시각 커스터마이즈.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo"><button class="btn btn-primary btn-md">Button</button></div>
+        <div class="info">
+          <div class="top"><h4>Button</h4><span class="consumers consumers-many">9곳</span></div>
+          <p>위 §Button 참고. 9곳 중 6곳이 모달 내부 — 사실상 "모달 인프라" 그룹에 가깝습니다.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo" style="overflow:hidden"><div class="marquee-wrap"><span class="track">이 텍스트는 너무 길어서 자동으로 흐르며 스크롤됩니다 · &nbsp;&nbsp;&nbsp;이 텍스트는 너무 길어서 자동으로 흐르며 스크롤됩니다 · &nbsp;&nbsp;&nbsp;</span></div></div>
+        <div class="info">
+          <div class="top"><h4>TickerText</h4><span class="consumers consumers-many">9곳</span></div>
+          <p>161줄, 13개 중 가장 큼. 넘치는 텍스트를 감지해 자동 마퀴 스크롤(hover 시 재생, 모바일은 별도 로직).</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo" style="background:#b9c2ce"><div style="width:70%;height:70%;border:2px dashed var(--color-primary);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--color-primary);font-weight:700">backdrop + role="dialog"</div></div>
+        <div class="info">
+          <div class="top"><h4>ModalShell</h4><span class="consumers consumers-many">7곳</span></div>
+          <p>백드롭·배경 클릭 판정·<code>role="dialog"</code>·z-index 캡슐화. 29줄, 크기·애니메이션은 각 모달이 className으로 소유.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo"><div style="width:80%;height:56px;background:white;border:2px solid var(--color-primary);border-radius:20px"></div></div>
+        <div class="info">
+          <div class="top"><h4>ModalPanel</h4><span class="consumers consumers-many">6곳</span></div>
+          <p>모달 흰 패널 뼈대만 캡슐화(<code>bg-white border-2 rounded-3xl overflow-hidden flex flex-col</code>). 크기·그림자는 각 모달 소유.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo">
+          <div style="width:180px;background:white;border:2px solid var(--color-primary);border-radius:10px;box-shadow:4px 4px 0px 0px var(--color-primary);padding:12px">
+            <div style="font-size:12px;font-weight:900">삭제할까요?</div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <button class="btn btn-secondary" style="flex:1;padding:5px;font-size:11px;border-radius:6px">취소</button>
+              <button class="btn btn-danger" style="flex:1;padding:5px;font-size:11px;border-radius:6px;border:none">삭제</button>
+            </div>
+          </div>
+        </div>
+        <div class="info">
+          <div class="top"><h4>ConfirmOverlay</h4><span class="consumers consumers-mid">3곳</span></div>
+          <p>삭제 등 확인/취소 다이얼로그, <code>createPortal</code>로 body에 직접 렌더링. <code>ConfirmToast</code>와 같은 문제를 모달형으로 푼 버전.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo" style="background:#fdecea;flex-direction:column;gap:6px">
+          <div style="font-size:12px;font-weight:800;color:#c0392b">오류가 발생했습니다</div>
+          <button style="font-size:10px;background:#c0392b;color:white;border:none;border-radius:5px;padding:4px 10px">다시 시도</button>
+        </div>
+        <div class="info">
+          <div class="top"><h4>ErrorScreen</h4><span class="consumers consumers-one">1곳</span></div>
+          <p><code>sidebar/Drawer.tsx</code> 전용. react-error-boundary의 <code>FallbackProps</code>를 받아 재시도 시 <code>router.refresh()</code> + <code>resetErrorBoundary()</code>.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo" style="flex-direction:column;gap:8px">
+          <div style="font-size:22px">⚠️</div>
+          <button style="font-size:11px;font-weight:700;background:var(--color-accent-yellow);border:none;border-radius:8px;padding:6px 14px">로그인하러 가기</button>
+        </div>
+        <div class="info">
+          <div class="top"><h4>LoginRequestScreen</h4><span class="consumers consumers-one">1곳</span></div>
+          <p><code>app/profile/page.tsx</code> 전용. 비로그인 사용자에게 로그인 모달을 열도록 유도.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo"><div style="background:var(--color-primary);color:white;font-size:11px;font-weight:700;border-radius:10px;padding:8px 14px">📲 앱으로 설치하기</div></div>
+        <div class="info">
+          <div class="top"><h4>PwaInstallBanner</h4><span class="consumers consumers-one">1곳</span></div>
+          <p><code>app/layout.tsx</code> 전용 앱 전역 싱글턴. 124줄, iOS/Chromium UA 분기 + 7일 dismiss TTL.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo" style="font-size:11px;color:var(--color-gray-1)">(비시각 — 서비스워커 등록)</div>
+        <div class="info">
+          <div class="top"><h4>PwaRegister</h4><span class="consumers consumers-one">1곳</span></div>
+          <p><code>app/layout.tsx</code> 전용, 프로덕션 전용 서비스워커 등록. 렌더링 결과물이 없는 로직 컴포넌트.</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo" style="font-size:11px;color:var(--color-gray-1)">(비시각 — react-toastify Provider)</div>
+        <div class="info">
+          <div class="top"><h4>ToastContainer</h4><span class="consumers consumers-one">1곳</span></div>
+          <p><code>app/layout.tsx</code> 전용, <code>react-toastify</code> Provider 래퍼(17줄).</p>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="demo">
+          <div style="background:white;border-radius:10px;padding:10px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:11px;text-align:center">
+            정말 삭제할까요?
+            <div style="display:flex;gap:6px;justify-content:center;margin-top:6px">
+              <span style="background:var(--color-gray-3);border-radius:4px;padding:3px 8px;font-weight:700">취소</span>
+              <span style="background:#ef4444;color:white;border-radius:4px;padding:3px 8px;font-weight:700">확인</span>
+            </div>
+          </div>
+        </div>
+        <div class="info">
+          <div class="top"><h4>ConfirmToast</h4><span class="consumers consumers-one">1곳</span></div>
+          <p><code>post/partials/PostHeader.tsx</code> 전용. <code>react-toastify</code> 토스트 형태 확인 다이얼로그 — <code>ConfirmOverlay</code>와 같은 문제를 다르게 풂(모달 vs 토스트).</p>
+        </div>
+      </div>
+
+    </div>
+    <p class="lede" style="margin-top:18px;font-size:13px;">
+      💡 소비처 1곳뿐인 6개 중 <code>PwaInstallBanner</code>/<code>PwaRegister</code>/<code>ToastContainer</code>는 <code>app/layout.tsx</code>에서만 쓰이는 앱 전역 싱글턴이라 애초에 "여러 곳에서 재사용"이라는 공용 컴포넌트 전제가 없습니다 — <code>components/ui/</code>보다 <code>components/layout/</code>이나 별도 <code>providers/</code> 폴더가 더 맞을 수 있다는 게 <code>shared-ui.md</code>의 관찰입니다.
+    </p>
+  </section>
+
+  <!-- ===================== 모달 구성 ===================== -->
+  <section id="modal">
+    <h2>모달 구성 — ModalShell + ModalPanel + ModalCloseButton</h2>
+    <p class="lede">
+      전 모달이 <code>ModalShell</code>(백드롭) 위에서 동작하지만 그 이후는 모달마다 다릅니다. 아래는 <code>LoginModal</code> 기준 3단 합성 구조 재현입니다.
+    </p>
+    <div class="modal-mockup-wrap">
+      <div class="modal-mockup">
+        <div class="mm-head"><h3>로그인</h3><button class="close-x">✕</button></div>
+        <div class="mm-body">ModalPanel 안쪽 body — 모달마다 자유롭게 구성</div>
+      </div>
+    </div>
+    <table class="modal-table" style="margin-top:20px">
+      <tr><th>모달</th><th>ModalShell</th><th>ModalPanel</th><th>닫기 버튼</th><th>closeOnBackdrop</th></tr>
+      <tr><td>ContentWriteModal</td><td class="tick">✓</td><td class="tick">✓</td><td>있음</td><td>false</td></tr>
+      <tr><td>LoginModal</td><td class="tick">✓</td><td class="tick">✓</td><td>있음</td><td>true</td></tr>
+      <tr><td>PlaylistDetailModal</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">없음</td><td>true</td></tr>
+      <tr><td>PlaylistPickerModal</td><td class="tick">✓</td><td class="tick">✓</td><td>있음</td><td>true</td></tr>
+      <tr><td>PostCardDetailModal(데스크탑)</td><td class="tick">✓</td><td class="cross">자체구현</td><td class="cross">없음</td><td>true</td></tr>
+      <tr><td>PostCardDetailModal(모바일)</td><td class="cross">자체구현</td><td class="cross">자체구현</td><td>있음</td><td>항상 닫힘</td></tr>
+      <tr><td>PrivacyConsentModal</td><td class="tick">✓</td><td class="tick">✓</td><td>있음</td><td>false</td></tr>
+      <tr><td>UserListModal</td><td class="tick">✓</td><td class="tick">✓</td><td>있음</td><td>true</td></tr>
+    </table>
+    <p class="lede" style="margin-top:14px;font-size:13px;">
+      닫기 버튼이 없는 곳은 <code>PlaylistDetailModal</code>과 <code>PostCardDetailModal</code> 데스크탑 변형 2곳뿐입니다 — 배경 클릭/ESC/뒤로가기로만 닫힙니다. 의도된 디자인인지는 <code>modals.md</code>도 판단하지 않고 열어둔 질문입니다.
+      또한 하드 섀도 색상이 <code>shadow-[8px_8px_0px_0px_var(--color-primary)]</code>(3곳)와 <code>#00214D</code> 하드코딩(1곳)으로 나뉘어 있다는 것도 알려진 이슈입니다(백로그 #98).
+    </p>
+  </section>
+
+  <!-- ===================== 검색 위젯 ===================== -->
+  <section id="search">
+    <h2>검색 위젯 — MusicPickerSearch / TrackItem</h2>
+    <p class="lede">
+      <code>search-widget-duplication</code> 사이클(#110~#115)에서 <code>ContentWriteModal</code>과 <code>PlaylistDetailModal</code>이 각자 재구현하던 검색 입력+탭+결과 리스트를 <code>MusicPickerSearch</code> 하나로 통합했습니다.
+    </p>
+    <div class="search-mockup">
+      <div class="search-input-row"><span>🔍</span><input placeholder="음악 검색" value="아이유" readonly /></div>
+      <div class="search-tabs"><div class="active">음원</div><div>유튜브</div></div>
+      <div>
+        <div class="track-row">
+          <div class="track-thumb"></div>
+          <div class="track-meta"><div class="t">좋은 날</div><div class="a">아이유 (IU)</div></div>
+          <div class="track-actions">📦 ✎</div>
+        </div>
+        <div class="track-row">
+          <div class="track-thumb"></div>
+          <div class="track-meta"><div class="t">Blueming</div><div class="a">아이유 (IU)</div></div>
+          <div class="track-actions">📦 ✎</div>
+        </div>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:14px;font-size:13px;">
+      <code>TrackItem</code>은 곡 제목/아티스트명에 <code>TickerText</code>를 이미 쓰고 있지만, <code>MusicPickerSearch</code>/구 <code>SearchDropdown</code>은 자체 결과 렌더링을 따로 구현해 <code>TrackItem</code>을 재사용하지 않습니다 — <code>search.md</code>가 지적한 대로, 폴더가 "공용"처럼 보여도 실제 재사용은 예상보다 좁습니다.
+    </p>
+  </section>
+
+  <footer class="page-footer">
+    이 문서는 다음 근거 자료를 바탕으로 생성되었습니다:
+    <ul>
+      <li><code>docs/component-design/README.md</code> / <code>shared-ui.md</code> / <code>buttons.md</code> / <code>modals.md</code> / <code>search.md</code></li>
+      <li><code>apps/web/app/globals.css</code>(디자인 토큰), <code>apps/web/src/components/ui/*.tsx</code>(실제 클래스 문자열)</li>
+      <li><code>docs/refactors/{shared-component-duplication,search-widget-duplication,mobile-queue-view-duplication}/result.md</code></li>
+    </ul>
+    실제 컴포넌트와 시각적으로 어긋나는 부분을 발견하면 이 문서보다 코드가 항상 우선합니다 — 이 문서는 정적 스냅샷입니다.
+  </footer>
+
+</main>
+</body>
+</html>
