@@ -96,25 +96,27 @@ pnpm format
 
 ---
 
-## 🔧 지금까지 해결한 문제들
+## 기술적 개선
 
-기능 개발 이후에도 구조적 문제를 진단하고 개선하는 리팩터링을 이어가고 있습니다. 각 항목은 진단(PRD) → 설계(ADR) → 구현 → 결과 검증 과정을 거쳤고, 상세 기록은 `docs/refactors/`에 남아있습니다.
+기능을 추가하는 데서 멈추지 않고, 기존 구조의 문제를 다음 순서로 진단하고 개선합니다.
 
-| 문제 영역                   | 무엇을 해결했나                                                                                                                                                                                              | PR                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| 서버 상태 캐싱              | 플레이리스트·로그인정보·게시글상세를 화면마다 따로 `useState`+`useEffect`로 캐싱해, 한 화면에서 바꾼 데이터가 다른 화면에 반영되지 않는 캐시 불일치가 있었음 → TanStack Query 도입으로 캐시 공유·자동 무효화 | [#148](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/148) |
-| 버튼 disabled 스타일 중복   | 버튼 `disabled` 클래스 조합이 파일마다 반복 → 공유 상수로 통일                                                                                                                                               | [#138](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/138) |
-| 로그인 버튼 중복            | 로그인 버튼 3종이 각자 구현됨 → `LoginActionButton`으로 통일                                                                                                                                                 | [#136](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/136) |
-| 게시글 상세 모달 책임 분리  | 상세 모달(329줄)이 데이터 조합·플레이어 연동·라우팅 전환·편집·UX 로그·스와이프까지 7가지 책임을 한 컴포넌트가 전담 → 오케스트레이션 훅 + 서브컴포넌트로 분리(69줄)                                           | [#134](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/134) |
-| 모바일 재생목록 진입점 중복 | 모바일에서 재생목록을 여는 진입점이 2개 있고 각각 다른 화면으로 연결됨 → 단일 진입점으로 통합                                                                                                                | [#123](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/123) |
-| 검색 위젯 중복              | 검색창+탭 전환+상태 메시지+결과 렌더링을 화면마다 재구현 → `MusicPickerSearch` 공용 컴포넌트로 통합                                                                                                          | [#116](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/116) |
-| 공유 컴포넌트/버튼 중복     | 공유 `Button`이 없어 화면마다 스타일을 인라인으로 반복, 공용 컴포넌트가 도메인 폴더와 뒤섞여 있었음 → 공용 `Button` 도입 + `components/ui/` 정리                                                             | [#109](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/109) |
-| 모달 구조/순환참조          | 모달 8개의 구조·관계가 파악되어 있지 않고 순환참조가 존재 → 배럴 구조 정리, 순환참조 제거                                                                                                                    | [#94](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/94)   |
-| 모달 배경/닫기 동작 중복    | 모달 8개가 배경 오버레이·배경 클릭 닫기·z-index·닫기 버튼을 각자 구현 → 공용 `ModalShell`/`ModalCloseButton` 도입                                                                                            | [#78](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/78)   |
-| 게시글 상세 UX 로그 분리    | 상세 모달이 좋아요/댓글 반응 외에 체류시간·재생곡 추적 같은 UX 로그 수집까지 겸함 → `usePostDetailUxLog` 훅으로 분리                                                                                         | [#63](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/63)   |
-| 좋아요/댓글 반응 상태 중복  | 좋아요 낙관적 갱신+롤백 로직이 `PostCard`와 `usePostReactions` 두 곳에 독립 구현 → `usePostLikeToggle`로 합성                                                                                                | [#52](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/52)   |
+```text
+문제 진단 → 요구사항 정리 → 설계 결정 → 구현 → 회귀 검증 → 문서화
+```
 
-진행 중이거나 검토 대기 중인 항목은 [`backlog` 라벨이 붙은 이슈](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/issues?q=is%3Aissue+is%3Aopen+label%3Abacklog)에서 볼 수 있습니다.
+대표적인 개선 사례만 아래에 요약했습니다.
+전체 기록은 [`docs/refactors/`](docs/refactors/)와 연결된 pull request에서 확인할 수 있습니다.
+
+| 문제 | 결정 | 결과 | 근거 |
+| --- | --- | --- | --- |
+| 화면별 `useState`와 `useEffect` 캐시가 서로 달라지는 문제 | TanStack Query를 서버 상태의 단일 관리 계층으로 도입 | 화면 간 캐시 공유와 명시적 무효화가 가능해짐 | [PR #148](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/148) |
+| 게시글 상세 모달이 데이터 조합, 재생, 라우팅, 편집, 로그, 제스처를 모두 담당 | 오케스트레이션 훅과 하위 컴포넌트로 책임 분리 | 핵심 컴포넌트를 329줄에서 69줄로 축소 | [PR #134](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/134) |
+| 모달마다 오버레이, 닫기 동작, z-index를 중복 구현 | `ModalShell`과 `ModalCloseButton` 도입 | 공통 동작과 접근 지점을 하나의 계층으로 통일 | [PR #78](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/78) |
+| 모달 간 배럴 파일과 의존 관계에서 순환 참조 발생 | 공개 API와 import 경계를 재정리 | 모달 의존 방향을 단순화하고 순환 참조 제거 | [PR #94](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/94) |
+| 검색 UI와 상태 처리 로직이 여러 화면에서 반복 | `MusicPickerSearch` 공용 컴포넌트로 통합 | 검색 흐름과 상태 표현을 한 곳에서 관리 | [PR #116](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/116) |
+| 좋아요 낙관적 갱신과 롤백 로직이 두 위치에 독립적으로 존재 | `usePostLikeToggle`로 합성 | 반응 상태 변경 규칙을 단일 경로로 통일 | [PR #52](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/pull/52) |
+
+진행 중인 개선 항목은 [backlog 이슈](https://github.com/Jae-Hyuk-Jang/web17-boostcamp-vibr/issues?q=is%3Aissue+is%3Aopen+label%3Abacklog)에서 확인할 수 있습니다.
 
 ---
 
