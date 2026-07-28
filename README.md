@@ -87,101 +87,8 @@ pnpm format
 
 ## ☁️ 인프라 아키텍처
 
-```mermaid
-flowchart LR
-  %% --- Style Definitions (High Contrast) ---
-  classDef actorNode fill:#ffffff,stroke:#333333,stroke-width:2px,shape:circle,color:#000000;
-  classDef lb fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,rx:5,ry:5,color:#000000;
-  classDef compute fill:#f5f5f5,stroke:#616161,stroke-width:2px,rx:5,ry:5,color:#000000;
-  classDef db fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,shape:cylinder,color:#000000;
-  classDef external fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,rx:5,ry:5,color:#000000;
-  classDef cicd fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,rx:5,ry:5,color:#000000;
+<img width="2102" height="1572" alt="image" src="https://github.com/user-attachments/assets/8b2769c8-1ce6-4437-a5dd-01e7b3187f14" />
 
-  %% 1. CI/CD Pipeline (Top Layer)
-  subgraph CICD ["⚙️ CI/CD Pipeline (Deployment)"]
-    direction LR
-    style CICD fill:none,stroke:none,color:#333333
-    GH["🐱 GitHub Actions"]:::cicd
-    NCR["📦 Container Registry<br/>(NCP NCR)"]:::cicd
-  end
-
-  %% 2. External Actors (Left Layer)
-  subgraph ExternalAccess ["👤 External Access"]
-    direction TB
-    style ExternalAccess fill:none,stroke:none,color:#333333
-    User["User<br/>(Client)"]:::actorNode
-    Admin["Admin<br/>(DevOps)"]:::actorNode
-  end
-
-  %% 3. Main Cloud Infrastructure (Center Layer)
-  subgraph VPC ["☁️ Naver Cloud Platform (VPC)"]
-    direction LR
-    style VPC fill:#f8fcfd,stroke:#00a4d8,stroke-width:2px,rx:10,ry:10,color:#000000
-
-    %% Tier 1: Public
-    subgraph PubSubnet ["🌐 Public Subnet (DMZ)"]
-      direction TB
-      style PubSubnet fill:#f1f8e9,stroke:#558b2f,stroke-width:1px,stroke-dasharray: 5 5,color:#000000
-      ALB["ALB<br/>(Load Balancer)"]:::lb
-      Bastion["Bastion Host<br/>(SSH Gateway)"]:::compute
-      NAT["NAT Gateway<br/>(Outbound)"]:::lb
-    end
-
-    %% Tier 2: Application
-    subgraph AppSubnet ["⚙️ Private Subnet (App Layer)"]
-      direction TB
-      style AppSubnet fill:#fff8e1,stroke:#fbc02d,stroke-width:1px,stroke-dasharray: 5 5,color:#000000
-      FE["FE Container<br/>(Nginx/Next.js)"]:::compute
-      BE["BE Container<br/>(NestJS)"]:::compute
-      WT["Watchtower<br/>(Auto-Deploy)"]:::compute
-    end
-
-    %% Tier 3: Data
-    subgraph DBSubnet ["🗄️ Private Subnet (Data Layer)"]
-      direction TB
-      style DBSubnet fill:#efebe9,stroke:#5d4037,stroke-width:1px,stroke-dasharray: 5 5,color:#000000
-      DB[("MySQL VM<br/>(RDBMS)")]:::db
-      RedisDB[("Redis VM<br/>(Cache)")]:::db
-      Neo4jDB[("Neo4j VM<br/>(Graph DB)")]:::db
-    end
-  end
-
-  %% 4. External APIs (Right Layer)
-  subgraph ThirdParty ["🔌 External Services (3rd Party)"]
-    direction TB
-    style ThirdParty fill:none,stroke:none,color:#333333
-    ITunes["🎵 iTunes API"]:::external
-    YouTube["▶️ YouTube API"]:::external
-  end
-
-  %% ==========================================
-  %% Connections & Traffic Flows
-  %% ==========================================
-
-  %% [CI/CD Flow]
-  GH -->|"1. Build & Push"| NCR
-  WT -.->|"2. Poll for new image"| NCR
-  WT -.->|"3. Restart container"| FE & BE
-
-  %% [Primary User Flow] (Bold lines)
-  User ==>|"HTTPS (443)"| ALB
-  ALB ==>|"Route /"| FE
-  ALB ==>|"Route /api"| BE
-
-  %% [Internal App Logic] (Bold lines)
-  BE ==>|"TCP 3306"| DB
-  BE ==>|"TCP 6379"| RedisDB
-  BE ==>|"Graph Query"| Neo4jDB
-
-  %% [Outbound Flow] (Dashed lines)
-  FE & BE -.->|"API Request"| NAT
-  NAT -.->|"Public IP"| ITunes & YouTube
-
-  %% [Management Flow] (Dashed lines)
-  Admin -.->|"SSH (22)"| Bastion
-  Bastion -.->|"SSH Tunnel"| FE & BE
-  Bastion -.->|"SSH Tunnel"| DB & RedisDB & Neo4jDB
-```
 
 > 위 다이어그램은 원래 설계된 배포 아키텍처를 옮긴 것입니다. **현재는 대상 인프라가 없어** 배포·트리거 워크플로우(`deploy.yml`, `ecsTrigger.yml`)는 수동 실행(`workflow_dispatch`)으로 전환된 상태이며, CI(`ci.yml`)만 push/PR 시 자동 실행됩니다.
 
@@ -213,8 +120,9 @@ flowchart LR
 
 ## 🌟 팀원 소개
 
-|                        J048 김승호                         |                        J055 김예빈                        |                       J100 문예찬                       |                          J237 장재혁                          |
-| :--------------------------------------------------------: | :-------------------------------------------------------: | :-----------------------------------------------------: | :-----------------------------------------------------------: |
-| <img src="https://github.com/seunghok22.png" width="120"/> | <img src="https://github.com/yebinGold.png" width="120"/> | <img src="https://github.com/myc0603.png" width="120"/> | <img src="https://github.com/Jae-Hyuk-Jang.png" width="120"/> |
-|           **J048&nbsp;김승호**<br/>Seung-Ho Kim            |            **J055&nbsp;김예빈**<br/>Ye-Bin Kim            |          **J100&nbsp;문예찬**<br/>Ye-Chan Moon          |            **J237&nbsp;장재혁**<br/>Jae-Hyuk Jang             |
-|        [seunghok22](https://github.com/seunghok22)         |         [yebinGold](https://github.com/yebinGold)         |          [myc0603](https://github.com/myc0603)          |       [Jae-Hyuk-Jang](https://github.com/Jae-Hyuk-Jang)       |
+이 프로젝트의 기반이 된 `web17-Busy`는 부스트캠프 웹/모바일 10기에서 네 명이 함께 개발했습니다.
+
+| 김승호 | 김예빈 | 문예찬 | 장재혁 |
+| :---: | :---: | :---: | :---: |
+| <img src="https://github.com/seunghok22.png" width="100" alt="김승호"/> | <img src="https://github.com/yebinGold.png" width="100" alt="김예빈"/> | <img src="https://github.com/myc0603.png" width="100" alt="문예찬"/> | <img src="https://github.com/Jae-Hyuk-Jang.png" width="100" alt="장재혁"/> |
+| [seunghok22](https://github.com/seunghok22) | [yebinGold](https://github.com/yebinGold) | [myc0603](https://github.com/myc0603) | [Jae-Hyuk-Jang](https://github.com/Jae-Hyuk-Jang) |
