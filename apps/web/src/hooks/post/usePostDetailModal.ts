@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-toastify';
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
 
-import { useModalStore, MODAL_TYPES, usePlayerStore, usePostReactionOverridesStore, useAuthStore } from '@/stores';
+import { useModalStore, MODAL_TYPES, usePlayerStore, useAuthStore } from '@/stores';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useScrollLock, usePostDetail, useLikedUsers, usePostReactions, usePostDetailUxLog, useInlineEditField } from '@/hooks';
 import { EMPTY_POST, DEFAULT_IMAGES } from '@/constants';
@@ -71,11 +71,10 @@ export function usePostDetailModal(): UsePostDetailModalResult {
   const isOwner = userId === post?.author.id;
   const safePost = post ?? passedPost ?? EMPTY_POST;
 
-  const setContentOverride = usePostReactionOverridesStore((s) => s.setContentOverride);
-  const likeOverride = usePostReactionOverridesStore((s) => (postId ? s.likesByPostId[postId] : undefined));
-
-  const isLikedInitially = likeOverride?.isLiked ?? post?.isLiked ?? passedPost?.isLiked ?? false;
-  const initialLikeCount = likeOverride?.likeCount ?? post?.likeCount ?? passedPost?.likeCount ?? 0;
+  // post는 usePostDetail(postDetailQueryKey 캐시)에서 온 값이라, 캐시를 함께 구독하는 다른 소비처
+  // (PostCard 등)가 좋아요를 바꾸면 여기도 그 값을 그대로 반영한다 — 별도 override 조회가 필요 없다.
+  const isLikedInitially = post?.isLiked ?? passedPost?.isLiked ?? false;
+  const initialLikeCount = post?.likeCount ?? passedPost?.likeCount ?? 0;
 
   const reactions = usePostReactions({
     enabled: Boolean(isEnabled && postId),
@@ -135,7 +134,6 @@ export function usePostDetailModal(): UsePostDetailModalResult {
       await updatePost(postId, { content: next });
       toast.success('게시글을 수정했습니다.');
       updatePostContent(next);
-      setContentOverride(postId, { content: next });
     },
     onCommitError: (err) => {
       toast.error('게시글 수정에 실패했습니다.');

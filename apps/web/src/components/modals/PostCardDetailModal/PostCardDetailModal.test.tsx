@@ -5,7 +5,6 @@ import { PostCardDetailModal } from './PostCardDetailModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
 
 const mockPush = jest.fn();
 const mockUsePathname = jest.fn(() => '/');
@@ -189,7 +188,6 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
   beforeEach(() => {
     useModalStore.setState({ isOpen: false, modalType: null, modalProps: {} });
     usePlayerStore.setState({ currentMusic: null, isPlaying: false });
-    usePostReactionOverridesStore.setState({ likesByPostId: {}, commentsByPostId: {}, contentByPostId: {}, deletedPostId: null });
     useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
 
     usePostDetail.mockReturnValue({ post: mockPost(), isLoading: false, error: null, updatePostContent: jest.fn() });
@@ -332,7 +330,6 @@ describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자�
   beforeEach(() => {
     useModalStore.setState({ isOpen: false, modalType: null, modalProps: {} });
     usePlayerStore.setState({ currentMusic: null, isPlaying: false });
-    usePostReactionOverridesStore.setState({ likesByPostId: {}, commentsByPostId: {}, contentByPostId: {}, deletedPostId: null });
     useAuthStore.setState({ userId: 'author-1', isAuthenticated: true, isLoading: false });
 
     usePostReactions.mockReturnValue({ ...defaultReactions });
@@ -344,7 +341,7 @@ describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자�
     toast.error.mockClear();
   });
 
-  it('편집 시작 후 저장에 성공하면 updatePostContent와 setContentOverride가 갱신되고 편집모드가 종료된다', async () => {
+  it('편집 시작 후 저장에 성공하면 updatePostContent가 갱신되고 편집모드가 종료된다', async () => {
     const post = mockPost({ content: 'original', author: { id: 'author-1', nickname: 'author', profileImgUrl: null } });
     const updatePostContent = jest.fn();
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent });
@@ -365,7 +362,6 @@ describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자�
 
     expect(updatePost).toHaveBeenCalledWith('post-1', { content: 'updated content' });
     expect(updatePostContent).toHaveBeenCalledWith('updated content');
-    expect(usePostReactionOverridesStore.getState().contentByPostId['post-1']).toEqual({ content: 'updated content' });
     expect(toast.success).toHaveBeenCalled();
   });
 
