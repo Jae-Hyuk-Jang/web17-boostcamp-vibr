@@ -7,7 +7,7 @@ import { toNotiView } from './noti.mapper';
 import { NotiView } from './noti.types';
 import { MODAL_TYPES, useModalStore } from '@/stores';
 import { useRouter } from 'next/navigation';
-import { useNotiStore } from '@/stores/useNotiStore';
+import useNotifications from '@/hooks/noti/useNotifications';
 import ConfirmOverlay from '@/components/ui/ConfirmOverlay';
 import Button from '@/components/ui/Button';
 
@@ -15,13 +15,8 @@ export default function NotiDrawerContent({ onNavigate }: { onNavigate?: () => v
   const openModal = useModalStore((s) => s.openModal);
   const router = useRouter();
 
-  const rawNotis = useNotiStore((s) => s.notis);
-  const notiFetchStatus = useNotiStore((s) => s.status);
-  const readNoti = useNotiStore((s) => s.readNoti);
-  const readAllNotis = useNotiStore((s) => s.readAllNotis);
-  const deleteAllNotis = useNotiStore((s) => s.deleteAllNotis);
+  const { notis: rawNotis, status: notiFetchStatus, errorMessage, readNoti, readAllNotis, deleteAllNotis } = useNotifications();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const errorMessage = useNotiStore((s) => s.errorMessage);
 
   const notis = useMemo(() => {
     return rawNotis
