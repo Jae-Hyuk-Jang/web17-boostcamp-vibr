@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VIBR 서버 상태 관리 명세서 — TanStack Query 도입</title>
+<style>
+  :root {
+    --color-primary: #00214d;
+    --color-accent-cyan: #00ebc7;
+    --color-accent-pink: #ff5470;
+    --color-accent-yellow: #fde24f;
+    --color-darkblue: #1b2d45;
+    --color-gray-1: #828282;
+    --color-gray-2: #bdbdbd;
+    --color-gray-3: #e0e0e0;
+    --color-gray-4: #f5f5f7;
+    --color-white: #fffffe;
+    --color-black: #191414;
+    --color-error: #ca2a30;
+    --sidebar-w: 280px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Roboto, sans-serif;
+    color: var(--color-primary);
+    background: var(--color-gray-4);
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ---------- 사이드 네비 ---------- */
+  nav.sidebar {
+    position: sticky;
+    top: 0;
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--color-primary);
+    color: white;
+    padding: 24px 20px;
+  }
+  nav.sidebar h1 { font-size: 16px; margin: 0 0 4px; line-height: 1.4; }
+  nav.sidebar .sub { font-size: 11.5px; color: rgba(255,255,255,0.55); margin-bottom: 22px; line-height: 1.6; }
+  nav.sidebar .group-title { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: rgba(255,255,255,0.4); margin: 18px 0 6px 10px; font-weight: 700; }
+  nav.sidebar a { display: block; color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; font-weight: 600; padding: 7px 10px; border-radius: 8px; margin-bottom: 1px; }
+  nav.sidebar a:hover { background: rgba(255,255,255,0.1); color: white; }
+  nav.sidebar .count { color: var(--color-accent-cyan); font-weight: 400; font-size: 11.5px; }
+
+  main { flex: 1; min-width: 0; padding: 40px 48px 120px; max-width: 1180px; }
+
+  section { margin-bottom: 76px; scroll-margin-top: 24px; }
+  section > h2 { font-size: 23px; border-bottom: 3px solid var(--color-primary); padding-bottom: 10px; margin-bottom: 10px; }
+  section > h3 { font-size: 17px; margin-top: 32px; margin-bottom: 8px; color: var(--color-primary); }
+  section > .lede { color: var(--color-gray-1); font-size: 14px; line-height: 1.75; margin-bottom: 24px; max-width: 820px; }
+  section > .lede code, main p code, main li code, table code { background: var(--color-gray-3); padding: 1px 6px; border-radius: 4px; font-size: 0.92em; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; }
+
+  header.hero { background: white; border: 2px solid var(--color-primary); border-radius: 24px; box-shadow: 8px 8px 0px 0px var(--color-primary); padding: 32px 36px; margin-bottom: 56px; }
+  header.hero h1 { margin: 0 0 10px; font-size: 28px; }
+  header.hero p { color: var(--color-gray-1); font-size: 14.5px; line-height: 1.8; max-width: 780px; }
+  header.hero .src-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  header.hero .src-list span { font-size: 11.5px; font-weight: 700; background: var(--color-gray-4); border: 1px solid var(--color-gray-3); border-radius: 999px; padding: 4px 12px; font-family: ui-monospace, monospace; }
+
+  .card { background: white; border: 2px solid var(--color-primary); border-radius: 16px; padding: 20px 22px; }
+
+  /* ---------- 타임라인 ---------- */
+  .timeline { display: flex; gap: 0; align-items: stretch; overflow-x: auto; padding-bottom: 8px; }
+  .timeline .tl-item { flex: 1; min-width: 260px; background: white; border: 2px solid var(--color-primary); border-radius: 16px; padding: 18px 20px; position: relative; }
+  .timeline .tl-arrow { display: flex; align-items: center; justify-content: center; width: 36px; color: var(--color-gray-2); font-size: 22px; flex-shrink: 0; }
+  .tl-item .tl-pr { font-family: ui-monospace, monospace; font-size: 12px; font-weight: 800; color: var(--color-accent-pink); }
+  .tl-item .tl-issues { font-size: 11px; color: var(--color-gray-1); margin: 2px 0 10px; }
+  .tl-item h4 { margin: 0 0 8px; font-size: 15.5px; }
+  .tl-item p { font-size: 12.5px; color: var(--color-gray-1); line-height: 1.65; margin: 0; }
+  .tl-item .tl-badge { display: inline-block; margin-top: 10px; font-size: 10.5px; font-weight: 800; background: #d7f7ee; color: #036b52; padding: 2px 9px; border-radius: 999px; }
+
+  /* ---------- 다이어그램/카드 공용 ---------- */
+  .legend { font-size: 0.85rem; color: var(--color-gray-1); margin-bottom: 10px; line-height: 1.6; }
+  .mermaid { background: white; border: 2px solid var(--color-primary); border-radius: 16px; padding: 18px; overflow-x: auto; margin-bottom: 12px; }
+
+  .diagram-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .diagram-pair .col-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; padding: 3px 10px; border-radius: 999px; display: inline-block; }
+  .col-label.before { background: #ffe1e6; color: #b3123a; }
+  .col-label.after { background: #d7f7ee; color: #036b52; }
+  @media (max-width: 900px) { .diagram-pair { grid-template-columns: 1fr; } }
+
+  /* ---------- 개념 카드 ---------- */
+  .concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .concept-card { background: white; border: 2px solid var(--color-primary); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; }
+  .concept-card h4 { margin: 0 0 6px; font-size: 14.5px; font-family: ui-monospace, monospace; color: var(--color-primary); }
+  .concept-card p.desc { font-size: 12.5px; color: var(--color-gray-1); line-height: 1.65; margin: 0 0 10px; }
+  .concept-card .src { font-size: 11px; font-family: ui-monospace, monospace; color: var(--color-gray-1); border-top: 1px dashed var(--color-gray-3); padding-top: 8px; margin-top: auto; }
+
+  /* ---------- 코드 블록 ---------- */
+  pre.code { background: #0f1b2e; color: #d9e6f2; border-radius: 12px; padding: 16px 18px; overflow-x: auto; font-size: 12.5px; line-height: 1.65; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; margin: 0; }
+  pre.code .cm { color: #7a93ad; }
+  pre.code .kw { color: #7fd7ff; }
+  pre.code .str { color: #b5f4c8; }
+  pre.code .fn { color: #ffd479; }
+  .code-panel { border: 2px solid var(--color-primary); border-radius: 14px; overflow: hidden; }
+  .code-panel .cp-head { background: var(--color-gray-4); font-size: 11.5px; font-weight: 800; padding: 8px 14px; font-family: ui-monospace, monospace; color: var(--color-gray-1); border-bottom: 2px solid var(--color-primary); }
+  .code-panel pre.code { border-radius: 0; }
+
+  /* ---------- 테이블 ---------- */
+  table.spec { border-collapse: collapse; width: 100%; background: white; border: 2px solid var(--color-primary); border-radius: 12px; overflow: hidden; font-size: 12.5px; }
+  table.spec th, table.spec td { padding: 11px 14px; text-align: left; border: 1px solid var(--color-gray-3); vertical-align: top; line-height: 1.55; }
+  table.spec th { background: var(--color-gray-4); font-size: 12px; }
+  table.spec td.mono, table.spec th.mono { font-family: ui-monospace, monospace; }
+  .tick { color: #036b52; font-weight: 900; }
+  .cross { color: #b3123a; font-weight: 900; }
+
+  /* ---------- 배지 ---------- */
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 800; padding: 2px 9px; border-radius: 999px; }
+  .badge-cyan { background: #d7f7ff; color: #036b7a; }
+  .badge-pink { background: #ffe1e6; color: #b3123a; }
+  .badge-yellow { background: #fff3cd; color: #8a6d00; }
+  .badge-gray { background: var(--color-gray-3); color: var(--color-gray-1); }
+
+  /* ---------- 체크리스트 ---------- */
+  ol.howto, ul.howto { padding-left: 22px; font-size: 13.5px; line-height: 1.9; }
+  ol.howto li, ul.howto li { margin-bottom: 6px; }
+
+  .callout { border-left: 4px solid var(--color-accent-pink); background: #fff5f7; border-radius: 0 10px 10px 0; padding: 12px 16px; font-size: 12.5px; line-height: 1.7; color: var(--color-primary); margin: 14px 0; }
+  .callout.cyan { border-left-color: var(--color-accent-cyan); background: #f0fffd; }
+  .callout.yellow { border-left-color: var(--color-accent-yellow); background: #fffaf0; }
+
+  footer.page-footer { border-top: 2px solid var(--color-gray-3); padding-top: 24px; font-size: 12.5px; color: var(--color-gray-1); }
+  footer.page-footer ul { padding-left: 18px; line-height: 1.9; }
+  footer.page-footer code { background: var(--color-gray-3); padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <h1>VIBR 서버 상태 관리</h1>
+  <div class="sub">TanStack Query 도입 명세서 · 2026-08-03</div>
+  <a href="#overview">도입 타임라인 <span class="count">3 PR</span></a>
+  <a href="#why">왜 도입했는가</a>
+  <a href="#architecture">전체 아키텍처 변화</a>
+  <a href="#concepts">핵심 개념 8가지</a>
+  <a href="#querykeys">Query Key 지도 <span class="count">10개</span></a>
+  <a href="#bug39">버그 #39 심층분석</a>
+  <div class="group-title">사이클별 상세</div>
+  <a href="#cycle1">① server-state-caching</a>
+  <a href="#cycle2">② feed-list-query-migration</a>
+  <a href="#cycle3">③ polling-optimistic-update</a>
+  <a href="#boundary">zustand ↔ Query 경계</a>
+  <a href="#debt">남은 부채</a>
+  <a href="#howto">새 데이터 추가 가이드</a>
+</nav>
+
+<main>
+
+  <header class="hero">
+    <h1>VIBR 서버 상태 관리 아키텍처 — TanStack Query 도입 명세서</h1>
+    <p>
+      <code>apps/web</code>은 원래 서버 상태 캐싱 라이브러리 없이 각 화면이 <code>useState</code>+<code>useEffect</code>로 데이터를 개별 페칭했고, 무효화 전파는 zustand의 nonce/bump 스토어(<code>usePlaylistRefreshStore</code>, <code>useFeedRefreshStore</code> 등)가 수동으로 담당했습니다.
+      세 차례의 리팩터링 사이클(PR #148 → #177 → #184)을 거치며 이 역할이 전부 <code>@tanstack/react-query</code>(v5.101.3)의 <code>queryKey</code> 기반 캐시로 이관됐습니다.
+      이 문서는 "무엇이 왜 바뀌었는지"와 "지금 코드가 실제로 어떻게 동작하는지"를 하나로 묶어 설명합니다.
+    </p>
+    <div class="src-list">
+      <span>docs/refactors/server-state-caching/</span>
+      <span>docs/refactors/feed-list-query-migration/</span>
+      <span>docs/refactors/server-polling-optimistic-update/</span>
+      <span>apps/web/src/hooks/**</span>
+      <span>apps/web/src/components/providers/QueryProvider.tsx</span>
+    </div>
+  </header>
+
+  <!-- ===================== 타임라인 ===================== -->
+  <section id="overview">
+    <h2>도입 타임라인</h2>
+    <p class="lede">세 사이클 모두 <code>/refactoring-planner</code> 파이프라인(PRD → ADR → 구현 → Result)을 거쳐 병합됐고, 사이클마다 이전 사이클이 남긴 후속 백로그를 이어받는 형태로 진행됐습니다.</p>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-pr">PR #148</div>
+        <div class="tl-issues">이슈 #139 ~ #145</div>
+        <h4>server-state-caching</h4>
+        <p>플레이리스트/authMe/게시글상세 3개 데이터 경로를 <code>useQuery</code>로 전환. <code>QueryClientProvider</code> 최초 도입. <code>usePlaylistRefreshStore</code> 제거.</p>
+        <span class="tl-badge">병합됨</span>
+      </div>
+      <div class="tl-arrow">→</div>
+      <div class="tl-item">
+        <div class="tl-pr">PR #177</div>
+        <div class="tl-issues">이슈 #166 ~ #175</div>
+        <h4>feed-list-query-migration</h4>
+        <p>피드/프로필/검색/유저목록 5개 무한스크롤 화면을 <code>useInfiniteQuery</code>로 전환. <code>useFeedRefreshStore</code>·<code>usePostDeletionSignalStore</code> 제거.</p>
+        <span class="tl-badge">병합됨</span>
+      </div>
+      <div class="tl-arrow">→</div>
+      <div class="tl-item">
+        <div class="tl-pr">PR #184</div>
+        <div class="tl-issues">이슈 #147, #179 ~ #183</div>
+        <h4>server-polling-optimistic-update</h4>
+        <p>댓글/알림 폴링과 낙관적 갱신+롤백을 <code>useQuery</code>(<code>refetchInterval</code>)+<code>useMutation</code>으로 전환. <b>버그 #39</b> 근본 수정. <code>useNotiStore</code> 제거.</p>
+        <span class="tl-badge">병합됨</span>
+      </div>
+    </div>
+    <div class="callout cyan" style="margin-top:18px;">
+      세 사이클을 관통하는 하나의 패턴: <b>"zustand 스토어가 서버 데이터를 들고 있고, 그 무효화를 사람이 수동으로 각 소비처에 배선하던 지점"</b>을 찾아 <code>queryKey</code> 기반 캐시로 옮기고, 해당 zustand 스토어를 삭제하는 것. 남은 zustand 스토어는 <a href="#boundary">경계 원칙</a>에서 다룹니다.
+    </div>
+  </section>
+
+  <!-- ===================== 왜 도입했는가 ===================== -->
+  <section id="why">
+    <h2>왜 도입했는가 — 구조적 원인이었던 6개 지점</h2>
+    <p class="lede">
+      <code>CLAUDE.md</code>는 "서버 상태와 UI 상태를 같은 종류로 취급하지 말라"고 명시합니다. 도입 전에는 이 원칙이 지켜지지 않아 무효화 전파가 "소비처가 관련 스토어를 빠짐없이 구독했는가"라는 <b>사람이 지켜야 하는 수동 계약</b>이었고, 실제로 이 계약이 최소 2곳에서 깨진 채 발견됐습니다.
+    </p>
+    <table class="spec">
+      <tr><th>데이터 경로</th><th>도입 전 구현</th><th>실제 문제</th><th>도입 후</th></tr>
+      <tr>
+        <td class="mono">playlists</td>
+        <td><code>usePlaylistRefreshStore</code>(nonce+bump)를 소비처마다 개별 구독</td>
+        <td><span class="badge badge-pink">실제 재현된 버그</span> <code>usePlaylistRecommendations</code>가 구독을 빠뜨려 다른 화면에서 바꾼 플레이리스트가 반영 안 됨</td>
+        <td><code>['playlists']</code> 공유 캐시 + <code>invalidateQueries</code></td>
+      </tr>
+      <tr>
+        <td class="mono">authMe</td>
+        <td><code>AuthBootstrap</code>과 <code>usePostReactions</code>가 각각 독립적으로 <code>authMe()</code> 호출</td>
+        <td>게시글 상세를 열 때마다 이미 있는 데이터를 다시 네트워크로 요청</td>
+        <td><code>['authMe']</code> 공유 캐시(<code>staleTime</code> 5분) — 중복 호출 0회</td>
+      </tr>
+      <tr>
+        <td class="mono">postDetail</td>
+        <td><code>passedPost</code> prop-threading으로 일부 진입점만 skip-fetch 최적화, 나머지는 항상 재요청</td>
+        <td><code>ProfilePosts</code>/<code>NotiDrawerContent</code>/<code>PostCard</code>(편집)가 이미 페칭된 postId도 매번 재요청</td>
+        <td><code>['postDetail', postId]</code> 공유 캐시 + <code>initialData</code>로 <code>passedPost</code> 대체</td>
+      </tr>
+      <tr>
+        <td class="mono">피드/프로필 무한스크롤</td>
+        <td><code>useInfiniteScroll</code>(133줄 커스텀 훅) 1개를 5곳이 공유 + <code>useFeedRefreshStore</code>/<code>usePostDeletionSignalStore</code></td>
+        <td>다중 소비처가 구독을 빠뜨릴 위험이 상시 존재(playlists와 같은 클래스의 위험)</td>
+        <td>5개 소비처 각자 <code>useInfiniteQuery</code> + <code>queryKey</code> 자체 소유(사용자별/조건별 격리)</td>
+      </tr>
+      <tr>
+        <td class="mono">댓글</td>
+        <td><code>setTimeout</code> 재귀 스케줄러 + <code>mergeComments</code>/<code>isTmp</code> 수동 병합</td>
+        <td><span class="badge badge-pink">실제 재현된 버그 #39</span> 댓글 작성 성공 직후 강제 <code>refetchComments()</code>가 서버의 아직-반영-안-된 스냅샷으로 로컬 캐시를 덮어써 방금 쓴 댓글이 사라짐</td>
+        <td><code>['comments', postId]</code> <code>useQuery</code>(<code>refetchInterval</code> 함수형) + <code>useMutation</code>, 성공 후 refetch 호출 자체를 없앰</td>
+      </tr>
+      <tr>
+        <td class="mono">알림</td>
+        <td><code>setInterval</code>(5초) + zustand 액션 안에서 읽음/전체읽음/전체삭제 각각 수동 스냅샷·롤백을 3번 반복 구현</td>
+        <td>동일 optimistic-rollback 패턴이 3중 반복, 전용 테스트 0건</td>
+        <td><code>['notifications']</code> <code>useQuery</code>(<code>refetchInterval: 5000</code>) + <code>useMutation</code> 3개로 통일</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- ===================== 전체 아키텍처 변화 ===================== -->
+  <section id="architecture">
+    <h2>전체 아키텍처 변화</h2>
+    <p class="legend">근거: 세 사이클의 adr.md/result.md. 도입 전에는 "화면 → zustand 리프레시 스토어 → 수동 재구독" 경로가 데이터마다 따로 있었고, 도입 후에는 화면들이 하나의 <code>QueryClient</code> 캐시를 <code>queryKey</code>로 공유합니다.</p>
+    <div class="diagram-pair">
+      <div>
+        <span class="col-label before">도입 전</span>
+        <pre class="mermaid">
+graph TD
+  subgraph screens["화면 컴포넌트"]
+    archive[ArchiveView 등]
+    feed[FeedView / ProfileView]
+    postdetail[PostCardDetailModal]
+    noti[Header / Sidebar / NotiDrawer]
+  end
+
+  playlistStore[["usePlaylistRefreshStore<br/>nonce+bump (구독 누락 버그)"]]
+  feedStore[["useFeedRefreshStore"]]
+  delStore[["usePostDeletionSignalStore"]]
+  notiStore[["useNotiStore<br/>setInterval + 수동 롤백×3"]]
+  manualFetch["개별 useState+useEffect 페칭<br/>(requestIdRef 취소 로직 등)"]
+
+  archive -.->|일부만 구독| playlistStore
+  feed --> feedStore
+  feed --> delStore
+  noti --> notiStore
+  postdetail --> manualFetch
+  archive --> manualFetch
+        </pre>
+      </div>
+      <div>
+        <span class="col-label after">도입 후</span>
+        <pre class="mermaid">
+graph TD
+  subgraph screens2["화면 컴포넌트"]
+    archive2[ArchiveView 등]
+    feed2[FeedView / ProfileView]
+    postdetail2[PostCardDetailModal]
+    noti2[Header / Sidebar / NotiDrawer]
+  end
+
+  qc[["QueryClient 캐시<br/>queryKey 기반, staleTime·dedup 내장"]]
+
+  archive2 <-->|usePlaylists + invalidateQueries| qc
+  feed2 <-->|useInfiniteQuery + invalidateQueries/setQueriesData| qc
+  postdetail2 <-->|usePostDetail·usePostReactions| qc
+  noti2 <-->|useNotifications| qc
+        </pre>
+      </div>
+    </div>
+    <div class="callout">
+      리프레시/삭제-신호 전용 zustand 스토어 4개(<code>usePlaylistRefreshStore</code>, <code>useFeedRefreshStore</code>, <code>usePostDeletionSignalStore</code>, <code>useNotiStore</code>)가 전부 삭제되고, 그 책임이 <code>QueryClient</code> 하나로 합쳐졌습니다. 무효화는 이제 "각 소비처가 스토어를 구독했는지"가 아니라 "같은 <code>queryKey</code>를 썼는지"로 판정되므로, 라이브러리가 구조적으로 보장합니다.
+    </div>
+  </section>
+
+  <!-- ===================== 핵심 개념 ===================== -->
+  <section id="concepts">
+    <h2>핵심 개념 8가지</h2>
+    <p class="lede">TanStack Query가 처음 도입되는 팀원이 이 저장소 코드를 읽기 전에 알아야 할 최소 개념 세트입니다. 각 카드는 저장소 안의 실제 사용례를 가리킵니다.</p>
+    <div class="concept-grid">
+      <div class="concept-card">
+        <h4>queryKey</h4>
+        <p class="desc">캐시의 유일한 식별자. 배열이며 뒤에 변수를 붙여 항목별로 캐시를 격리한다(예: postId별로 다른 캐시). <b>키 설계 실수(변수 누락)는 서로 다른 데이터가 섞이는 사고로 직결</b>되므로 이 저장소는 모든 키를 <code>xxxQueryKey(...)</code> 함수로 export해 오너십을 명확히 한다.</p>
+        <span class="src">usePostDetail.ts:24 postDetailQueryKey(postId)</span>
+      </div>
+      <div class="concept-card">
+        <h4>enabled</h4>
+        <p class="desc">조건부로 쿼리 실행 자체를 끈다. 로그인 여부, 이미 데이터가 있는지(<code>passedPost</code>) 등을 반영해 불필요한 네트워크 호출을 원천 차단한다. <code>staleTime</code>이 있어도 <code>enabled</code>가 <code>true</code>면 첫 mount 시 fetch가 시도되므로 함께 낮춰야 한다(구현 중 실제로 발견된 함정).</p>
+        <span class="src">usePostDetail.ts:40 enabled: enabled && Boolean(postId) && !matchedPost</span>
+      </div>
+      <div class="concept-card">
+        <h4>staleTime</h4>
+        <p class="desc">이 시간 안에는 같은 쿼리가 다시 mount돼도 재요청하지 않는다. 기본값은 0 — <b>0인 채로 두면 컴포넌트가 매번 새로 mount되는 화면(모달 열고 닫기 등)에서 캐시가 있어도 계속 재요청된다</b>. authMe/postDetail 모두 <code>pnpm dev</code> 실동작 확인 중에야 이 함정을 실제로 재현하고서 추가했다.</p>
+        <span class="src">useAuthMeQuery.ts:11 AUTH_ME_STALE_TIME_MS = 5분</span>
+      </div>
+      <div class="concept-card">
+        <h4>invalidateQueries vs setQueryData</h4>
+        <p class="desc"><code>invalidateQueries</code>는 "다음 기회에 다시 fetch해라"는 지연 무효화(플레이리스트 변경 후). <code>setQueryData</code>는 캐시를 즉시 직접 덮어써 네트워크 왕복 없이 반영한다(좋아요 수, 댓글 tmp-id 교체). <b>updater가 <code>undefined</code>를 반환하면 no-op</b>이라는 세부 동작이 댓글 롤백 설계를 바꾼 원인이었다.</p>
+        <span class="src">usePostReactions.ts:96, 119</span>
+      </div>
+      <div class="concept-card">
+        <h4>useMutation 3단 콜백</h4>
+        <p class="desc"><code>onMutate</code>(낙관적 반영, 롤백용 스냅샷/tmp-id 기록) → <code>onSuccess</code>(서버 결과로 확정) → <code>onError</code>(실패 시 롤백). 항목 <b>추가</b>(댓글, tmp-id filter 방식)와 필드 <b>갱신/교체</b>(알림, snapshot-restore 방식)는 롤백 전략이 근본적으로 달라 공용 추상화로 묶지 않기로 결정됐다(<a href="#cycle3">사이클 ③ 참고</a>).</p>
+        <span class="src">useNotifications.ts:47-58, usePostReactions.ts:101-127</span>
+      </div>
+      <div class="concept-card">
+        <h4>refetchInterval(함수형)</h4>
+        <p class="desc">고정 숫자 대신 함수를 전달하면 <b>매 스케줄링 시점마다 재평가</b>된다. 댓글 폴링은 이 함수 안에서 컴포넌트 로컬 상태(입력 중인지, 뮤테이션이 진행 중인지)를 클로저로 참조해 <code>false</code>를 반환하는 방식으로 조건부 skip을 구현한다 — 이 저장소에 처음 도입된 패턴이라 회귀 테스트로 꼼꼼히 검증됐다.</p>
+        <span class="src">usePostReactions.ts:133-137</span>
+      </div>
+      <div class="concept-card">
+        <h4>useInfiniteQuery</h4>
+        <p class="desc"><code>getNextPageParam</code>으로 다음 페이지 커서를 도출하고 <code>fetchNextPage</code>로 다음 페이지를 이어붙인다. 스크롤 트리거 배선(<code>useInView</code>) 자체는 데이터와 무관해 <code>useInfiniteScrollTrigger</code> 공유 훅으로 분리했다 — 5개 무한스크롤 화면이 이 훅 하나만 재사용한다.</p>
+        <span class="src">FeedView.tsx:37-45, useInfiniteScrollTrigger.ts</span>
+      </div>
+      <div class="concept-card">
+        <h4>QueryClientProvider 싱글턴</h4>
+        <p class="desc"><code>'use client'</code> 컴포넌트로 <code>ToastProvider</code>와 동일한 패턴으로 <code>app/layout.tsx</code>를 감싼다. 모듈 스코프 싱글턴 <code>QueryClient</code>를 쓴다 — 서버 컴포넌트/SSR 하이드레이션 경계가 필요한 곳이 없어(모든 소비 훅이 <code>'use client'</code>) 요청별 팩토리가 불필요했다.</p>
+        <span class="src">components/providers/QueryProvider.tsx</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== Query Key 지도 ===================== -->
+  <section id="querykeys">
+    <h2>Query Key 지도 — 현재 저장소의 10개 캐시</h2>
+    <p class="legend">근거: <code>grep -rn "QueryKey\s*=" apps/web/src</code>. 각 키는 정의 파일이 <code>export</code>해 오너십을 명확히 하고, 소비처는 이 함수를 import해서만 캐시에 접근한다 — 문자열 키를 직접 하드코딩하는 곳은 없다.</p>
+    <table class="spec">
+      <tr><th class="mono">queryKey</th><th>소유 파일</th><th>종류</th><th>주요 소비처</th><th>쓰기 지점</th></tr>
+      <tr><td class="mono">['playlists']</td><td class="mono">usePlaylists.ts</td><td>useQuery</td><td>ArchiveView, ArchiveViewHeader, PlaylistDetailModal, PlaylistPickerModal</td><td><code>invalidateQueries</code>(3곳)</td></tr>
+      <tr><td class="mono">['authMe']</td><td class="mono">useAuthMeQuery.ts</td><td>useQuery(staleTime 5분)</td><td>AuthBootstrap, usePostReactions</td><td>없음(읽기 전용, 로그인/로그아웃은 별도 store)</td></tr>
+      <tr><td class="mono">['postDetail', postId]</td><td class="mono">usePostDetail.ts</td><td>useQuery(staleTime 1분, initialData)</td><td>usePostDetailModal, ProfilePostsFeed(프리페치 시딩)</td><td><code>setQueryData</code>(좋아요/댓글수/본문수정)</td></tr>
+      <tr><td class="mono">['comments', postId]</td><td class="mono">usePostReactions.ts</td><td>useQuery(refetchInterval 함수형) + useMutation</td><td>게시글 상세 댓글 UI</td><td><code>setQueryData</code>(onMutate/onSuccess/onError)</td></tr>
+      <tr><td class="mono">['notifications']</td><td class="mono">useNotifications.ts</td><td>useQuery(refetchInterval 5000) + useMutation×3</td><td>Header, Sidebar, NotiDrawerContent, NotiPollingGate</td><td><code>setQueryData</code>(onMutate/onError 롤백)</td></tr>
+      <tr><td class="mono">['feed']</td><td class="mono">FeedView.tsx</td><td>useInfiniteQuery</td><td>FeedView</td><td><code>invalidateQueries</code>(글 작성), <code>setQueriesData</code>(PostHeader 삭제)</td></tr>
+      <tr><td class="mono">['profileGrid', userId]</td><td class="mono">ProfileView.tsx</td><td>useInfiniteQuery</td><td>ProfileView</td><td>사용자별 키 격리로 별도 무효화 불필요</td></tr>
+      <tr><td class="mono">['profilePostsFeed', userId]</td><td class="mono">ProfilePostsFeed.tsx</td><td>useInfiniteQuery</td><td>ProfilePostsFeed</td><td>각 항목이 postDetailQueryKey로 프리페치 시딩</td></tr>
+      <tr><td class="mono">['userList', userId, title]</td><td class="mono">UserListModal.tsx</td><td>useInfiniteQuery</td><td>UserListModal(팔로워/팔로잉)</td><td><code>setQueryData</code>(팔로우 토글 로컬 갱신)</td></tr>
+      <tr><td class="mono">['userSearch', trimmedQuery]</td><td class="mono">useUserSearch.ts</td><td>useInfiniteQuery(디바운스 300ms)</td><td>검색 위젯</td><td>없음(읽기 전용)</td></tr>
+    </table>
+    <h3>소비 관계 다이어그램</h3>
+    <pre class="mermaid">
+graph LR
+  subgraph consumers["소비 컴포넌트/훅"]
+    c_archive["ArchiveView·ArchiveViewHeader<br/>PlaylistPickerModal·PlaylistDetailModal"]
+    c_auth["AuthBootstrap·usePostReactions"]
+    c_detail["usePostDetailModal"]
+    c_comment["게시글 상세 댓글 UI"]
+    c_noti["Header·Sidebar<br/>NotiDrawerContent·NotiPollingGate"]
+    c_feed["FeedView·PostHeader"]
+    c_profile["ProfileView"]
+    c_profileposts["ProfilePostsFeed"]
+    c_userlist["UserListModal"]
+    c_search["검색 위젯"]
+  end
+
+  subgraph keys["queryKey"]
+    k_playlists[["['playlists']"]]
+    k_authme[["['authMe']"]]
+    k_postdetail[["['postDetail', postId]"]]
+    k_comments[["['comments', postId]"]]
+    k_noti[["['notifications']"]]
+    k_feed[["['feed']"]]
+    k_profilegrid[["['profileGrid', userId]"]]
+    k_profileposts[["['profilePostsFeed', userId]"]]
+    k_userlist[["['userList', userId, title]"]]
+    k_search[["['userSearch', query]"]]
+  end
+
+  c_archive --> k_playlists
+  c_auth --> k_authme
+  c_detail --> k_postdetail
+  c_comment --> k_comments
+  c_noti --> k_noti
+  c_feed --> k_feed
+  c_profile --> k_profilegrid
+  c_profileposts --> k_profileposts
+  c_profileposts -.->|프리페치 시딩| k_postdetail
+  c_userlist --> k_userlist
+  c_search --> k_search
+    </pre>
+    <div class="callout yellow">
+      눈에 띄는 지점: <code>['authMe']</code>와 <code>['postDetail', postId]</code>는 소비처가 서로 다른데도 같은 캐시를 공유한다 — 이것이 정확히 도입 목적(중복 요청 제거)이었다. <code>ProfilePostsFeed</code>는 자기 목록 키(<code>profilePostsFeed</code>) 외에 <code>postDetail</code> 캐시에도 프리페치로 값을 써 넣는 유일한 "다른 키에 쓰는" 소비처다.
+    </div>
+  </section>
+
+  <!-- ===================== 버그 #39 심층분석 ===================== -->
+  <section id="bug39">
+    <h2>버그 #39 심층분석 — "방금 쓴 댓글이 사라지는" 근본 원인과 수정</h2>
+    <p class="lede">
+      세 사이클 중 유일하게 <b>실제 사용자 영향이 있는 버그</b>를 수정한 지점입니다. 원인은 "낙관적 갱신 이후 굳이 다시 서버에 물어보는" 코드 자체였고, 수정은 새 기능 추가가 아니라 <b>불필요한 재조회 호출 하나를 제거</b>하는 것이었습니다 — TanStack Query 도입이 근본 원인을 어떻게 구조적으로 없앴는지 보여주는 가장 압축적인 사례입니다.
+    </p>
+    <div class="diagram-pair">
+      <div>
+        <span class="col-label before">도입 전 (버그 재현)</span>
+        <pre class="mermaid">
+sequenceDiagram
+    participant U as 사용자
+    participant H as usePostReactions(Before)
+    participant L as 로컬 상태(useState)
+    participant S as apps/api
+
+    U->>H: submitComment("방금 쓴 댓글")
+    H->>L: optimistic append (tmp-id)
+    H->>S: POST /comment
+    S-->>H: 201 Created (id: real-id)
+    H->>L: tmp-id → real-id 치환
+    H->>S: refetchComments() 즉시 재호출
+    Note right of H: 이때 백그라운드 폴링 응답도<br/>비슷한 시점에 도착할 수 있음
+    S-->>H: 서버 스냅샷(방금 쓴 댓글 미반영일 수 있음)
+    H->>L: mergeComments(스냅샷, tmp 목록)
+    Note over L: 서버 스냅샷에 없으면<br/>방금 쓴 댓글이 사라짐 — 버그 #39
+        </pre>
+      </div>
+      <div>
+        <span class="col-label after">도입 후 (수정됨)</span>
+        <pre class="mermaid">
+sequenceDiagram
+    participant U as 사용자
+    participant H as usePostReactions(After)
+    participant C as QueryClient 캐시(comments)
+    participant S as apps/api
+
+    U->>H: submitComment("방금 쓴 댓글")
+    H->>C: onMutate: cancelQueries + optimistic append(tmp-id)
+    H->>S: POST /comment (useMutation)
+    S-->>H: 201 Created (id: real-id)
+    H->>C: onSuccess: tmp-id → real-id 캐시 내 치환
+    Note over C: refetch를 호출하지 않음 —<br/>mutation 자신의 결과를 신뢰
+    loop refetchInterval(폴링)
+        H->>S: GET /comments
+        S-->>H: 서버 스냅샷(이미 반영됨)
+        H->>C: setQueryData(스냅샷으로 갱신)
+    end
+    Note over C: 방금 쓴 댓글 유지됨
+        </pre>
+      </div>
+    </div>
+    <table class="spec">
+      <tr><th>비교 항목</th><th>Before</th><th>After</th></tr>
+      <tr><td>댓글 작성 성공 직후</td><td>tmp-id 치환 <b>+ 강제 refetchComments()</b></td><td>tmp-id 치환만, refetch 호출 없음</td></tr>
+      <tr><td>병합 로직</td><td><code>mergeComments</code>/<code>isTmp</code>(폴링 스냅샷과 로컬 tmp를 매번 수동 병합)</td><td>없음 — 캐시가 유일한 진실 공급원</td></tr>
+      <tr><td>왜 이게 고쳐지나</td><td>-</td><td>mutation의 <code>onSuccess</code> 결과를 신뢰하고 즉시 재검증하지 않으므로, 서버 read-after-write 지연과 경쟁할 코드 경로 자체가 없어짐</td></tr>
+      <tr><td>재현 테스트</td><td><code>usePostReactions.test.ts</code>에 characterization으로 고정</td><td>같은 테스트가 "사라지지 않는다"로 갱신(<code>[수정 완료·버그 #39]</code>)</td></tr>
+    </table>
+    <div class="callout">
+      완전히 해결된 것은 아닙니다 — 이론적으로 폴링 주기(5초)보다 백엔드 replica lag이 더 길면 여전히 재현 가능합니다(<code>result.md</code> Remaining Debt에 명시). 이번 수정이 없앤 것은 "성공 직후 스스로 강제로 재조회해 자기 자신의 쓰기 결과를 덮어쓰는" 코드였습니다.
+    </div>
+  </section>
+
+  <!-- ===================== 사이클 ① ===================== -->
+  <section id="cycle1">
+    <h2>① server-state-caching — PR #148</h2>
+    <p class="lede">3개의 독립적인 데이터 경로(플레이리스트/authMe/게시글상세)를 <code>useQuery</code> 기반 공용 훅으로 각각 전환. <code>QueryClientProvider</code>가 이 사이클에서 처음 도입됐다.</p>
+
+    <h3>usePlaylists — 무효화 누락 버그의 구조적 해결</h3>
+    <div class="code-panel">
+      <div class="cp-head">apps/web/src/hooks/playlist/usePlaylists.ts</div>
+      <pre class="code">'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import { getAllPlaylists } from '@/api/internal';
+
+export const PLAYLISTS_QUERY_KEY = ['playlists'] as const;
+
+export const usePlaylists = (enabled: boolean = true) =>
+  useQuery({
+    queryKey: PLAYLISTS_QUERY_KEY,
+    queryFn: getAllPlaylists,
+    enabled,
+  });</pre>
+    </div>
+    <p class="lede" style="margin-top:10px;">플레이리스트를 바꾸는 3곳(<code>ArchiveView</code>/<code>ArchiveViewHeader</code>/<code>PlaylistDetailModal</code>)은 이제 <code>queryClient.invalidateQueries({'{'} queryKey: PLAYLISTS_QUERY_KEY {'}'})</code> 한 줄만 호출하면 되고, 원래 이 nonce 스토어를 아예 구독하지 않았던 <code>PlaylistPickerModal</code>도 같은 캐시를 쓰게 되며 부수적으로 함께 정상화됐다.</p>
+
+    <h3>useAuthMeQuery — staleTime 함정을 실동작으로 발견</h3>
+    <div class="code-panel">
+      <div class="cp-head">apps/web/src/hooks/auth/client/useAuthMeQuery.ts</div>
+      <pre class="code">export const AUTH_ME_QUERY_KEY = ['authMe'] as const;
+
+// staleTime을 두지 않으면(기본값 0) usePostReactions가 게시글 상세를 열 때마다
+// 쿼리 옵저버가 새로 mount되어 매번 재요청한다 — AuthBootstrap이 이미 채워둔
+// 캐시를 히트하게 하려면 필요.
+const AUTH_ME_STALE_TIME_MS = 5 * 60 * 1000;
+
+export const useAuthMeQuery = (enabled: boolean = true) =>
+  useQuery({
+    queryKey: AUTH_ME_QUERY_KEY,
+    queryFn: authMe,
+    enabled,
+    retry: false,
+    staleTime: AUTH_ME_STALE_TIME_MS,
+  });</pre>
+    </div>
+    <div class="callout yellow">
+      <b>실동작 확인 중 발견된 함정</b>: 처음 구현했을 때는 <code>staleTime</code>이 없었고, 정적 테스트(각 테스트가 새 <code>QueryClient</code>를 써서 격리됨)는 이를 잡아내지 못했다. <code>pnpm dev</code>로 게시글 상세를 3번 열어보고 나서야 매번 추가 네트워크 호출이 발생하는 회귀를 실제로 재현했다 — "개발환경 실동작 확인은 위임하지 않는다"는 워크플로 원칙이 실제로 버그를 잡은 사례.
+    </div>
+
+    <h3>usePostDetail — passedPost prop-threading을 initialData로 대체</h3>
+    <div class="code-panel">
+      <div class="cp-head">apps/web/src/hooks/post/usePostDetail.ts</div>
+      <pre class="code">export const postDetailQueryKey = (postId: string) => ['postDetail', postId] as const;
+
+export function usePostDetail({ enabled, postId, passedPost }: Params): Result {
+  const matchedPost = postId && passedPost && passedPost.id === postId ? passedPost : undefined;
+
+  const { data, isPending, isError, error } = useQuery({
+    queryKey: postDetailQueryKey(postId ?? ''),
+    queryFn: () => getPostDetail(postId as string),
+    // passedPost가 이미 일치하면 fetch 자체를 건너뛴다
+    // (initialData는 fetch 없이도 캐시를 시딩함)
+    enabled: enabled && Boolean(postId) && !matchedPost,
+    initialData: matchedPost,
+    staleTime: POST_DETAIL_STALE_TIME_MS, // 1분
+  });
+  // ...
+}</pre>
+    </div>
+    <p class="lede" style="margin-top:10px;">이전엔 <code>FeedList</code>/<code>FeedView</code>만 <code>passedPost</code>를 넘겨 skip-fetch 최적화를 받았고, <code>ProfilePosts</code>/<code>NotiDrawerContent</code>/<code>PostCard</code>(편집)는 postId만으로 항상 재요청했다. <code>queryKey</code> 기반 캐시는 이 4개 진입점 전부에서 동일 postId 재요청 시 캐시를 공유하게 만든다 — <code>enabled</code>를 <code>!matchedPost</code>로 함께 낮춰야 "네트워크 호출 없음"이 실제로 보장된다는 것도 구현 중 드러난 세부 동작이었다.</p>
+  </section>
+
+  <!-- ===================== 사이클 ② ===================== -->
+  <section id="cycle2">
+    <h2>② feed-list-query-migration — PR #177</h2>
+    <p class="lede">5개 무한스크롤 화면(피드/프로필그리드/프로필게시글목록/유저목록/유저검색)을 리스크가 낮은 순서로 <code>useInfiniteQuery</code>로 전환. 리프레시/삭제-신호 전용 zustand 스토어 2개(<code>useFeedRefreshStore</code>, <code>usePostDeletionSignalStore</code>)를 삭제.</p>
+
+    <h3>공유 스크롤 트리거 — 데이터와 무관한 배선만 분리</h3>
+    <div class="code-panel">
+      <div class="cp-head">apps/web/src/hooks/useInfiniteScrollTrigger.ts</div>
+      <pre class="code">export function useInfiniteScrollTrigger({ hasNextPage, isFetchingNextPage, fetchNextPage }: Params) {
+  const { ref, inView: isInView } = useInView({ threshold: 0.8, rootMargin: '200px' });
+
+  useEffect(() => {
+    if (isInView && hasNextPage && !isFetchingNextPage) fetchNextPage();
+  }, [isInView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  return ref;
+}</pre>
+    </div>
+
+    <h3>FeedView — 다중 소스 커서 + invalidateQueries/setQueriesData</h3>
+    <div class="code-panel">
+      <div class="cp-head">apps/web/src/components/feed/FeedView.tsx</div>
+      <pre class="code">export const feedQueryKey = ['feed'] as const;
+
+const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+  queryKey: feedQueryKey,
+  queryFn: async ({ pageParam }: { pageParam: Cursor | undefined }): Promise&lt;FeedPage&gt; => {
+    if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300));
+    return getFeedPosts(pageParam);
+  },
+  initialPageParam: undefined as Cursor | undefined,
+  getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.nextCursor : undefined),
+});
+
+const ref = useInfiniteScrollTrigger({
+  hasNextPage: Boolean(hasNextPage),
+  isFetchingNextPage,
+  fetchNextPage: () => { void fetchNextPage(); },
+});</pre>
+    </div>
+    <p class="lede" style="margin-top:10px;">글 작성 시 <code>useFeedRefreshStore.bump()</code> 호출부는 <code>queryClient.invalidateQueries({'{'} queryKey: feedQueryKey {'}'})</code>로 대체됐다. 게시글 삭제 신호는 별도 스토어 대신 <code>PostHeader</code>가 캐시를 직접 조작한다:</p>
+    <div class="code-panel">
+      <div class="cp-head">apps/web/src/components/post/partials/PostHeader.tsx</div>
+      <pre class="code">// 피드 목록 캐시에서 직접 항목을 제거한다
+// (프로필 그리드는 기존에도 삭제 신호를 받지 않았음 — 그대로 유지)
+queryClient.setQueriesData({ queryKey: feedQueryKey }, (old: InfiniteData&lt;FeedPage&gt; | undefined) => {
+  if (!old) return old;
+  return { ...old, pages: old.pages.map((page) => ({ ...page, posts: page.posts.filter((p) => p.id !== post.id) })) };
+});</pre>
+    </div>
+    <div class="callout">
+      <b>예상하지 못했던 단순화</b>: <code>ProfileView</code>의 <code>isMyProfile</code>일 때만 쓰던 <code>resetKey</code>(nonce 기반 강제 리마운트) 로직이 완전히 사라졌다. <code>['profileGrid', userId]</code> 자체가 사용자별로 이미 격리돼 있어, 다른 사람 프로필을 봤다가 돌아와도 각자의 캐시를 그대로 재사용하면 되기 때문이다 — ADR 작성 시점엔 "참조만 제거"로 적었는데 구현하며 로직 자체가 불필요해짐을 발견했다.
+    </div>
+  </section>
+
+  <!-- ===================== 사이클 ③ ===================== -->
+  <section id="cycle3">
+    <h2>③ server-polling-optimistic-update — PR #184</h2>
+    <p class="lede">댓글(<code>usePostReactions</code>)과 알림(<code>useNotiStore</code>/<code>useNotiPolling</code>)의 수동 폴링·optimistic 갱신을 전환. <a href="#bug39">버그 #39</a>를 이 사이클에서 근본 수정했다.</p>
+
+    <h3>댓글 — refetchInterval 함수형 + useMutation 3단 콜백</h3>
+    <div class="code-panel">
+      <div class="cp-head">apps/web/src/hooks/post/usePostReactions.ts</div>
+      <pre class="code">export const commentsQueryKey = (postId: string) => ['comments', postId] as const;
+
+export const getEffectivePollMs = (base: number) => {
+  const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+  if (isHidden) return Math.max(base * 6, 30000); // 탭 숨김 시 6배·최소 30초
+  return base;
+};
+
+const createCommentMutation = useMutation({
+  mutationFn: (content: string) => createComment({ postId, content }),
+  onMutate: async (content) => {
+    await queryClient.cancelQueries({ queryKey: commentsQueryKey(postId) });
+    const tmpId = `tmp-${Date.now()}`;
+    queryClient.setQueryData&lt;CommentItem[]&gt;(commentsQueryKey(postId), (old = []) => [...old, optimistic]);
+    return { tmpId };
+  },
+  onSuccess: (res, _content, context) => {
+    // tmp id -> 서버 id로 캐시 내 치환만 한다 — 여기서 refetch를 다시 부르지 않는 것이
+    // "방금 쓴 댓글이 사라지는" #39 race를 구조적으로 없앤다.
+    queryClient.setQueryData&lt;CommentItem[]&gt;(commentsQueryKey(postId), (old = []) =>
+      old.map((c) => (c.id === context?.tmpId ? { ...c, id: res.id } : c)));
+  },
+  onError: (_err, _content, context) => {
+    // snapshot 전체를 되돌리는 대신, 실패한 낙관적 항목만 제거한다.
+    queryClient.setQueryData&lt;CommentItem[]&gt;(commentsQueryKey(postId), (old = []) =>
+      old.filter((c) => c.id !== context?.tmpId));
+  },
+});
+
+const { data: comments = [] } = useQuery({
+  queryKey: commentsQueryKey(postId),
+  queryFn: async () => safeComments(await getComments(postId)),
+  enabled,
+  refetchInterval: () => {
+    // 입력 중/전송 중이면 skip — 매 스케줄링 시점마다 재평가되는 함수형이라 가능
+    if (commentText.trim().length > 0 || createCommentMutation.isPending) return false;
+    return getEffectivePollMs(pollMs);
+  },
+});</pre>
+    </div>
+    <div class="callout yellow">
+      <b>ADR에서 벗어난 결정(구현 중 발견)</b>: 원래는 <code>onMutate</code>에서 <code>previous</code> 전체 스냅샷을 저장했다가 <code>onError</code>에서 복원하는 교과서적 패턴을 계획했다. 그런데 쿼리가 한 번도 fetch되지 않은 시점에 mutation이 시작되면 <code>previous</code>가 <code>undefined</code>이고, <b><code>setQueryData</code>는 updater 결과가 <code>undefined</code>면 캐시를 건드리지 않는다</b>는 라이브러리 동작 때문에 롤백이 씹히는 문제를 발견했다. 그래서 "실패한 tmp-id 항목만 filter로 제거"하는 방식으로 바꿨다 — 결과적으로 원래(리팩터링 전) 코드의 롤백 방식과 동일한 접근이 됐다. 알림 쪽은 필드갱신/전체교체 셰이프라 이 문제가 없어 snapshot-restore를 그대로 유지했다.
+    </div>
+
+    <h3>알림 — useNotifications 훅으로 zustand 스토어 완전 대체</h3>
+    <div class="code-panel">
+      <div class="cp-head">apps/web/src/hooks/noti/useNotifications.ts</div>
+      <pre class="code">export const notiQueryKey = ['notifications'] as const;
+
+const isEnabled = isAuthenticated && !isLoading;
+
+const { data: notis = [], isLoading, isError, error } = useQuery({
+  queryKey: notiQueryKey,
+  queryFn: async () => (await fetchNotis()) as NotiResponseDto[],
+  enabled: isEnabled,
+  refetchInterval: isEnabled ? 5000 : false,
+});
+
+const status = !isEnabled ? 'no-login' : isLoading ? 'loading' : isError ? 'error' : 'success';
+const unreadCount = notis.filter((n) => !n.isRead).length; // 파생값 — 별도 상태 불필요
+
+const readNotiMutation = useMutation({
+  mutationFn: (notiId: string) => markNotiRead(notiId),
+  onMutate: async (notiId) => {
+    await queryClient.cancelQueries({ queryKey: notiQueryKey });
+    const previous = queryClient.getQueryData&lt;NotiResponseDto[]&gt;(notiQueryKey);
+    queryClient.setQueryData&lt;NotiResponseDto[]&gt;(notiQueryKey, (old = []) =>
+      old.map((n) => (n.id === notiId ? { ...n, isRead: true } : n)));
+    return { previous };
+  },
+  onError: (_err, _notiId, context) => {
+    if (context?.previous) queryClient.setQueryData(notiQueryKey, context.previous);
+  },
+});
+// readAllNotisMutation, deleteAllNotisMutation도 동일한 onMutate/onError 형태</pre>
+    </div>
+    <p class="lede" style="margin-top:10px;">
+      <code>Header</code>·<code>Sidebar</code>·<code>NotiDrawerContent</code>·<code>NotiPollingGate</code> 4곳이 모두 <code>useNotifications()</code>를 각자 호출하지만, 같은 <code>notiQueryKey</code>를 구독하므로 TanStack Query가 중복 네트워크 요청을 자동으로 합친다 — <code>['authMe']</code> dedup과 동일한 패턴이다. <code>NotiPollingGate</code>는 루트에 상시 마운트돼 폴링 구독 자체를 유지하는 역할만 한다.
+    </p>
+  </section>
+
+  <!-- ===================== zustand ↔ Query 경계 ===================== -->
+  <section id="boundary">
+    <h2>zustand ↔ TanStack Query 경계 원칙</h2>
+    <p class="lede">
+      세 사이클을 거치며 삭제된 4개 스토어(<code>usePlaylistRefreshStore</code>, <code>useFeedRefreshStore</code>, <code>usePostDeletionSignalStore</code>, <code>useNotiStore</code>)는 모두 <b>"서버 데이터를 들고 있거나, 그 무효화 시점을 수동으로 알리는" 스토어</b>였습니다. 반대로 지금 남아있는 zustand 스토어는 전부 이 기준에 해당하지 않습니다.
+    </p>
+    <table class="spec">
+      <tr><th>남은 zustand 스토어</th><th>왜 Query로 옮기지 않았는가</th></tr>
+      <tr><td class="mono">useAuthStore</td><td>인증 상태 자체(전역 UI 게이트) — <code>authMe</code> 쿼리의 파생 상태를 담는 저장소일 뿐, 별도 네트워크 호출을 만들지 않는다</td></tr>
+      <tr><td class="mono">useModalStore</td><td>모달/드로어 UI 상태, 서버 데이터 아님</td></tr>
+      <tr><td class="mono">useNotiOverlayStore</td><td>모바일 알림 오버레이 열림/닫힘 UI 신호</td></tr>
+      <tr><td class="mono">usePlayerStore / useSpotifyPlayerStore / useSpotifyAuthStore</td><td>재생 큐/재생 상태 — 서버가 아니라 브라우저 SDK/iframe 상태를 반영</td></tr>
+      <tr><td class="mono">usePostReactionOverridesStore</td><td>좋아요/댓글수/본문/삭제 오버라이드 — 각 사이클 PRD에서 명시적으로 Out of Scope로 남긴 항목(아래 <a href="#debt">남은 부채</a> 참고)</td></tr>
+      <tr><td class="mono">useProfileStore</td><td>프로필 화면의 팔로우/팔로잉 카운트 등 — 마찬가지로 Out of Scope, 백로그 #178</td></tr>
+    </table>
+    <div class="callout cyan">
+      <b>판단 기준</b>: "여러 컴포넌트에 걸쳐 동기화가 필요한 서버 데이터의 값"이면 <code>queryKey</code> 캐시(<code>setQueryData</code>)로, "전역 UI 상태/이벤트성 신호"면 zustand로 — <code>CLAUDE.md</code>의 상태 관리 원칙과 동일하다. 새 데이터를 어디에 둘지 헷갈리면 <a href="#howto">아래 가이드</a>를 따른다.
+    </div>
+  </section>
+
+  <!-- ===================== 남은 부채 ===================== -->
+  <section id="debt">
+    <h2>남은 부채 — 아직 Query로 옮기지 않은 것들</h2>
+    <table class="spec">
+      <tr><th>항목</th><th>현재 상태</th><th>비고</th></tr>
+      <tr><td class="mono">usePostReactionOverridesStore</td><td>여전히 zustand(좋아요/댓글수/본문/삭제 오버라이드)</td><td>세 사이클 모두 명시적으로 Out of Scope — 4개 도메인(feed/modals/post/hooks-post)이 공유 중, 별도 검토 필요</td></tr>
+      <tr><td class="mono">useProfileStore</td><td>여전히 zustand(52줄, 팔로우 토글 등)</td><td><span class="badge badge-cyan">백로그 #178</span> 쿼리 캐시 전환 검토 대상으로 남아있음</td></tr>
+      <tr><td class="mono">ProfilePostsFeed N+1</td><td>서로 다른 postId N개를 각각 요청 — 캐시 공유로 "재요청"만 없앴을 뿐 최초 요청 개수는 그대로</td><td><span class="badge badge-cyan">백로그 #146</span> 목록 API가 상세 필드를 함께 내려주는 API 계약 변경 필요(프론트엔드 단독으로 해결 불가)</td></tr>
+      <tr><td class="mono">플레이리스트 상세(selectPlaylist)</td><td><code>useQuery</code> 밖에서 여전히 <code>getPlaylistDetail</code> 직접 호출</td><td>ADR에서 명시적으로 Out of Scope — "목록"만 캐시 공유, "상세"는 개별 페칭</td></tr>
+      <tr><td class="mono">읽기-후-쓰기 일관성</td><td>백엔드 replica lag이 폴링 주기(5초)보다 길면 #39류 race가 이론적으로 재현 가능</td><td>프론트엔드 구조 변경으로는 완전히 없앨 수 없는 영역 — PRD Out of Scope로 명시</td></tr>
+    </table>
+  </section>
+
+  <!-- ===================== 새 데이터 추가 가이드 ===================== -->
+  <section id="howto">
+    <h2>새 서버 데이터를 추가할 때 따라야 할 패턴</h2>
+    <p class="lede">이 저장소에 새 API 연동 화면/기능을 추가한다면, 지금까지의 세 사이클이 만든 컨벤션은 다음과 같습니다.</p>
+    <ol class="howto">
+      <li><b>queryKey를 먼저 함수로 정의하고 export한다.</b> 문자열 배열을 직접 여러 곳에 하드코딩하지 않는다 — <code>xxxQueryKey(...)</code> 형태로 소유 파일에서 export(<code>commentsQueryKey(postId)</code> 등 참고).</li>
+      <li><b>목록/무한스크롤이면 <code>useInfiniteQuery</code> + <code>useInfiniteScrollTrigger</code>를 재사용한다.</b> 새 스크롤 배선을 직접 구현하지 않는다.</li>
+      <li><b>다른 화면 변경이 이 데이터에 반영돼야 하면 <code>invalidateQueries</code>를, 네트워크 왕복 없이 즉시 반영해야 하면 <code>setQueryData</code>/<code>setQueriesData</code>를 쓴다.</b> 새 zustand nonce/bump 스토어를 만들지 않는다.</li>
+      <li><b>폴링이 필요하면 <code>refetchInterval</code>을 쓴다.</b> 조건부로 멈춰야 하면(입력 중 등) 숫자 대신 함수를 전달해 클로저로 조건을 반영한다.</li>
+      <li><b>낙관적 갱신이 필요하면 <code>useMutation</code>의 <code>onMutate</code>/<code>onSuccess</code>/<code>onError</code> 3단을 쓴다.</b> 롤백 설계 전에 "이 mutation이 항목을 추가하는지, 필드를 갱신/교체하는지"부터 정한다 — 두 경우 롤백 전략(tmp-id filter vs snapshot-restore)이 다르다. <code>setQueryData</code>의 updater가 <code>undefined</code>를 반환하면 no-op이라는 점을 미리 감안한다.</li>
+      <li><b>staleTime을 반드시 검토한다.</b> 같은 화면이 반복 mount되는 경로(모달 열고 닫기 등)가 있다면 기본값 0으로는 캐시가 있어도 재요청이 발생한다 — 유닛 테스트만으로는 이 문제가 드러나지 않을 수 있으므로 <code>pnpm dev</code> 실동작으로 직접 확인한다.</li>
+      <li><b>서버 데이터를 zustand에 새로 담지 않는다.</b> "여러 컴포넌트가 같은 서버 값을 봐야 한다"는 요구가 생기면 그 자체가 <code>queryKey</code> 캐시가 필요하다는 신호다(<a href="#boundary">경계 원칙</a> 참고).</li>
+    </ol>
+  </section>
+
+  <footer class="page-footer">
+    <p>참고 문서</p>
+    <ul>
+      <li><code>docs/refactors/server-state-caching/{adr,result}.md</code> — PR #148</li>
+      <li><code>docs/refactors/feed-list-query-migration/{adr,result}.md</code> — PR #177</li>
+      <li><code>docs/refactors/server-polling-optimistic-update/{adr,result}.md</code> — PR #184, 버그 #39</li>
+      <li><code>docs/architecture/index.html</code> — 저장소 전체 아키텍처/ERD/의존성 다이어그램</li>
+    </ul>
+  </footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+</script>
+</body>
+</html>
