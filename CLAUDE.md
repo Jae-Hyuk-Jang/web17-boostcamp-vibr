@@ -174,7 +174,7 @@ Next.js App Router 구조로, `app/`에는 라우트/레이아웃만 두고 나�
 
 - 파일당 스토어 1개, `stores/use{Domain}Store.ts` 네이밍. `State`/`Actions` 인터페이스를 분리 정의한 뒤 교집합 타입(`type XxxStore = XxxState & XxxActions`)으로 합쳐 `create<XxxStore>((set, get) => ({...}))`를 호출하는 형태를 따르세요 (`stores/usePlayerStore.ts` 참고).
 - `persist`/`devtools` 등 zustand 미들웨어는 사용하지 않습니다 — 새 스토어를 추가할 때도 미들웨어 없이 순수 `create()`만 쓰세요.
-- zustand는 **전역 UI 상태(모달/드로어/재생), 인증 상태, 여러 컴포넌트에 걸쳐 동기화가 필요한 서버 데이터 오버라이드**(예: `usePostReactionOverridesStore`로 피드/상세모달 간 좋아요 상태 동기화)에만 사용합니다. 폼 입력값 등 컴포넌트 로컬 상태는 `useState`로 유지하고, 저장 시점에만 스토어에 반영하세요(`components/profile/ProfileInfo`가 이 패턴의 예시).
+- zustand는 **전역 UI 상태(모달/드로어/재생), 인증 상태, 여러 컴포넌트에 걸쳐 동기화가 필요하지만 TanStack Query 캐시로 정규화하기엔 성격이 다른 이벤트성 신호**(예: `usePostDeletionSignalStore`로 게시글 삭제를 목록 컴포넌트에 알림)에만 사용합니다. 좋아요/댓글수/본문처럼 "같은 서버 데이터의 값 동기화"가 필요한 경우는 `postDetailQueryKey` 쿼리 캐시(`queryClient.setQueryData`)로 정규화하세요(`usePostCacheSync`, `usePostLikeToggle`이 이 패턴의 예시) — zustand 오버라이드 맵으로 중복 구현하지 않습니다. 폼 입력값 등 컴포넌트 로컬 상태는 `useState`로 유지하고, 저장 시점에만 스토어에 반영하세요(`components/profile/ProfileInfo`가 이 패턴의 예시).
 - 서버 상태 캐싱/재검증 라이브러리(React Query 등)는 현재 도입되어 있지 않습니다 — 지금까지는 데이터 페칭을 커스텀 훅 안에서 `useState` + `useEffect`/`useCallback`으로 직접 구현해왔습니다. 이 항목은 프로젝트 초기 파악 시점에 기록해둔 현재 상태 설명이지 금지 규칙이 아닙니다 — 도입 여부는 실제 문제와 비교 근거가 쌓였을 때 `/refactoring-planner`의 라이브러리 도입 심사 기준(해결 책임-핵심 추상화 일치, 버전 호환성, 제거 비용 등)으로 그때그때 판단하세요.
 
 ### API 호출 패턴
