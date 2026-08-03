@@ -4,14 +4,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { useNotiStore } from '@/stores/useNotiStore';
+import useNotifications from '@/hooks/noti/useNotifications';
 import { useNotiOverlayStore } from '@/stores/useNotiOverlayStore';
 import { feedQueryKey } from '@/components/feed/FeedView';
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const unreadNotiCount = useNotiStore((s) => s.unreadCount);
+  const { unreadCount: unreadNotiCount } = useNotifications();
   const openNoti = useNotiOverlayStore((s) => s.open);
   const queryClient = useQueryClient();
 

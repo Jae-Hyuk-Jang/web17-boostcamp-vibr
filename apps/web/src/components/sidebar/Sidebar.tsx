@@ -14,7 +14,7 @@ import MenuButton from './MenuButton';
 import { NotiDrawerContent } from '../noti';
 
 import { performLogout } from '@/hooks/auth/client/logout';
-import { useNotiStore } from '@/stores/useNotiStore';
+import useNotifications from '@/hooks/noti/useNotifications';
 
 const SearchDrawerContent = lazy(() => import('@/components/search/SearchDrawerContent'));
 const isDrawerItem = (type: SidebarItemTypeValues): boolean => (drawerTypes as readonly SidebarItemTypeValues[]).includes(type);
@@ -31,7 +31,7 @@ export default function Sidebar() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
 
-  const unreadNotiCount = useNotiStore((s) => s.unreadCount);
+  const { unreadCount: unreadNotiCount } = useNotifications();
 
   const initialActiveItem = useMemo<SidebarItemTypeValues>(() => {
     if (pathname === '/') {

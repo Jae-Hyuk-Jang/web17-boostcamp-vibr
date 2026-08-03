@@ -1,8 +1,8 @@
 'use client';
 
-import useNotiPolling from '@/hooks/noti/useNotiPolling';
+import useNotifications from '@/hooks/noti/useNotifications';
 
 export default function NotiPollingGate() {
-  useNotiPolling();
+  useNotifications();
   return null;
 }
