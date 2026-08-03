@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { GetCommentsResDto, PostResponseDto as Post, UserDto } from '@repo/dto';
 
 import { getComments, createComment } from '@/api/internal';
@@ -10,6 +10,8 @@ import usePostLikeToggle from './usePostLikeToggle';
 import { postDetailQueryKey } from './usePostDetail';
 
 type CommentItem = GetCommentsResDto['comments'][number];
+
+export const commentsQueryKey = (postId: string) => ['comments', postId] as const;
 
 type Options = {
   enabled: boolean;
@@ -52,19 +54,7 @@ const safeComments = (v: unknown): CommentItem[] => {
   return list as CommentItem[];
 };
 
-const isTmp = (id: string) => id.startsWith('tmp-');
-
-const mergeComments = (server: CommentItem[], local: CommentItem[]) => {
-  const tmp = local.filter((c) => isTmp(c.id));
-  if (tmp.length === 0) return server;
-
-  const serverIds = new Set(server.map((c) => c.id));
-  const remainingTmp = tmp.filter((c) => !serverIds.has(c.id));
-
-  return [...server, ...remainingTmp];
-};
-
-const getEffectivePollMs = (base: number) => {
+export const getEffectivePollMs = (base: number) => {
   const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
   if (isHidden) return Math.max(base * 6, 30000);
   return base;
@@ -89,33 +79,17 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
     resetSubmittingOnSync: false,
   });
 
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [isCommentsLoading, setIsCommentsLoading] = useState(false);
-
   const [commentText, setCommentText] = useState('');
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-
-  const [commentCount, setCommentCount] = useState(0);
-
-  // 최신 comments를 항상 참조하기 위한 ref (setState updater 내부에서 다른 setState 호출 방지)
-  const commentsRef = useRef<CommentItem[]>([]);
-  useEffect(() => {
-    commentsRef.current = comments;
-  }, [comments]);
 
   const meRef = useRef<UserDto | null>(null);
   useEffect(() => {
     meRef.current = me ?? null;
   }, [me]);
 
-  const timerRef = useRef<number | null>(null);
-  const onlineRef = useRef<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
-
-  const clearTimer = useCallback(() => {
-    if (!timerRef.current) return;
-    window.clearTimeout(timerRef.current);
-    timerRef.current = null;
-  }, []);
+  // postId가 바뀔 때 이전 게시글에서 입력하던 텍스트가 남지 않도록 리셋
+  useEffect(() => {
+    setCommentText('');
+  }, [postId]);
 
   const setGlobalCommentCount = useCallback(
     (count: number) => {
@@ -124,167 +98,71 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
     [queryClient, postId],
   );
 
-  /**
-   * comments/카운트/스토어를 "한 번에" 맞추는 헬퍼
-   * - setComments(updater) 안에서 setState/store set을 호출하지 않도록 분리
-   */
-  const applyComments = useCallback(
-    (next: CommentItem[]) => {
-      commentsRef.current = next;
-      setComments(next);
+  const createCommentMutation = useMutation({
+    mutationFn: (content: string) => createComment({ postId, content }),
+    onMutate: async (content: string) => {
+      // 진행 중인 폴링 요청이 낙관적 추가분을 덮어쓰지 않도록 취소
+      await queryClient.cancelQueries({ queryKey: commentsQueryKey(postId) });
 
-      const nextCount = next.length;
-      setCommentCount(nextCount);
-      setGlobalCommentCount(nextCount);
+      const tmpId = `tmp-${Date.now()}`;
+
+      if (meRef.current) {
+        const optimistic: CommentItem = { id: tmpId, content, createdAt: nowIso(), author: meRef.current };
+        queryClient.setQueryData<CommentItem[]>(commentsQueryKey(postId), (old = []) => [...old, optimistic]);
+      }
+
+      return { tmpId };
     },
-    [setGlobalCommentCount],
-  );
+    onSuccess: (res, _content, context) => {
+      // tmp id -> 서버 id로 캐시 내 치환만 한다 — 여기서 refetch를 다시 부르지 않는 것이
+      // "방금 쓴 댓글이 사라지는" #39 race를 구조적으로 없앤다.
+      queryClient.setQueryData<CommentItem[]>(commentsQueryKey(postId), (old = []) =>
+        old.map((c) => (c.id === context?.tmpId ? { ...c, id: res.id } : c)),
+      );
+    },
+    onError: (_err, _content, context) => {
+      // snapshot 전체를 되돌리는 대신, 실패한 낙관적 항목만 제거한다.
+      queryClient.setQueryData<CommentItem[]>(commentsQueryKey(postId), (old = []) => old.filter((c) => c.id !== context?.tmpId));
+    },
+  });
 
-  /**
-   * postId가 바뀔 때만 전체 리셋
-   */
+  const { data: comments = [], isLoading: isCommentsLoading } = useQuery({
+    queryKey: commentsQueryKey(postId),
+    queryFn: async () => safeComments(await getComments(postId)),
+    enabled,
+    refetchInterval: () => {
+      // 입력 중/전송 중이면 skip
+      if (commentText.trim().length > 0 || createCommentMutation.isPending) return false;
+      return getEffectivePollMs(pollMs);
+    },
+  });
+
+  const commentCount = comments.length;
+
   useEffect(() => {
-    applyComments([]);
-    setCommentText('');
-    setIsCommentsLoading(false);
-
-    setIsSubmittingComment(false);
-
-    clearTimer();
-  }, [postId, clearTimer, applyComments]);
+    setGlobalCommentCount(commentCount);
+  }, [commentCount, setGlobalCommentCount]);
 
   const refetchComments = useCallback(async () => {
-    if (!enabled) return;
-    if (!onlineRef.current) return;
+    await queryClient.refetchQueries({ queryKey: commentsQueryKey(postId) });
+  }, [queryClient, postId]);
 
-    const data = await getComments(postId);
-    const server = safeComments(data);
-
-    const merged = mergeComments(server, commentsRef.current);
-    applyComments(merged);
-  }, [enabled, postId, applyComments]);
-
-  // 최초 댓글 로드
-  useEffect(() => {
-    if (!enabled) return;
-
-    let isAlive = true;
-
-    const run = async () => {
-      if (!onlineRef.current) return;
-
-      setIsCommentsLoading(true);
-      try {
-        const data = await getComments(postId);
-        if (!isAlive) return;
-
-        const server = safeComments(data);
-        const merged = mergeComments(server, commentsRef.current);
-        applyComments(merged);
-      } finally {
-        if (isAlive) setIsCommentsLoading(false);
-      }
-    };
-
-    void run();
-
-    return () => {
-      isAlive = false;
-    };
-  }, [enabled, postId, applyComments]);
-
-  // 댓글 폴링(모달 열린 동안만)
-  useEffect(() => {
-    if (!enabled) {
-      clearTimer();
-      return;
-    }
-
-    const schedule = () => {
-      clearTimer();
-      const effective = getEffectivePollMs(pollMs);
-
-      timerRef.current = window.setTimeout(() => {
-        // 입력 중/전송 중이면 skip
-        if (commentText.trim().length > 0 || isSubmittingComment) {
-          schedule();
-          return;
-        }
-        if (!onlineRef.current) {
-          schedule();
-          return;
-        }
-
-        void refetchComments().finally(schedule);
-      }, effective);
-    };
-
-    const onOnline = () => {
-      onlineRef.current = true;
-      void refetchComments();
-      schedule();
-    };
-
-    const onOffline = () => {
-      onlineRef.current = false;
-      schedule();
-    };
-
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-
-    schedule();
-
-    return () => {
-      clearTimer();
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-    };
-  }, [enabled, pollMs, commentText, isSubmittingComment, refetchComments, clearTimer]);
-
-  // 댓글 작성(optimistic + 성공 시 refetch)
   const submitComment = useCallback(async () => {
     if (!isAuthenticated) return;
-    if (isSubmittingComment) return;
+    if (createCommentMutation.isPending) return;
 
     const content = commentText.trim();
     if (!content) return;
+    if (!meRef.current) return;
 
-    const me = meRef.current;
-    if (!me) return;
-
-    const tmpId = `tmp-${Date.now()}`;
-
-    const optimistic: CommentItem = {
-      id: tmpId,
-      content,
-      createdAt: nowIso(),
-      author: me,
-    };
-
-    setIsSubmittingComment(true);
     setCommentText('');
 
-    // optimistic append
-    applyComments([...commentsRef.current, optimistic]);
-
     try {
-      const res = await createComment({ postId, content });
-
-      // tmp id -> server id
-      const replaced = commentsRef.current.map((c) => (c.id === tmpId ? { ...c, id: res.id } : c));
-      applyComments(replaced);
-
-      // 정합성 보정 + 동시 댓글 반영
-      await refetchComments();
+      await createCommentMutation.mutateAsync(content);
     } catch {
-      // rollback
-      const rolled = commentsRef.current.filter((c) => c.id !== tmpId);
-      applyComments(rolled);
-    } finally {
-      setIsSubmittingComment(false);
+      // onError가 이미 캐시를 롤백했으므로 추가 처리는 없다
     }
-  }, [isAuthenticated, isSubmittingComment, commentText, postId, refetchComments, applyComments]);
+  }, [isAuthenticated, commentText, createCommentMutation]);
 
   return {
     isAuthenticated,
@@ -300,7 +178,7 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
     commentText,
     setCommentText,
     submitComment,
-    isSubmittingComment,
+    isSubmittingComment: createCommentMutation.isPending,
 
     commentCount,
     refetchComments,

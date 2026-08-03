@@ -1,7 +1,7 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import type { PostResponseDto as Post } from '@repo/dto';
 
-import usePostReactions from './usePostReactions';
+import usePostReactions, { getEffectivePollMs } from './usePostReactions';
 import { postDetailQueryKey } from './usePostDetail';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
@@ -154,12 +154,13 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     expect(result.current.commentCount).toBe(1);
   });
 
-  it('[재현·버그 #39] 댓글 작성 직후 refetchComments의 서버 응답이 아직 새 댓글을 포함하지 않으면, 방금 작성한 댓글이 조용히 사라진다', async () => {
-    // createComment는 성공하지만(실제로는 서버에 저장됨), 뒤이은 refetchComments()가 받는 getComments 응답은
-    // 아직 그 댓글을 포함하지 않은 스냅샷이라고 가정 — 캐시 지연/읽기 replica lag/네트워크 순서 역전 등으로
-    // 실무에서 충분히 발생할 수 있는 타이밍이다.
+  it('[수정 완료·버그 #39] 댓글 작성 직후 폴링(getComments)의 서버 응답이 아직 새 댓글을 포함하지 않아도, 방금 작성한 댓글이 사라지지 않는다', async () => {
+    // createComment는 성공하지만(실제로는 서버에 저장됨), getComments는 계속 빈 목록만 반환한다고 가정
+    // — 캐시 지연/읽기 replica lag/네트워크 순서 역전 등으로 실무에서 충분히 발생할 수 있는 타이밍이다.
+    // 고쳐진 구현은 mutation 성공 직후 refetch를 다시 부르지 않고 mutation이 캐시에 반영한 tmp->서버 id
+    // 치환 결과를 그대로 신뢰하므로, 이 스냅샷이 새 댓글을 아직 반영하지 않았어도 화면에서 사라지지 않는다.
     createComment.mockResolvedValue({ id: 'server-comment-1' });
-    getComments.mockResolvedValue({ comments: [] }); // 최초 로드 + submitComment 내부의 refetchComments 둘 다 빈 목록
+    getComments.mockResolvedValue({ comments: [] });
     const queryClient = createTestQueryClient();
     queryClient.setQueryData(postDetailQueryKey('post-1'), mockPost({ commentCount: 0 }));
 
@@ -175,14 +176,10 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
       await result.current.submitComment();
     });
 
-    // 버그: submitComment 안에서 tmpId -> 서버 id로 이미 교체한 뒤 refetchComments를 호출하는데,
-    // mergeComments()는 "아직 tmp-로 시작하는 로컬 댓글"만 서버 응답에 강제로 합쳐준다(usePostReactions.ts:55-63).
-    // 이미 서버 id로 교체된 댓글은 더 이상 tmp가 아니므로, 이 refetch의 서버 스냅샷이 새 댓글을 포함하지
-    // 않으면 그대로 사라진다 — 방금 작성한 댓글이 화면에서 사라지고 카운트도 0으로 되돌아간다.
-    // 아래 값은 "바람직한 동작"이 아니라 "현재 실제로 이렇게 동작한다"는 특성화(characterization)다.
-    await waitFor(() => expect(result.current.comments).toHaveLength(0));
-    expect(result.current.commentCount).toBe(0);
-    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ commentCount: 0 });
+    await waitFor(() => expect(result.current.comments).toHaveLength(1));
+    expect(result.current.comments[0]).toMatchObject({ id: 'server-comment-1', content: '방금 쓴 댓글' });
+    expect(result.current.commentCount).toBe(1);
+    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ commentCount: 1 });
   });
 
   it('댓글 작성 실패 시 낙관적으로 추가했던 임시 댓글이 제거되고 캐시의 댓글 수도 되돌아간다', async () => {
@@ -265,5 +262,68 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     expect(typeof result.current.isLiked).toBe('boolean');
     expect(typeof result.current.likeCount).toBe('number');
     expect(typeof result.current.isSubmittingLike).toBe('boolean');
+  });
+
+  it('[Behavior Invariant] getEffectivePollMs — 탭이 숨겨지면 폴링 주기가 6배(최소 30초)로 늘어난다', () => {
+    const originalVisibilityState = document.visibilityState;
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    expect(getEffectivePollMs(5000)).toBe(5000);
+
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    expect(getEffectivePollMs(5000)).toBe(30000); // 5000*6=30000, 최소 30초 바닥과 동일
+    expect(getEffectivePollMs(1000)).toBe(30000); // 1000*6=6000 < 30000 바닥 → 바닥값 적용
+
+    Object.defineProperty(document, 'visibilityState', { value: originalVisibilityState, configurable: true });
+  });
+
+  it('[Behavior Invariant] 입력 중이면 폴링 주기가 지나도 댓글을 다시 조회하지 않는다', async () => {
+    getComments.mockResolvedValue({ comments: [] });
+
+    const { result } = renderHook(
+      () => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0, pollMs: 1000 }),
+      { wrapper: createQueryClientWrapper() },
+    );
+    await waitFor(() => expect(getComments).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      result.current.setCommentText('입력 중');
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(getComments).toHaveBeenCalledTimes(1);
+  });
+
+  it('[Behavior Invariant] 댓글 전송 중이면 폴링 주기가 지나도 댓글을 다시 조회하지 않는다', async () => {
+    getComments.mockResolvedValue({ comments: [] });
+    let resolveCreateComment!: (value: { id: string }) => void;
+    createComment.mockReturnValue(
+      new Promise((resolve) => {
+        resolveCreateComment = resolve;
+      }),
+    );
+
+    const { result } = renderHook(
+      () => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0, pollMs: 1000 }),
+      { wrapper: createQueryClientWrapper() },
+    );
+    await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+    await waitFor(() => expect(getComments).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      result.current.setCommentText('전송 중인 댓글');
+    });
+    let submitPromise!: Promise<void>;
+    act(() => {
+      submitPromise = result.current.submitComment();
+    });
+    await waitFor(() => expect(result.current.isSubmittingComment).toBe(true));
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(getComments).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveCreateComment({ id: 'server-comment-1' });
+      await submitPromise;
+    });
   });
 });
