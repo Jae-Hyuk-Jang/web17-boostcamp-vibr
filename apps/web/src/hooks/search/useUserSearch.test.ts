@@ -2,6 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { useInView } from 'react-intersection-observer';
 
 import useUserSearch from './useUserSearch';
+import { createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({
   useInView: jest.fn(),
@@ -23,7 +24,7 @@ describe('useUserSearch — 검색 초기 로드 실패 시 에러 상태 노출
   it('검색 초기 로드가 실패하면 status가 "error"가 된다 (수정 전에는 initialError 죽은 상태 때문에 "empty"로 귀결됐음)', async () => {
     searchUsers.mockRejectedValue(new Error('network error'));
 
-    const { result } = renderHook(() => useUserSearch({ query: 'abcd', debounceMs: 0 }));
+    const { result } = renderHook(() => useUserSearch({ query: 'abcd', debounceMs: 0 }), { wrapper: createQueryClientWrapper() });
 
     await waitFor(() => expect(searchUsers).toHaveBeenCalled());
     await waitFor(() => expect(result.current.status).toBe('error'));
@@ -34,14 +35,14 @@ describe('useUserSearch — 검색 초기 로드 실패 시 에러 상태 노출
   it('검색 성공 시 결과가 반영되고 status가 success가 된다', async () => {
     searchUsers.mockResolvedValue({ users: [{ id: 'u1', nickname: 'user1', profileImgUrl: null }], hasNext: false, nextCursor: undefined });
 
-    const { result } = renderHook(() => useUserSearch({ query: 'abcd', debounceMs: 0 }));
+    const { result } = renderHook(() => useUserSearch({ query: 'abcd', debounceMs: 0 }), { wrapper: createQueryClientWrapper() });
 
     await waitFor(() => expect(result.current.status).toBe('success'));
     expect(result.current.results).toHaveLength(1);
   });
 
   it('최소 글자수 미만이면 검색을 호출하지 않고 status는 idle이다', async () => {
-    const { result } = renderHook(() => useUserSearch({ query: 'a', debounceMs: 0, minQueryLength: 2 }));
+    const { result } = renderHook(() => useUserSearch({ query: 'a', debounceMs: 0, minQueryLength: 2 }), { wrapper: createQueryClientWrapper() });
 
     await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -52,7 +53,7 @@ describe('useUserSearch — 검색 초기 로드 실패 시 에러 상태 노출
   it('결과가 없으면 status가 empty가 된다', async () => {
     searchUsers.mockResolvedValue({ users: [], hasNext: false, nextCursor: undefined });
 
-    const { result } = renderHook(() => useUserSearch({ query: 'abcd', debounceMs: 0 }));
+    const { result } = renderHook(() => useUserSearch({ query: 'abcd', debounceMs: 0 }), { wrapper: createQueryClientWrapper() });
 
     await waitFor(() => expect(result.current.status).toBe('empty'));
   });
@@ -62,6 +63,7 @@ describe('useUserSearch — 검색 초기 로드 실패 시 에러 상태 노출
 
     const { result, rerender } = renderHook(({ query }: { query: string }) => useUserSearch({ query, debounceMs: 0 }), {
       initialProps: { query: 'abcd' },
+      wrapper: createQueryClientWrapper(),
     });
     await waitFor(() => expect(result.current.results).toHaveLength(1));
 

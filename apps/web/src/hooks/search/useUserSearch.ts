@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
-import { useInfiniteScroll, useDebouncedValue } from '@/hooks';
+import { useInfiniteScrollTrigger, useDebouncedValue } from '@/hooks';
 import { ITUNES_SEARCH } from '@/constants';
 import { searchUsers } from '@/api';
 import { SearchStatus } from '@/types';
@@ -29,9 +30,17 @@ type Result = {
   ref: (node?: Element | null) => void;
 };
 
+type Page = {
+  items: SearchUser[];
+  hasNext: boolean;
+  nextCursor?: string;
+};
+
 const DEFAULT_LIMIT = 10;
 
 const shouldFetch = (enabled: boolean, q: string, minLen: number) => enabled && q.length >= minLen;
+
+export const userSearchQueryKey = (trimmedQuery: string) => ['userSearch', trimmedQuery] as const;
 
 export default function useUserSearch({
   query,
@@ -45,52 +54,64 @@ export default function useUserSearch({
 
   const isFetchable = useMemo(() => shouldFetch(enabled, trimmedQuery, minQueryLength), [enabled, trimmedQuery, minQueryLength]);
 
-  const fetchFn = useCallback(
-    async (cursor?: string) => {
-      if (!isFetchable) return { items: [], hasNext: false, nextCursor: undefined };
+  const {
+    data,
+    isPending,
+    isError,
+    error: queryError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: userSearchQueryKey(trimmedQuery),
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }): Promise<Page> => {
+      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출(기존 useInfiniteScroll 동작 유지)
 
-      const data = await searchUsers(trimmedQuery, cursor, limit);
+      const data = await searchUsers(trimmedQuery, pageParam, limit);
       const users = Array.isArray(data.users) ? data.users : [];
 
-      return {
-        items: users,
-        hasNext: Boolean(data.hasNext),
-        nextCursor: data.nextCursor,
-      };
+      return { items: users, hasNext: Boolean(data.hasNext), nextCursor: data.nextCursor };
     },
-    [isFetchable, trimmedQuery, limit],
-  );
-
-  const { items, hasNext, isLoading, isInitialLoading, errorMsg, ref } = useInfiniteScroll<SearchUser>({
-    fetchFn,
-    resetKey: isFetchable ? trimmedQuery : '',
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.nextCursor : undefined),
+    enabled: isFetchable,
   });
+
+  const ref = useInfiniteScrollTrigger({
+    hasNextPage: Boolean(hasNextPage),
+    isFetchingNextPage,
+    fetchNextPage: () => {
+      void fetchNextPage();
+    },
+  });
+
+  const items = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
 
   const status: SearchStatus = useMemo(() => {
     if (!enabled) return 'idle';
     if (trimmedQuery.length === 0) return 'idle';
     if (trimmedQuery.length < minQueryLength) return 'idle';
 
-    if (isInitialLoading) return 'loading';
+    if (isPending) return 'loading';
     // 초기 로드가 실패해 보여줄 결과가 하나도 없는 경우에만 에러로 취급한다.
-    // 이미 로드된 결과가 있는 상태에서 추가 로드(loadMore)만 실패한 경우는 기존 결과를 유지한다.
-    if (errorMsg && items.length === 0) return 'error';
+    // 이미 로드된 결과가 있는 상태에서 추가 로드(다음 페이지)만 실패한 경우는 기존 결과를 유지한다.
+    if (isError && items.length === 0) return 'error';
     if (items.length === 0) return 'empty';
     return 'success';
-  }, [enabled, trimmedQuery, minQueryLength, isInitialLoading, errorMsg, items.length]);
+  }, [enabled, trimmedQuery, minQueryLength, isPending, isError, items.length]);
 
   const errorMessage = useMemo(() => {
     if (status !== 'error') return null;
-    return errorMsg ?? '검색 중 오류가 발생했습니다.';
-  }, [status, errorMsg]);
+    return queryError instanceof Error ? queryError.message : '검색 중 오류가 발생했습니다.';
+  }, [status, queryError]);
 
   return {
     status,
     results: items,
     errorMessage,
     trimmedQuery,
-    hasNext,
-    isLoadingMore: isLoading,
+    hasNext: Boolean(hasNextPage),
+    isLoadingMore: isFetchingNextPage,
     ref,
   };
 }
