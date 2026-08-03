@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getUserProfilePosts, getPostDetail } from '@/api';
-import { useInfiniteScroll, postDetailQueryKey } from '@/hooks';
+import { useInfiniteScrollTrigger, postDetailQueryKey } from '@/hooks';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useModalStore, MODAL_TYPES, usePlayerStore } from '@/stores';
 import { PostCard } from '@/components/post';
@@ -17,6 +17,14 @@ interface Props {
   userId: string;
   initialPostId?: string;
 }
+
+type Page = {
+  items: Post[];
+  hasNext: boolean;
+  nextCursor?: string;
+};
+
+export const profilePostsFeedQueryKey = (userId: string) => ['profilePostsFeed', userId] as const;
 
 export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
   const router = useRouter();
@@ -37,9 +45,12 @@ export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
   const pageRef = useRef<HTMLDivElement>(null);
   const swipe = useRef({ startX: 0, startY: 0, isHorizontal: null as boolean | null });
 
-  const fetchFn = useCallback(
-    async (cursor?: string) => {
-      const { items: previews, hasNext, nextCursor } = await getUserProfilePosts(userId, cursor);
+  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: profilePostsFeedQueryKey(userId),
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }): Promise<Page> => {
+      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출(기존 useInfiniteScroll 동작 유지)
+
+      const { items: previews, hasNext, nextCursor } = await getUserProfilePosts(userId, pageParam);
       const fullPosts = await Promise.all(
         previews.map(async (p) => {
           const detail = await getPostDetail(p.postId);
@@ -51,10 +62,22 @@ export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
       );
       return { items: fullPosts, hasNext, nextCursor };
     },
-    [userId, queryClient],
-  );
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.nextCursor : undefined),
+  });
 
-  const { items, hasNext, isInitialLoading, errorMsg, ref } = useInfiniteScroll({ fetchFn });
+  const ref = useInfiniteScrollTrigger({
+    hasNextPage: Boolean(hasNextPage),
+    isFetchingNextPage,
+    fetchNextPage: () => {
+      void fetchNextPage();
+    },
+  });
+
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
+  const isInitialLoading = isPending;
+  const errorMsg = isError ? '오류가 발생했습니다.' : null;
+  const hasNext = Boolean(hasNextPage);
 
   // 초기 로드 완료 후 클릭했던 게시글로 스크롤
   useEffect(() => {
