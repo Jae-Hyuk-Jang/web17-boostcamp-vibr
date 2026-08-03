@@ -174,6 +174,19 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
     await waitFor(() => expect(changeMusicOrderOfPlaylist).toHaveBeenCalledWith('pl-1', ['s2', 's1', 's3']));
   });
 
+  it('곡 순서 변경: onMutate에서 즉시 playlistDetail 캐시도 낙관적으로 반영된다 (playlist-detail-caching #191)', async () => {
+    changeMusicOrderOfPlaylist.mockResolvedValue(undefined);
+    const queryClient = createTestQueryClient();
+    render(<PlaylistDetailModal playlistId="pl-1" />, { wrapper: createQueryClientWrapper(queryClient) });
+    await screen.findByText('내 플레이리스트');
+
+    const items = screen.getAllByRole('listitem');
+    const secondItemButtons = within(items[1]!).getAllByRole('button');
+    fireEvent.click(secondItemButtons[1]!); // Song2의 ChevronUp
+
+    expect(queryClient.getQueryData<GetPlaylistDetailResDto>(playlistDetailQueryKey('pl-1'))?.musics.map((m) => m.id)).toEqual(['s2', 's1', 's3']);
+  });
+
   it('곡 순서 변경 실패 시 에러 toast를 띄우지만, 낙관적으로 바뀐 로컬 순서는 롤백하지 않는다 (현재 동작)', async () => {
     changeMusicOrderOfPlaylist.mockRejectedValue(new Error('fail'));
     renderModal();

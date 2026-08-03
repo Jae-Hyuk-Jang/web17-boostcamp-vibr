@@ -68,35 +68,45 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
     setSelectedSongIds(newSelected);
   };
 
-  const requestChangeOrder = async (nextSongs: SavedMusic[]) => {
-    try {
-      const songIds = nextSongs.map((s) => s.id);
-      await changeMusicOrderOfPlaylist(playlistId, songIds); // playlist.id?
+  // 현재도 낙관적 업데이트다 — onMutate에서 즉시 로컬/캐시를 반영한 뒤 API를 호출한다.
+  // 현재 동작 그대로, 실패해도 onMutate의 낙관적 반영을 롤백하지 않는다(사용자 확인).
+  const changeOrderMutation = useMutation({
+    mutationFn: (nextSongs: SavedMusic[]) =>
+      changeMusicOrderOfPlaylist(
+        playlistId,
+        nextSongs.map((s) => s.id),
+      ),
+    onMutate: (nextSongs) => {
+      setSongs(nextSongs);
+      queryClient.setQueryData(playlistDetailQueryKey(playlistId), (prev: GetPlaylistDetailResDto | undefined) =>
+        prev ? { ...prev, musics: nextSongs } : prev,
+      );
+    },
+    onSuccess: () => {
       bumpPlaylistRefresh();
-    } catch (e) {
+    },
+    onError: (e) => {
       toast.error('변경사항 반영에 실패했습니다.');
       console.error(e);
-    }
+    },
+  });
+
+  const requestChangeOrder = (nextSongs: SavedMusic[]) => {
+    changeOrderMutation.mutate(nextSongs);
   };
 
-  const deleteSelectedSongs = async () => {
-    // 낙관적 업데이트
+  const deleteSelectedSongs = () => {
     const nextSongs = songs.filter((s) => !selectedSongIds.has(s.id));
-    setSongs(nextSongs);
     setSelectedSongIds(new Set());
-
-    await requestChangeOrder(nextSongs);
+    requestChangeOrder(nextSongs);
   };
 
-  const moveSong = async (index: number, direction: 'up' | 'down') => {
-    // 낙관적 업데이트
+  const moveSong = (index: number, direction: 'up' | 'down') => {
     const nextSongs = reorder(songs, index, direction);
-    setSongs(nextSongs);
-
-    await requestChangeOrder(nextSongs);
+    requestChangeOrder(nextSongs);
   };
 
-  const moveSongTo = async (from: number, to: number) => {
+  const moveSongTo = (from: number, to: number) => {
     if (from === to) return;
     if (from < 0 || from >= songs.length) return;
     if (to < 0 || to >= songs.length) return;
@@ -106,8 +116,7 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
     if (!item) return;
     nextSongs.splice(to, 0, item);
 
-    setSongs(nextSongs);
-    await requestChangeOrder(nextSongs);
+    requestChangeOrder(nextSongs);
   };
 
   const handleAddSong = async (song: UnsavedMusic) => {
