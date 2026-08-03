@@ -720,10 +720,10 @@ const readNotiMutation = useMutation({
     <h2>남은 부채 — 아직 Query로 옮기지 않은 것들</h2>
     <table class="spec">
       <tr><th>항목</th><th>현재 상태</th><th>비고</th></tr>
-      <tr><td class="mono">usePostReactionOverridesStore</td><td>여전히 zustand(좋아요/댓글수/본문/삭제 오버라이드)</td><td>세 사이클 모두 명시적으로 Out of Scope — 4개 도메인(feed/modals/post/hooks-post)이 공유 중, 별도 검토 필요</td></tr>
+      <tr><td class="mono">usePostReactionOverridesStore</td><td>여전히 zustand(좋아요/댓글수/본문/삭제 오버라이드)</td><td><span class="badge badge-cyan">백로그 #185</span> 세 사이클 모두 명시적으로 Out of Scope — 4개 도메인(feed/modals/post/hooks-post)이 공유 중</td></tr>
       <tr><td class="mono">useProfileStore</td><td>여전히 zustand(52줄, 팔로우 토글 등)</td><td><span class="badge badge-cyan">백로그 #178</span> 쿼리 캐시 전환 검토 대상으로 남아있음</td></tr>
       <tr><td class="mono">ProfilePostsFeed N+1</td><td>서로 다른 postId N개를 각각 요청 — 캐시 공유로 "재요청"만 없앴을 뿐 최초 요청 개수는 그대로</td><td><span class="badge badge-cyan">백로그 #146</span> 목록 API가 상세 필드를 함께 내려주는 API 계약 변경 필요(프론트엔드 단독으로 해결 불가)</td></tr>
-      <tr><td class="mono">플레이리스트 상세(selectPlaylist)</td><td><code>useQuery</code> 밖에서 여전히 <code>getPlaylistDetail</code> 직접 호출</td><td>ADR에서 명시적으로 Out of Scope — "목록"만 캐시 공유, "상세"는 개별 페칭</td></tr>
+      <tr><td class="mono">플레이리스트 상세(selectPlaylist)</td><td><code>useQuery</code> 밖에서 여전히 <code>getPlaylistDetail</code> 직접 호출</td><td><span class="badge badge-cyan">백로그 #186</span> ADR에서 명시적으로 Out of Scope — "목록"만 캐시 공유, "상세"는 개별 페칭</td></tr>
       <tr><td class="mono">읽기-후-쓰기 일관성</td><td>백엔드 replica lag이 폴링 주기(5초)보다 길면 #39류 race가 이론적으로 재현 가능</td><td>프론트엔드 구조 변경으로는 완전히 없앨 수 없는 영역 — PRD Out of Scope로 명시</td></tr>
     </table>
   </section>
