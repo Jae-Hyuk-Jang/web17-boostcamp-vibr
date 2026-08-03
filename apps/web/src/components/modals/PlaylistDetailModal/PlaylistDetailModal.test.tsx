@@ -2,7 +2,8 @@ import { render, fireEvent, screen, waitFor, within } from '@testing-library/rea
 
 import PlaylistDetailModal from './PlaylistDetailModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import { createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
+import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
+import { playlistDetailQueryKey } from '@/hooks/playlist/usePlaylistDetail';
 import type { MusicResponseDto, GetPlaylistDetailResDto } from '@repo/dto';
 
 jest.mock('react-toastify', () => ({
@@ -118,6 +119,19 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
 
     await waitFor(() => expect(editTitleOfPlaylist).toHaveBeenCalledWith('pl-1', '새 제목'));
     expect(await screen.findByText('새 제목')).toBeInTheDocument();
+  });
+
+  it('제목 편집 성공 시 playlistDetail 캐시(다른 진입점과 공유)에도 반영된다 (playlist-detail-caching #190)', async () => {
+    editTitleOfPlaylist.mockResolvedValue(undefined);
+    const queryClient = createTestQueryClient();
+    render(<PlaylistDetailModal playlistId="pl-1" />, { wrapper: createQueryClientWrapper(queryClient) });
+    await screen.findByText('내 플레이리스트');
+
+    fireEvent.click(screen.getByLabelText('Edit title'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '새 제목' } });
+    fireEvent.click(screen.getByLabelText('Confirm rename'));
+
+    await waitFor(() => expect(queryClient.getQueryData<GetPlaylistDetailResDto>(playlistDetailQueryKey('pl-1'))?.title).toBe('새 제목'));
   });
 
   it('제목 편집: MAX_PLAYLIST_TITLE_LENGTH를 넘으면 저장 없이 에러 문구를 보여준다', async () => {
