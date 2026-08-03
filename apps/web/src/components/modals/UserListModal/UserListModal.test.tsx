@@ -87,7 +87,7 @@ describe('UserListModal — 무한스크롤/팔로우 토글 특성화(#166)', (
     renderModal(fetchFn, 'profile-owner');
 
     await waitFor(() => expect(screen.getByText('userA')).toBeInTheDocument());
-    expect(fetchFn).toHaveBeenCalledWith('profile-owner', undefined, undefined);
+    expect(fetchFn).toHaveBeenCalledWith('profile-owner', undefined);
   });
 
   it('팔로우 토글 완료 시 로컬 목록 항목의 isFollowing이 즉시 갱신된다(에러 없이 재렌더링됨)', async () => {
