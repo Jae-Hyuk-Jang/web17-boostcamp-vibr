@@ -76,7 +76,7 @@
 ### 3.4 훅
 
 - `hooks/{domain}/use{Domain}{Action}.ts`로 명명합니다: `hooks/post/usePostDetail.ts`, `hooks/playlist/usePlaylistRecommendations.ts`, `hooks/queue/useQueueSync.ts`.
-- **범용/도메인 무관 훅은 `hooks/` 루트에 그대로 둡니다**(`useDebouncedValue.ts`, `useIsMobile.ts`, `useInfiniteScroll.ts`, `useMusicActions.ts` 등). 특정 도메인에 속하지 않는다고 판단되면 도메인 폴더를 억지로 만들지 않아도 됩니다.
+- **범용/도메인 무관 훅은 `hooks/` 루트에 그대로 둡니다**(`useDebouncedValue.ts`, `useIsMobile.ts`, `useInfiniteScrollTrigger.ts`, `useMusicActions.ts` 등). 특정 도메인에 속하지 않는다고 판단되면 도메인 폴더를 억지로 만들지 않아도 됩니다.
 - `hooks/auth/{client,config,server}`처럼 **클라이언트/서버 실행 경계가 있는 도메인은 하위 폴더로 명시적으로 분리**합니다. 서버 사이드 훅은 RSC/route handler에서 `INTERNAL_API_URL`을 쓰고, 클라이언트 사이드 훅은 브라우저에서 `API_BASE_URL`/axios client를 씁니다 — 이 경계를 넘나들지 않도록 주의하세요.
 
 ### 3.5 타입 · 상수 위치

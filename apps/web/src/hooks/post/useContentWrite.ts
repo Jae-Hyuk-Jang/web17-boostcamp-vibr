@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { MusicResponseDto as Music } from '@repo/dto';
 
 import { useMusicActions, type PlaylistDetail } from '@/hooks';
 import { createPost } from '@/api';
 import { DEFAULT_IMAGES } from '@/constants';
 import { reorder } from '@/utils';
-import { useFeedRefreshStore } from '@/stores';
+import { useAuthStore } from '@/stores';
+import { feedQueryKey } from '@/components/feed/FeedView';
+import { profileGridQueryKey } from '@/components/profile/ProfileView';
 
 type Options = {
   /**
@@ -76,6 +79,8 @@ const toMusicPayload = (m: Music) => ({
 
 export const useContentWrite = ({ initialMusic, initialMusics, onSuccess }: Options): Return => {
   const { ensureMusicInDb } = useMusicActions();
+  const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.userId);
 
   const [selectedMusics, setSelectedMusics] = useState<Music[]>(() => toInitialSelected(initialMusics, initialMusic));
   const [content, setContent] = useState('');
@@ -170,8 +175,9 @@ export const useContentWrite = ({ initialMusic, initialMusics, onSuccess }: Opti
 
     await createPost(fd);
 
-    // 피드 무한스크롤 초기화/재조회 트리거
-    useFeedRefreshStore.getState().bump();
+    // 피드/내 프로필 게시글 목록 재조회
+    await queryClient.invalidateQueries({ queryKey: feedQueryKey });
+    if (userId) await queryClient.invalidateQueries({ queryKey: profileGridQueryKey(userId) });
 
     onSuccess();
   };

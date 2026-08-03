@@ -6,17 +6,25 @@ import ModalPanel from '@/components/ui/ModalPanel';
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import { ProfileActionButton } from '@/components/profile';
 import { DEFAULT_IMAGES } from '@/constants';
-import type { GetUserFollowDto } from '@repo/dto';
+import type { GetUserFollowDto, UserWithFollowStatusDto } from '@repo/dto';
 import { useAuthStore, useModalStore, useProfileStore } from '@/stores';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback } from 'react';
-import { useInfiniteScroll } from '@/hooks';
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useInfiniteScrollTrigger } from '@/hooks';
 
 interface UserListModalProps {
   title: string;
   fetchFn: (userId: string, cursor?: string | undefined, limit?: number) => Promise<GetUserFollowDto>;
 }
+
+type Page = {
+  items: UserWithFollowStatusDto[];
+  hasNext: boolean;
+  nextCursor?: string;
+};
+
+export const userListQueryKey = (profileUserId: string, title: string) => ['userList', profileUserId, title] as const;
 
 export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
   const { modalProps, closeModal } = useModalStore();
@@ -24,25 +32,50 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
 
   const router = useRouter();
   const loggedInUserId = useAuthStore((s) => s.userId);
+  const queryClient = useQueryClient();
 
   const incrementFollowingCount = useProfileStore((s) => s.incrementFollowingCount);
   const decrementFollowingCount = useProfileStore((s) => s.decrementFollowingCount);
 
-  /** fetch 함수 반환 형식을 무한 스크롤 hook 시그니처에 맞게 변환하는 함수 */
-  const fetchUsers = useCallback(
-    async (cursor?: string, limit?: number) => {
-      const data = await fetchFn(profileUserId, cursor, limit);
+  const queryKey = userListQueryKey(profileUserId, title);
+
+  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey,
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }): Promise<Page> => {
+      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출
+
+      const data = await fetchFn(profileUserId, pageParam);
       return { items: data.users, hasNext: data.hasNext, nextCursor: data.nextCursor };
     },
-    [profileUserId, fetchFn],
-  );
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.nextCursor : undefined),
+  });
 
-  const { items, setItems, hasNext, isInitialLoading, errorMsg, ref } = useInfiniteScroll({ fetchFn: fetchUsers });
+  const ref = useInfiniteScrollTrigger({
+    hasNextPage: Boolean(hasNextPage),
+    isFetchingNextPage,
+    fetchNextPage: () => {
+      void fetchNextPage();
+    },
+  });
+
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
+  const isInitialLoading = isPending;
+  const errorMsg = isError ? '오류가 발생했습니다.' : null;
 
   /** 팔로우/언팔로우 후 사용자 목록 및 프로필 정보(팔로잉 수) 상태 업데이트 함수 */
   const handleFollowActionComplete = (updatedUserId: string, prevIsFollowing: boolean) => {
-    // 모달의 사용자 목록 로컬 상태 업데이트
-    setItems((prevItems) => prevItems.map((user) => (user.id === updatedUserId ? { ...user, isFollowing: !user.isFollowing } : user)));
+    // 모달의 사용자 목록 쿼리 캐시 업데이트
+    queryClient.setQueryData(queryKey, (old: InfiniteData<Page> | undefined) => {
+      if (!old) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          items: page.items.map((user) => (user.id === updatedUserId ? { ...user, isFollowing: !user.isFollowing } : user)),
+        })),
+      };
+    });
 
     // 내가 내 프로필에서 다른 사람을 팔로우/언팔로우 하는 경우, 전역 프로필(내 프로필) 스토어 상태 업데이트
     if (profileUserId === loggedInUserId) {
@@ -120,7 +153,7 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
                 <p className="text-sm mt-2">다시 시도해주세요.</p>
               </div>
             )}
-            {hasNext && (
+            {hasNextPage && (
               <div ref={ref}>
                 <LoadingSpinner hStyle="py-6" />
               </div>
