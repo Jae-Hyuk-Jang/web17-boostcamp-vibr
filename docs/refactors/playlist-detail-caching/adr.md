@@ -111,6 +111,8 @@ A. 60초 — `POST_DETAIL_STALE_TIME_MS`와 동일(추천). 이유: 세션 중 �
 | 같은 `playlistId`를 모달→위젯 순서로 순차 조회                    | (신규 계약) 두 번째는 `getPlaylistDetail` 미호출                          | Contract                                                 | Success Criteria 미달성으로 이슈 재작업 |
 
 > 주의: 현재 `moveSong`/`deleteSelectedSongs`의 낙관적 로컬 갱신은 API 실패 시에도 **롤백하지 않는다**(코드 상 확인된 Fact). 안 3(`useMutation`)으로 전환하며 `onError` 롤백을 추가하면 이는 동작 변경이다 — Behavior Invariant를 "실패해도 롤백 없음(현재 동작)"으로 유지할지, 이번 기회에 "실패 시 롤백"으로 개선할지는 이슈 5(아래)에서 별도로 확정하고 `result.md`에 명시한다.
+>
+> **정정(#193 구현 중 발견)**: 삭제 성공 시 `queryClient.removeQueries({queryKey: playlistDetailQueryKey(playlistId)})`로 상세 캐시를 즉시 지우려 했으나, `PlaylistDetailModal` 자신이 아직 `usePlaylistDetail`을 구독 중인 상태(모달이 실제로 unmount되는 것은 `closeModal()` 이후 부모의 다음 렌더에서다)라 `removeQueries`가 그 구독을 즉시 재요청으로 이어지게 만드는 레이스가 발견됐다 — 방금 삭제한 `playlistId`를 다시 조회해 "불러오지 못했습니다" 에러가 잠깐 노출될 수 있다. 캐시 정리는 하지 않고 `staleTime` 경과에 맡기기로 했다(이슈 7 TODO에서 "캐시 정리" 항목 제외).
 
 ## 체크포인트 이슈 목록
 

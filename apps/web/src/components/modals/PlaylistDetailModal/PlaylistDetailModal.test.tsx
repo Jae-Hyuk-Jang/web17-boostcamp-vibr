@@ -295,6 +295,20 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
     await waitFor(() => expect(useModalStore.getState().isOpen).toBe(false));
   });
 
+  it('삭제 성공 시 playlistDetail 캐시를 강제로 지우지 않는다 (removeQueries 시 재요청 레이스 방지, #193)', async () => {
+    deletePlaylist.mockResolvedValue(undefined);
+    const queryClient = createTestQueryClient();
+    render(<PlaylistDetailModal playlistId="pl-1" />, { wrapper: createQueryClientWrapper(queryClient) });
+    await screen.findByText('내 플레이리스트');
+
+    fireEvent.click(screen.getByLabelText('Delete playlist'));
+    fireEvent.click(await screen.findByText('삭제'));
+
+    await waitFor(() => expect(deletePlaylist).toHaveBeenCalledWith('pl-1'));
+    // getPlaylistDetail이 삭제 성공 이후 다시 호출되지 않는다 — 캐시가 그대로 남아있어 재요청 레이스가 없다
+    expect(getPlaylistDetail).toHaveBeenCalledTimes(1);
+  });
+
   it('삭제 API 실패 시 에러 toast를 띄우고 모달은 닫히지 않는다', async () => {
     deletePlaylist.mockRejectedValue(new Error('fail'));
     renderModal();

@@ -190,6 +190,22 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
     setIsConfirmOpen(true);
   };
 
+  // 현재도 낙관적 업데이트가 아니다 — deletePlaylist 성공 이후에만 모달을 닫는다.
+  // (ADR 정정: removeQueries로 상세 캐시를 즉시 지우면, 아직 마운트된 이 컴포넌트의 usePlaylistDetail
+  // 구독이 closeModal 반영 전에 곧바로 재요청해 방금 삭제한 playlistId를 다시 조회하는 레이스가 생겨
+  // "불러오지 못했습니다" 에러가 잠깐 노출될 수 있다 — 캐시 정리는 하지 않고 staleTime 경과에 맡긴다.)
+  const deleteMutation = useMutation({
+    mutationFn: () => deletePlaylist(playlistId),
+    onSuccess: () => {
+      bumpPlaylistRefresh();
+      closeModal();
+    },
+    onError: (e) => {
+      toast.error('플레이리스트 삭제에 실패했습니다.');
+      console.error(e);
+    },
+  });
+
   useEffect(() => {
     const isInValid = !validateRename(draftTitle);
     if (isInvalidTitle !== isInValid) setIsInvalidTitle(isInValid);
@@ -242,16 +258,9 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
           confirmLabel="삭제"
           cancelLabel="취소"
           onCancel={() => setIsConfirmOpen(false)}
-          onConfirm={async () => {
-            try {
-              setIsConfirmOpen(false);
-              await deletePlaylist(playlistId);
-              bumpPlaylistRefresh();
-              closeModal();
-            } catch (e) {
-              toast.error('플레이리스트 삭제에 실패했습니다.');
-              console.error(e);
-            }
+          onConfirm={() => {
+            setIsConfirmOpen(false);
+            deleteMutation.mutate();
           }}
         />
       </ModalShell>
