@@ -19,7 +19,7 @@ type Result = {
 
 // 게시글 상세 데이터는 세션 중 잦은 재편집 대상이 아니므로, 같은 postId를 다른 진입점(모달/편집 등)에서
 // 다시 열어도 이 시간 내에는 캐시를 그대로 재사용한다(불필요한 재요청 방지).
-const POST_DETAIL_STALE_TIME_MS = 60 * 1000;
+export const POST_DETAIL_STALE_TIME_MS = 60 * 1000;
 
 export const postDetailQueryKey = (postId: string) => ['postDetail', postId] as const;
 
