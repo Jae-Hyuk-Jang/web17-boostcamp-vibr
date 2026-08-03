@@ -1,34 +1,53 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUser, getUserProfilePosts } from '@/api';
-import { useInfiniteScroll } from '@/hooks';
-import { useAuthStore, useFeedRefreshStore, useProfileStore } from '@/stores';
+import { useInfiniteScrollTrigger } from '@/hooks';
+import { useAuthStore, useProfileStore } from '@/stores';
+import type { PostPreviewDto as PostPreview } from '@repo/dto';
 import { ProfileSkeleton } from '../skeleton';
 import { ProfileInfo } from './ProfileInfo';
 import ProfilePosts from './ProfilePosts';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
+type Page = {
+  items: PostPreview[];
+  hasNext: boolean;
+  nextCursor?: string;
+};
+
+export const profileGridQueryKey = (userId: string) => ['profileGrid', userId] as const;
+
 export default function ProfileView({ userId }: { userId: string }) {
   const loggedInUserId = useAuthStore((s) => s.userId);
   const { profile, setProfile } = useProfileStore();
 
-  const nonce = useFeedRefreshStore((s) => s.nonce);
   const isMyProfile = loggedInUserId === userId;
 
-  /** fetch 함수 반환 형식을 무한 스크롤 hook 시그니처에 맞게 변환하는 함수 */
-  const fetchProfilePosts = useCallback(
-    async (cursor?: string, limit?: number) => {
-      const data = await getUserProfilePosts(userId, cursor, limit);
-      return data;
+  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: profileGridQueryKey(userId),
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }): Promise<Page> => {
+      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출(기존 useInfiniteScroll 동작 유지)
+      return getUserProfilePosts(userId, pageParam);
     },
-    [userId],
-  );
-
-  const { items, hasNext, isInitialLoading, errorMsg, ref } = useInfiniteScroll({
-    fetchFn: fetchProfilePosts,
-    resetKey: isMyProfile ? String(nonce) : undefined,
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.nextCursor : undefined),
   });
+
+  const ref = useInfiniteScrollTrigger({
+    hasNextPage: Boolean(hasNextPage),
+    isFetchingNextPage,
+    fetchNextPage: () => {
+      void fetchNextPage();
+    },
+  });
+
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
+  const isInitialLoading = isPending;
+  const errorMsg = isError ? '오류가 발생했습니다.' : null;
+  const hasNext = Boolean(hasNextPage);
+
   const [renderError, setRenderError] = useState<Error | null>(null);
 
   useEffect(() => {

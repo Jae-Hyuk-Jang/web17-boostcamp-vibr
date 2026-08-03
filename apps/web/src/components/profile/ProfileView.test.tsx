@@ -3,9 +3,9 @@ import { act } from 'react';
 import { useInView } from 'react-intersection-observer';
 import type { GetUserDto as Profile, PostPreviewDto as PostPreview } from '@repo/dto';
 
-import ProfileView from './ProfileView';
-import { useAuthStore, useFeedRefreshStore, useProfileStore } from '@/stores';
-import { createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
+import ProfileView, { profileGridQueryKey } from './ProfileView';
+import { useAuthStore, useProfileStore } from '@/stores';
+import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({
   useInView: jest.fn(),
@@ -46,14 +46,14 @@ const mockProfile = (overrides: Partial<Profile> = {}): Profile => ({
   ...overrides,
 });
 
-const renderProfileView = (userId = 'user-1') => render(<ProfileView userId={userId} />, { wrapper: createQueryClientWrapper() });
+const renderProfileView = (userId = 'user-1', queryClient = createTestQueryClient()) =>
+  render(<ProfileView userId={userId} />, { wrapper: createQueryClientWrapper(queryClient) });
 
-describe('ProfileView — 무한스크롤/리프레시 특성화(#166)', () => {
+describe('ProfileView — 무한스크롤/쿼리 무효화 특성화(#166)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
     useAuthStore.setState({ userId: 'user-1', isAuthenticated: true, isLoading: false });
-    useFeedRefreshStore.setState({ nonce: 0 });
     useProfileStore.setState({ profile: null });
   });
 
@@ -65,38 +65,39 @@ describe('ProfileView — 무한스크롤/리프레시 특성화(#166)', () => {
 
     await waitFor(() => expect(screen.getByTestId('profile-info')).toBeInTheDocument());
     expect(screen.getByTestId('profile-posts')).toHaveTextContent('a');
-    expect(getUserProfilePosts).toHaveBeenCalledWith('user-1', undefined, undefined);
+    expect(getUserProfilePosts).toHaveBeenCalledWith('user-1', undefined);
   });
 
-  it('본인 프로필(isMyProfile)일 때만 useFeedRefreshStore.bump() 후 게시글을 재조회한다', async () => {
+  it('profileGridQueryKey(userId)를 invalidateQueries하면 게시글을 재조회한다(글 작성 후 재조회 대체 메커니즘)', async () => {
     getUser.mockResolvedValue(mockProfile());
     getUserProfilePosts.mockResolvedValueOnce({ items: [{ postId: 'a' }], hasNext: false, nextCursor: undefined });
 
-    renderProfileView('user-1');
+    const queryClient = createTestQueryClient();
+    renderProfileView('user-1', queryClient);
     await waitFor(() => expect(screen.getByTestId('profile-posts')).toHaveTextContent('a'));
 
     getUserProfilePosts.mockResolvedValueOnce({ items: [{ postId: 'x' }], hasNext: false, nextCursor: undefined });
-    act(() => {
-      useFeedRefreshStore.getState().bump();
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: profileGridQueryKey('user-1') });
     });
 
     await waitFor(() => expect(screen.getByTestId('profile-posts')).toHaveTextContent('x'), { timeout: 2000 });
     expect(getUserProfilePosts).toHaveBeenCalledTimes(2);
   });
 
-  it('타인 프로필일 때는 useFeedRefreshStore.bump()가 재조회를 유발하지 않는다', async () => {
-    useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
-    getUser.mockResolvedValue(mockProfile({ id: 'other-user' }));
+  it('다른 유저의 profileGridQueryKey를 invalidate해도 이 프로필에는 영향이 없다(쿼리키 자체가 사용자별로 격리됨)', async () => {
+    getUser.mockResolvedValue(mockProfile());
     getUserProfilePosts.mockResolvedValue({ items: [{ postId: 'a' }], hasNext: false, nextCursor: undefined });
 
-    renderProfileView('other-user');
+    const queryClient = createTestQueryClient();
+    renderProfileView('user-1', queryClient);
     await waitFor(() => expect(screen.getByTestId('profile-posts')).toHaveTextContent('a'));
 
-    act(() => {
-      useFeedRefreshStore.getState().bump();
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: profileGridQueryKey('other-user') });
     });
-
     await new Promise((resolve) => setTimeout(resolve, 300));
+
     expect(getUserProfilePosts).toHaveBeenCalledTimes(1);
   });
 
