@@ -61,7 +61,7 @@ export default function useUserSearch({
     [isFetchable, trimmedQuery, limit],
   );
 
-  const { items, hasNext, isLoading, isInitialLoading, initialError, errorMsg, ref } = useInfiniteScroll<SearchUser>({
+  const { items, hasNext, isLoading, isInitialLoading, errorMsg, ref } = useInfiniteScroll<SearchUser>({
     fetchFn,
     resetKey: isFetchable ? trimmedQuery : '',
   });
@@ -71,17 +71,18 @@ export default function useUserSearch({
     if (trimmedQuery.length === 0) return 'idle';
     if (trimmedQuery.length < minQueryLength) return 'idle';
 
-    if (initialError) return 'error';
     if (isInitialLoading) return 'loading';
+    // 초기 로드가 실패해 보여줄 결과가 하나도 없는 경우에만 에러로 취급한다.
+    // 이미 로드된 결과가 있는 상태에서 추가 로드(loadMore)만 실패한 경우는 기존 결과를 유지한다.
+    if (errorMsg && items.length === 0) return 'error';
     if (items.length === 0) return 'empty';
     return 'success';
-  }, [enabled, trimmedQuery, minQueryLength, initialError, isInitialLoading, items.length]);
+  }, [enabled, trimmedQuery, minQueryLength, isInitialLoading, errorMsg, items.length]);
 
   const errorMessage = useMemo(() => {
-    if (status === 'error') return initialError?.message ?? '검색 중 오류가 발생했습니다.';
-    if (errorMsg) return errorMsg;
-    return 'error';
-  }, [status, initialError, errorMsg]);
+    if (status !== 'error') return null;
+    return errorMsg ?? '검색 중 오류가 발생했습니다.';
+  }, [status, errorMsg]);
 
   return {
     status,
