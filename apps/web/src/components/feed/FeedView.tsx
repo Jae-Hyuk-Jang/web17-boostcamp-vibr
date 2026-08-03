@@ -8,7 +8,7 @@ import LoadingSpinner from '../ui/LoadingSpinner';
 import FeedList from './FeedList';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 
-import { useFeedRefreshStore, usePostReactionOverridesStore } from '@/stores';
+import { useFeedRefreshStore, usePostDeletionSignalStore } from '@/stores';
 import { PostResponseDto as Post, Cursor } from '@repo/dto';
 
 interface FeedViewProps {
@@ -47,19 +47,8 @@ export default function FeedView({ initialPost }: FeedViewProps) {
     mergeItems: (prev, next) => dedupePosts([...prev, ...next]),
   });
 
-  const contentByPostId = usePostReactionOverridesStore((s) => s.contentByPostId);
-  const clearContentOverride = usePostReactionOverridesStore((s) => s.clearContentOverride);
-
-  const deletedPostId = usePostReactionOverridesStore((s) => s.deletedPostId);
-  const clearDeletedPostId = usePostReactionOverridesStore((s) => s.clearDeletedPostId);
-
-  const updatePostContent = useCallback(
-    (updatedPostId: string, newContent?: string) => {
-      if (!newContent) return;
-      setPosts((prev) => prev.map((post) => (post.id === updatedPostId ? { ...post, content: newContent } : post)));
-    },
-    [setPosts],
-  );
+  const deletedPostId = usePostDeletionSignalStore((s) => s.deletedPostId);
+  const clearDeletedPostId = usePostDeletionSignalStore((s) => s.clearDeletedPostId);
 
   const updateDeletedPost = useCallback(
     (deletedPostId: string) => {
@@ -67,15 +56,6 @@ export default function FeedView({ initialPost }: FeedViewProps) {
     },
     [setPosts],
   );
-
-  useEffect(() => {
-    const updatedIds = Object.keys(contentByPostId);
-    if (updatedIds.length === 0) return;
-    updatedIds.map((id) => {
-      updatePostContent(id, contentByPostId[id]?.content);
-      clearContentOverride(id);
-    });
-  }, [contentByPostId, updatePostContent, clearContentOverride]);
 
   useEffect(() => {
     if (!deletedPostId) return;

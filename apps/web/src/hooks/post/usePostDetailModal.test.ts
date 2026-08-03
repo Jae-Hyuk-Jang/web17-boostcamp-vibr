@@ -3,7 +3,6 @@ import type { PostResponseDto as Post } from '@repo/dto';
 
 import { usePostDetailModal } from './usePostDetailModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 const mockPush = jest.fn();
@@ -64,7 +63,6 @@ const openModalFor = (post: Post, extraProps: Record<string, unknown> = {}) => {
 describe('usePostDetailModal', () => {
   beforeEach(() => {
     useModalStore.setState({ isOpen: false, modalType: null, modalProps: {} });
-    usePostReactionOverridesStore.setState({ likesByPostId: {}, commentsByPostId: {}, contentByPostId: {}, deletedPostId: null });
     useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
 
     usePostDetail.mockReturnValue({ post: mockPost(), isLoading: false, error: null, updatePostContent: jest.fn() });
@@ -88,15 +86,11 @@ describe('usePostDetailModal', () => {
     mockPush.mockClear();
   });
 
-  it('usePostReactions에 오버라이드 > post > passedPost 순으로 우선한 초기 좋아요 상태를 넘긴다', () => {
-    const post = mockPost({ isLiked: true, likeCount: 5 });
+  it('usePostReactions에 post(캐시 반영값) > passedPost 순으로 우선한 초기 좋아요 상태를 넘긴다', () => {
+    // post는 usePostDetail(postDetailQueryKey 캐시)에서 온 값이라, 다른 소비처(PostCard 등)가
+    // 좋아요를 바꾸면 캐시가 갱신되고 usePostDetail의 post도 그 값을 그대로 반영한다.
+    const post = mockPost({ isLiked: false, likeCount: 1 });
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
-    usePostReactionOverridesStore.setState({
-      likesByPostId: { 'post-1': { isLiked: false, likeCount: 1 } },
-      commentsByPostId: {},
-      contentByPostId: {},
-      deletedPostId: null,
-    });
     openModalFor(post);
 
     renderHook(() => usePostDetailModal());
@@ -134,7 +128,7 @@ describe('usePostDetailModal', () => {
     expect(result.current.editing.draft).toBe('draft from feed');
   });
 
-  it('editing.commit 성공 시 updatePost·updatePostContent·setContentOverride가 모두 호출된다', async () => {
+  it('editing.commit 성공 시 updatePost·updatePostContent가 호출된다(캐시 쓰기 한 곳으로 단일화, 이중 쓰기 없음)', async () => {
     const post = mockPost({ content: 'original' });
     const updatePostContent = jest.fn();
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent });
@@ -155,7 +149,6 @@ describe('usePostDetailModal', () => {
 
     expect(updatePost).toHaveBeenCalledWith('post-1', { content: 'updated' });
     expect(updatePostContent).toHaveBeenCalledWith('updated');
-    expect(usePostReactionOverridesStore.getState().contentByPostId['post-1']).toEqual({ content: 'updated' });
   });
 
   it('handleClose는 모달을 닫는다', () => {

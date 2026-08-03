@@ -1,8 +1,9 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
+import type { PostResponseDto as Post } from '@repo/dto';
 
 import usePostReactions from './usePostReactions';
-import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
-import { createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
+import { postDetailQueryKey } from './usePostDetail';
+import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api/internal', () => ({
   addLike: jest.fn(),
@@ -23,19 +24,34 @@ const { addLike, removeLike, getComments, createComment } = jest.requireMock('@/
 };
 const { authMe } = jest.requireMock('@/api/internal/auth') as { authMe: jest.Mock };
 
+const mockPost = (overrides: Partial<Post> = {}): Post => ({
+  id: 'post-1',
+  author: { id: 'author-1', nickname: 'author', profileImgUrl: null },
+  coverImgUrl: '',
+  musics: [],
+  content: 'content',
+  likeCount: 0,
+  commentCount: 0,
+  createdAt: new Date().toISOString(),
+  isEdited: false,
+  isLiked: false,
+  ...overrides,
+});
+
 describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상세 모달 측)', () => {
   beforeEach(() => {
-    usePostReactionOverridesStore.setState({ likesByPostId: {}, commentsByPostId: {}, contentByPostId: {}, deletedPostId: null });
     jest.clearAllMocks();
     getComments.mockResolvedValue({ comments: [] });
     authMe.mockResolvedValue({ id: 'me', nickname: 'me', profileImgUrl: null });
   });
 
-  it('[카드 ↔ 모달 동기화] toggleLike 성공 시 전역 store의 likesByPostId를 갱신하고, 이는 카드가 읽는 것과 동일한 키·형태다', async () => {
+  it('[카드 ↔ 모달 동기화] toggleLike 성공 시 postDetailQueryKey 캐시를 갱신하고, 이는 카드가 읽는 것과 동일한 키다', async () => {
     addLike.mockResolvedValue({});
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(postDetailQueryKey('post-1'), mockPost({ isLiked: false, likeCount: 3 }));
 
     const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 }), {
-      wrapper: createQueryClientWrapper(),
+      wrapper: createQueryClientWrapper(queryClient),
     });
 
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
@@ -48,15 +64,17 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     expect(result.current.likeCount).toBe(4);
     expect(addLike).toHaveBeenCalledWith({ postId: 'post-1' });
 
-    // PostCard.tsx가 읽는 것과 정확히 같은 경로/형태 — usePostReactionOverridesStore().likesByPostId[post.id]
-    expect(usePostReactionOverridesStore.getState().likesByPostId['post-1']).toEqual({ isLiked: true, likeCount: 4 });
+    // PostCard.tsx(usePostCacheSync)가 읽는 것과 정확히 같은 캐시 키
+    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ isLiked: true, likeCount: 4 });
   });
 
-  it('toggleLike 실패 시 로컬 상태와 store 모두 롤백된다', async () => {
+  it('toggleLike 실패 시 로컬 상태와 캐시 모두 롤백된다', async () => {
     removeLike.mockRejectedValue(new Error('network error'));
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(postDetailQueryKey('post-1'), mockPost({ isLiked: true, likeCount: 5 }));
 
     const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: true, initialLikeCount: 5 }), {
-      wrapper: createQueryClientWrapper(),
+      wrapper: createQueryClientWrapper(queryClient),
     });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
@@ -66,7 +84,7 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
 
     expect(result.current.isLiked).toBe(true);
     expect(result.current.likeCount).toBe(5);
-    expect(usePostReactionOverridesStore.getState().likesByPostId['post-1']).toEqual({ isLiked: true, likeCount: 5 });
+    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ isLiked: true, likeCount: 5 });
   });
 
   it('[재현·버그 후보] authMe() 응답이 오기 전에 좋아요를 누르면, 실제로는 로그인 사용자여도 조용히 아무 일도 일어나지 않는다', async () => {
@@ -93,7 +111,6 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     // usePostReactions는 자체 authMe() 판정에 의존하기 때문에 여기서는 토글이 무시된다.
     expect(addLike).not.toHaveBeenCalled();
     expect(result.current.isLiked).toBe(false);
-    expect(usePostReactionOverridesStore.getState().likesByPostId['post-1']).toBeUndefined();
 
     await act(async () => {
       resolveAuthMe({ id: 'me', nickname: 'me', profileImgUrl: null });
@@ -101,11 +118,13 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
   });
 
-  it('[카드 ↔ 모달 동기화] 댓글 작성 성공 시(서버가 read-after-write를 보장하는 경우) commentsByPostId override를 갱신한다 — 카드가 읽는 것과 동일한 키·형태다', async () => {
+  it('[카드 ↔ 모달 동기화] 댓글 작성 성공 시(서버가 read-after-write를 보장하는 경우) postDetailQueryKey 캐시의 commentCount를 갱신한다', async () => {
     createComment.mockResolvedValue({ id: 'server-comment-1' });
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(postDetailQueryKey('post-1'), mockPost({ commentCount: 0 }));
 
     const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }), {
-      wrapper: createQueryClientWrapper(),
+      wrapper: createQueryClientWrapper(queryClient),
     });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
@@ -131,7 +150,7 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
       await result.current.submitComment();
     });
 
-    await waitFor(() => expect(usePostReactionOverridesStore.getState().commentsByPostId['post-1']).toEqual({ commentCount: 1 }));
+    await waitFor(() => expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ commentCount: 1 }));
     expect(result.current.commentCount).toBe(1);
   });
 
@@ -141,9 +160,11 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     // 실무에서 충분히 발생할 수 있는 타이밍이다.
     createComment.mockResolvedValue({ id: 'server-comment-1' });
     getComments.mockResolvedValue({ comments: [] }); // 최초 로드 + submitComment 내부의 refetchComments 둘 다 빈 목록
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(postDetailQueryKey('post-1'), mockPost({ commentCount: 0 }));
 
     const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }), {
-      wrapper: createQueryClientWrapper(),
+      wrapper: createQueryClientWrapper(queryClient),
     });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
@@ -161,14 +182,16 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     // 아래 값은 "바람직한 동작"이 아니라 "현재 실제로 이렇게 동작한다"는 특성화(characterization)다.
     await waitFor(() => expect(result.current.comments).toHaveLength(0));
     expect(result.current.commentCount).toBe(0);
-    expect(usePostReactionOverridesStore.getState().commentsByPostId['post-1']).toEqual({ commentCount: 0 });
+    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ commentCount: 0 });
   });
 
-  it('댓글 작성 실패 시 낙관적으로 추가했던 임시 댓글이 제거되고 store의 댓글 수도 되돌아간다', async () => {
+  it('댓글 작성 실패 시 낙관적으로 추가했던 임시 댓글이 제거되고 캐시의 댓글 수도 되돌아간다', async () => {
     createComment.mockRejectedValue(new Error('network error'));
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(postDetailQueryKey('post-1'), mockPost({ commentCount: 0 }));
 
     const { result } = renderHook(() => usePostReactions({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 0 }), {
-      wrapper: createQueryClientWrapper(),
+      wrapper: createQueryClientWrapper(queryClient),
     });
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
@@ -180,7 +203,7 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
     });
 
     await waitFor(() => expect(result.current.comments).toHaveLength(0));
-    expect(usePostReactionOverridesStore.getState().commentsByPostId['post-1']).toEqual({ commentCount: 0 });
+    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ commentCount: 0 });
   });
 
   it('[회귀 안전망 #44] 좋아요 요청이 진행 중일 때 다시 toggleLike를 호출해도 API가 한 번만 호출된다', async () => {
