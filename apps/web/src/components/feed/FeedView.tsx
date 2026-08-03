@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect } from 'react';
-import { useFeedInfiniteScroll } from '@/hooks';
+import { useInfiniteScroll } from '@/hooks';
 import { getFeedPosts } from '@/api';
 import { FeedSkeleton } from '../skeleton';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -9,11 +9,14 @@ import FeedList from './FeedList';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 
 import { useFeedRefreshStore, usePostReactionOverridesStore } from '@/stores';
-import { PostResponseDto } from '@repo/dto';
+import { PostResponseDto as Post, Cursor } from '@repo/dto';
 
 interface FeedViewProps {
-  initialPost?: PostResponseDto;
+  initialPost?: Post;
 }
+
+/** postId 기반 게시글 목록 중복 제거 함수 */
+const dedupePosts = (posts: Post[]) => Array.from(new Map(posts.map((post) => [post.id, post])).values());
 
 export default function FeedView({ initialPost }: FeedViewProps) {
   const openModal = useModalStore((s) => s.openModal);
@@ -25,10 +28,23 @@ export default function FeedView({ initialPost }: FeedViewProps) {
     }
   }, [initialPost, openModal]);
 
-  const { posts, setPosts, hasNext, isInitialLoading, errorMsg, ref } = useFeedInfiniteScroll({
-    fetchFn: getFeedPosts,
+  const fetchFn = useCallback(async (cursor?: Cursor, limit?: number) => {
+    const data = await getFeedPosts(cursor, limit);
+    return { items: data.posts, hasNext: data.hasNext, nextCursor: data.nextCursor };
+  }, []);
+
+  const {
+    items: posts,
+    setItems: setPosts,
+    hasNext,
+    isInitialLoading,
+    errorMsg,
+    ref,
+  } = useInfiniteScroll<Post, Cursor>({
+    fetchFn,
     resetKey: String(nonce),
-    initialData: initialPost ? [initialPost] : [],
+    initialItems: initialPost ? [initialPost] : [],
+    mergeItems: (prev, next) => dedupePosts([...prev, ...next]),
   });
 
   const contentByPostId = usePostReactionOverridesStore((s) => s.contentByPostId);
