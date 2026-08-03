@@ -242,6 +242,24 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
     expect(screen.getAllByRole('listitem')).toHaveLength(4);
   });
 
+  it('곡 추가 성공 시 playlistDetail 캐시에도 반영된다 (playlist-detail-caching #192)', async () => {
+    addMusicsToPlaylist.mockResolvedValue({ addedMusics: [song('new-song', 'New Song')] });
+    const queryClient = createTestQueryClient();
+    render(<PlaylistDetailModal playlistId="pl-1" />, { wrapper: createQueryClientWrapper(queryClient) });
+    await screen.findByText('내 플레이리스트');
+
+    fireEvent.click(screen.getByText('곡 추가 트리거'));
+
+    await waitFor(() =>
+      expect(queryClient.getQueryData<GetPlaylistDetailResDto>(playlistDetailQueryKey('pl-1'))?.musics.map((m) => m.id)).toEqual([
+        's1',
+        's2',
+        's3',
+        'new-song',
+      ]),
+    );
+  });
+
   it('곡 추가 실패 시 에러 toast를 띄우고 목록은 바뀌지 않는다', async () => {
     addMusicsToPlaylist.mockRejectedValue(new Error('fail'));
     renderModal();

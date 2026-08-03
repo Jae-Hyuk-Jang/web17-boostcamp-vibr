@@ -119,16 +119,24 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
     requestChangeOrder(nextSongs);
   };
 
-  const handleAddSong = async (song: UnsavedMusic) => {
-    try {
-      // 낙관적 업데이트 x - song id가 필요해서 안 됨
-      const { addedMusics } = await addMusicsToPlaylist(playlistId, [song]);
-      setSongs([...songs, ...addedMusics]);
+  // 낙관적 업데이트 x - song id가 필요해서 안 됨(기존 제약 유지). onSuccess에서만 반영한다.
+  const addSongMutation = useMutation({
+    mutationFn: (song: UnsavedMusic) => addMusicsToPlaylist(playlistId, [song]),
+    onSuccess: ({ addedMusics }) => {
+      setSongs((prev) => [...prev, ...addedMusics]);
+      queryClient.setQueryData(playlistDetailQueryKey(playlistId), (prev: GetPlaylistDetailResDto | undefined) =>
+        prev ? { ...prev, musics: [...prev.musics, ...addedMusics] } : prev,
+      );
       bumpPlaylistRefresh();
-    } catch (e) {
+    },
+    onError: (e) => {
       toast.error('곡 추가에 실패했습니다.');
       console.error(e);
-    }
+    },
+  });
+
+  const handleAddSong = (song: UnsavedMusic) => {
+    addSongMutation.mutate(song);
   };
 
   const startRename = () => {
