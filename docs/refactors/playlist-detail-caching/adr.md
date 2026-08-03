@@ -55,7 +55,14 @@ A. 60초 — `POST_DETAIL_STALE_TIME_MS`와 동일(추천). 이유: 세션 중 �
 
 ### Decision
 
-`playlistDetailQueryKey(playlistId)` 기반 `usePlaylistDetail` 공용 훅(`useQuery`, `staleTime: 60_000`)을 신설해 두 소비처가 캐시를 공유하도록 전환한다. `PlaylistDetailModal`의 4개 변경 액션은 각각 `useMutation`(`onMutate`로 낙관적 캐시 쓰기 → `onSuccess`로 서버 응답 확정 → `onError`로 이전 캐시 값 롤백)으로 재작성한다. `usePlaylistRecommendations.selectPlaylist`는 `queryClient.ensureQueryData({queryKey: playlistDetailQueryKey(id), queryFn, staleTime: 60_000})`로 같은 캐시를 재사용하는 imperative 함수로 유지한다(컴포넌트 마운트에 종속되지 않는 사용자 액션이므로 `useQuery`로 바꾸지 않는다). 목록(`['playlists']`) 캐시는 지금처럼 각 mutation 성공 후 `invalidateQueries`로 최종 일치만 보장한다(PRD 결정 유지).
+`playlistDetailQueryKey(playlistId)` 기반 `usePlaylistDetail` 공용 훅(`useQuery`, `staleTime: 60_000`)을 신설해 두 소비처가 캐시를 공유하도록 전환한다. `PlaylistDetailModal`의 4개 변경 액션은 각각 `useMutation`으로 재작성하되, 캐시 쓰기 시점은 **현재 동작을 그대로 보존**한다(#189 구현 중 정정 — 아래 참고).
+
+> **정정(#190 착수 전 발견)**: 당초 "4개 액션 모두 `onMutate` 낙관적 쓰기"로 적었으나, 실제 코드를 다시 확인한 결과 낙관적으로 동작하는 것은 `requestChangeOrder`(순서변경/곡삭제) 경로뿐이었다(Fact, `moveSong`/`moveSongTo`/`deleteSelectedSongs`는 `await` 전에 `setSongs` 호출). `commitRename`/`handleAddSong`/삭제는 `await` **성공 이후에만** 로컬 state를 바꾼다 — 낙관적 업데이트가 아니다. 사용자에게 확인 결과 "현재 동작대로 진행"하기로 확정했다. 따라서:
+>
+> - `requestChangeOrder` 경로(이슈 5/#191): `onMutate`에서 낙관적 캐시 쓰기, `onError`에서 롤백 정책 적용(기존 동작 유지 — 롤백 없음, 이슈 5에서 재확인).
+> - `commitRename`(이슈 4/#190), `handleAddSong`(이슈 6/#192), 삭제(이슈 7/#193): `onSuccess`에서만 캐시 쓰기(현재와 동일한 타이밍) — `onMutate` 낙관적 쓰기와 `onError` 롤백은 추가하지 않는다.
+
+`usePlaylistRecommendations.selectPlaylist`는 `queryClient.ensureQueryData({queryKey: playlistDetailQueryKey(id), queryFn, staleTime: 60_000})`로 같은 캐시를 재사용하는 imperative 함수로 유지한다(컴포넌트 마운트에 종속되지 않는 사용자 액션이므로 `useQuery`로 바꾸지 않는다). 목록(`['playlists']`) 캐시는 지금처럼 각 mutation 성공 후 `invalidateQueries`로 최종 일치만 보장한다(PRD 결정 유지).
 
 ### Alternatives
 
