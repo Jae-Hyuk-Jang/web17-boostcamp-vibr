@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import PostHeader from './PostHeader';
-import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
+import { usePostDeletionSignalStore } from '@/stores/usePostDeletionSignalStore';
 
 jest.mock('react-toastify', () => ({
   toast: { success: jest.fn(), error: jest.fn() },
@@ -35,10 +35,10 @@ const mockPost = (overrides: Partial<Post> = {}): Post => ({
 describe('PostHeader — 삭제 동기화 특성화(#153)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    usePostReactionOverridesStore.setState({ likesByPostId: {}, commentsByPostId: {}, contentByPostId: {}, deletedPostId: null });
+    usePostDeletionSignalStore.setState({ deletedPostId: null });
   });
 
-  it('삭제 성공 시 deletePost를 호출하고 usePostReactionOverridesStore.deletedPostId를 postId로 설정한다', async () => {
+  it('삭제 성공 시 deletePost를 호출하고 usePostDeletionSignalStore.deletedPostId를 postId로 설정한다', async () => {
     deletePost.mockResolvedValue(undefined);
     const post = mockPost();
     const onDeletePost = jest.fn();
@@ -49,7 +49,7 @@ describe('PostHeader — 삭제 동기화 특성화(#153)', () => {
     fireEvent.click(screen.getByText('삭제하기'));
 
     await waitFor(() => expect(deletePost).toHaveBeenCalledWith('post-1'));
-    await waitFor(() => expect(usePostReactionOverridesStore.getState().deletedPostId).toBe('post-1'));
+    await waitFor(() => expect(usePostDeletionSignalStore.getState().deletedPostId).toBe('post-1'));
     expect(onDeletePost).toHaveBeenCalled();
   });
 
@@ -64,7 +64,7 @@ describe('PostHeader — 삭제 동기화 특성화(#153)', () => {
     fireEvent.click(screen.getByText('삭제하기'));
 
     await waitFor(() => expect(deletePost).toHaveBeenCalledWith('post-1'));
-    expect(usePostReactionOverridesStore.getState().deletedPostId).toBeNull();
+    expect(usePostDeletionSignalStore.getState().deletedPostId).toBeNull();
     expect(onDeletePost).not.toHaveBeenCalled();
   });
 

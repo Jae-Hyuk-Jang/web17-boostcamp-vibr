@@ -8,7 +8,7 @@ import LoadingSpinner from '../ui/LoadingSpinner';
 import FeedList from './FeedList';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 
-import { useFeedRefreshStore, usePostReactionOverridesStore } from '@/stores';
+import { useFeedRefreshStore, usePostDeletionSignalStore } from '@/stores';
 import { PostResponseDto as Post, Cursor } from '@repo/dto';
 
 interface FeedViewProps {
@@ -47,8 +47,8 @@ export default function FeedView({ initialPost }: FeedViewProps) {
     mergeItems: (prev, next) => dedupePosts([...prev, ...next]),
   });
 
-  const deletedPostId = usePostReactionOverridesStore((s) => s.deletedPostId);
-  const clearDeletedPostId = usePostReactionOverridesStore((s) => s.clearDeletedPostId);
+  const deletedPostId = usePostDeletionSignalStore((s) => s.deletedPostId);
+  const clearDeletedPostId = usePostDeletionSignalStore((s) => s.clearDeletedPostId);
 
   const updateDeletedPost = useCallback(
     (deletedPostId: string) => {

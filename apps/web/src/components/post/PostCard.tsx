@@ -26,7 +26,7 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
   const { openModal } = useModalStore();
 
   // postDetailQueryKey 캐시를 구독한다 — usePostLikeToggle/usePostReactions/usePostDetailModal가
-  // 이 캐시에 좋아요/댓글수/본문을 쓰면 그 값을 그대로 반영한다(usePostReactionOverridesStore 대체).
+  // 이 캐시에 좋아요/댓글수/본문을 쓰면 그 값을 그대로 반영한다(옛 usePostReactionOverridesStore의 값 동기화 대체).
   const { post: cachedPost } = usePostCacheSync(post.id, post);
 
   const {

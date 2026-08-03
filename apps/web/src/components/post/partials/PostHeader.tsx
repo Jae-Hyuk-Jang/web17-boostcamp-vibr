@@ -6,7 +6,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { coalesceImageSrc, formatRelativeTime } from '@/utils';
 import type { PostResponseDto } from '@repo/dto';
 import { DEFAULT_IMAGES } from '@/constants';
-import { usePostReactionOverridesStore } from '@/stores';
+import { usePostDeletionSignalStore } from '@/stores';
 import { showConfirmToast } from '@/components/ui/ConfirmToast';
 import { deletePost } from '@/api';
 import { toast } from 'react-toastify';
@@ -26,7 +26,7 @@ export default function PostHeader({ post, isOwner, onUserClick, onEditPost, onD
   const menuRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
-  const setDeletedPostId = usePostReactionOverridesStore((s) => s.setDeletedPostId);
+  const setDeletedPostId = usePostDeletionSignalStore((s) => s.setDeletedPostId);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
