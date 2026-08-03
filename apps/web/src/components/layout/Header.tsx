@@ -2,21 +2,22 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useNotiStore } from '@/stores/useNotiStore';
 import { useNotiOverlayStore } from '@/stores/useNotiOverlayStore';
-import { useFeedRefreshStore } from '@/stores';
+import { feedQueryKey } from '@/components/feed/FeedView';
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const unreadNotiCount = useNotiStore((s) => s.unreadCount);
   const openNoti = useNotiOverlayStore((s) => s.open);
-  const bumpFeed = useFeedRefreshStore((s) => s.bump);
+  const queryClient = useQueryClient();
 
   const handleLogoClick = () => {
     if (pathname === '/') {
-      bumpFeed();
+      queryClient.invalidateQueries({ queryKey: feedQueryKey });
     } else {
       router.push('/');
     }
