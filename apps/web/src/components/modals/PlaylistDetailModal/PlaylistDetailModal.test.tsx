@@ -10,11 +10,15 @@ jest.mock('react-toastify', () => ({
 }));
 
 jest.mock('@/api', () => ({
-  getPlaylistDetail: jest.fn(),
   changeMusicOrderOfPlaylist: jest.fn(),
   addMusicsToPlaylist: jest.fn(),
   deletePlaylist: jest.fn(),
   editTitleOfPlaylist: jest.fn(),
+}));
+
+// usePlaylistDetail(#188)이 getPlaylistDetail을 '@/api/internal'에서 직접 가져오므로 별도로 모킹한다.
+jest.mock('@/api/internal', () => ({
+  getPlaylistDetail: jest.fn(),
 }));
 
 jest.mock('@/components/search/picker/MusicPickerSearch', () => ({
@@ -38,13 +42,13 @@ jest.mock('@/components/search/picker/MusicPickerSearch', () => ({
   ),
 }));
 
-const { getPlaylistDetail, changeMusicOrderOfPlaylist, addMusicsToPlaylist, deletePlaylist, editTitleOfPlaylist } = jest.requireMock('@/api') as {
-  getPlaylistDetail: jest.Mock;
+const { changeMusicOrderOfPlaylist, addMusicsToPlaylist, deletePlaylist, editTitleOfPlaylist } = jest.requireMock('@/api') as {
   changeMusicOrderOfPlaylist: jest.Mock;
   addMusicsToPlaylist: jest.Mock;
   deletePlaylist: jest.Mock;
   editTitleOfPlaylist: jest.Mock;
 };
+const { getPlaylistDetail } = jest.requireMock('@/api/internal') as { getPlaylistDetail: jest.Mock };
 const { toast } = jest.requireMock('react-toastify') as { toast: { error: jest.Mock } };
 
 const song = (id: string, title: string): MusicResponseDto => ({

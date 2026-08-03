@@ -6,11 +6,12 @@ import ModalPanel from '@/components/ui/ModalPanel';
 import MusicPickerSearch from '@/components/search/picker/MusicPickerSearch';
 import { useModalStore, usePlayerStore } from '@/stores';
 import { PLAYLISTS_QUERY_KEY } from '@/hooks/playlist/usePlaylists';
+import { usePlaylistDetail } from '@/hooks/playlist/usePlaylistDetail';
 import type { MusicRequestDto as UnsavedMusic, MusicResponseDto as SavedMusic, GetPlaylistDetailResDto } from '@repo/dto';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DEFAULT_IMAGES, MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
 import { Header, SongList, Toolbar } from './components';
-import { addMusicsToPlaylist, changeMusicOrderOfPlaylist, deletePlaylist, editTitleOfPlaylist, getPlaylistDetail } from '@/api';
+import { addMusicsToPlaylist, changeMusicOrderOfPlaylist, deletePlaylist, editTitleOfPlaylist } from '@/api';
 import { reorder } from '@/utils';
 import { toast } from 'react-toastify';
 
@@ -22,6 +23,11 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   const selectMusic = usePlayerStore((s) => s.selectMusic);
   const bumpPlaylistRefresh = () => queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
 
+  // usePlaylistRecommendations(#194)와 캐시를 공유하는 조회 경로. 변경 액션 4개는 아직 이 캐시를 쓰지 않고
+  // 기존과 같은 로컬 state(playlist/songs)를 직접 갱신한다 — 각 액션의 useMutation 전환(#190~#193)에서
+  // 순차적으로 이 캐시 쓰기로 옮긴다.
+  const { data: fetchedPlaylist, isError: isPlaylistDetailError } = usePlaylistDetail(playlistId);
+
   const [playlist, setPlaylist] = useState<GetPlaylistDetailResDto | null>(null);
   const [songs, setSongs] = useState<SavedMusic[]>([]);
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
@@ -32,20 +38,18 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   const [isInvalidTitle, setIsInvalidTitle] = useState(false);
   const [musicQuery, setMusicQuery] = useState('');
 
-  const initialFetchPlaylist = useCallback(async () => {
-    try {
-      const fetched = await getPlaylistDetail(playlistId);
-      setPlaylist(fetched);
-      setSongs(fetched.musics);
-    } catch (e) {
-      toast.error('플레이리스트 정보를 불러오지 못했습니다.');
-      console.error(e);
+  useEffect(() => {
+    if (fetchedPlaylist) {
+      setPlaylist(fetchedPlaylist);
+      setSongs(fetchedPlaylist.musics);
     }
-  }, [playlistId]);
+  }, [fetchedPlaylist]);
 
   useEffect(() => {
-    initialFetchPlaylist();
-  }, [initialFetchPlaylist]);
+    if (isPlaylistDetailError) {
+      toast.error('플레이리스트 정보를 불러오지 못했습니다.');
+    }
+  }, [isPlaylistDetailError]);
 
   const onPlayTotalSongs = () => {
     if (songs.length > 0) {
