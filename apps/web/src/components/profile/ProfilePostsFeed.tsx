@@ -48,7 +48,7 @@ export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
   const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: profilePostsFeedQueryKey(userId),
     queryFn: async ({ pageParam }: { pageParam: string | undefined }): Promise<Page> => {
-      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출(기존 useInfiniteScroll 동작 유지)
+      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출
 
       const { items: previews, hasNext, nextCursor } = await getUserProfilePosts(userId, pageParam);
       const fullPosts = await Promise.all(

@@ -3,7 +3,6 @@ import { render, renderHook, waitFor } from '@testing-library/react';
 import { AuthBootstrap } from './AuthBootstrap';
 import usePostReactions from '@/hooks/post/usePostReactions';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { usePostDeletionSignalStore } from '@/stores/usePostDeletionSignalStore';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api/internal', () => ({
@@ -22,7 +21,6 @@ describe('authMe 중복 호출 계약 테스트 (#139) — AuthBootstrap과 useP
   beforeEach(() => {
     jest.clearAllMocks();
     useAuthStore.setState({ userId: null, isAuthenticated: false, isLoading: true });
-    usePostDeletionSignalStore.setState({ deletedPostId: null });
     authMe.mockResolvedValue({ id: 'me', nickname: 'me', profileImgUrl: null });
     getComments.mockResolvedValue({ comments: [] });
   });

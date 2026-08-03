@@ -65,7 +65,7 @@ export default function useUserSearch({
   } = useInfiniteQuery({
     queryKey: userSearchQueryKey(trimmedQuery),
     queryFn: async ({ pageParam }: { pageParam: string | undefined }): Promise<Page> => {
-      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출(기존 useInfiniteScroll 동작 유지)
+      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출
 
       const data = await searchUsers(trimmedQuery, pageParam, limit);
       const users = Array.isArray(data.users) ? data.users : [];

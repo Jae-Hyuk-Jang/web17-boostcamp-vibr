@@ -37,7 +37,7 @@ export default function FeedView({ initialPost }: FeedViewProps) {
   const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: feedQueryKey,
     queryFn: async ({ pageParam }: { pageParam: Cursor | undefined }): Promise<FeedPage> => {
-      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출(기존 useInfiniteScroll 동작 유지)
+      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출
       return getFeedPosts(pageParam);
     },
     initialPageParam: undefined as Cursor | undefined,

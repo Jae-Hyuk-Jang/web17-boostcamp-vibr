@@ -28,7 +28,7 @@ export default function ProfileView({ userId }: { userId: string }) {
   const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: profileGridQueryKey(userId),
     queryFn: async ({ pageParam }: { pageParam: string | undefined }): Promise<Page> => {
-      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출(기존 useInfiniteScroll 동작 유지)
+      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출
       return getUserProfilePosts(userId, pageParam);
     },
     initialPageParam: undefined as string | undefined,

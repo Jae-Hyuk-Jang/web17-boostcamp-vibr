@@ -42,7 +42,7 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
   const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam }: { pageParam: string | undefined }): Promise<Page> => {
-      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출(기존 useInfiniteScroll 동작 유지)
+      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출
 
       const data = await fetchFn(profileUserId, pageParam);
       return { items: data.users, hasNext: data.hasNext, nextCursor: data.nextCursor };

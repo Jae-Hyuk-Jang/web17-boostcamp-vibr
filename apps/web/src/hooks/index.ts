@@ -2,7 +2,6 @@ export { default as useDebouncedValue } from './useDebouncedValue';
 export { default as useIsMobile } from './useIsMobile';
 export { default as useMusicActions } from './useMusicActions';
 export { default as useScrollLock } from './useScrollLock';
-export { default as useInfiniteScroll } from './useInfiniteScroll';
 export { useInfiniteScrollTrigger } from './useInfiniteScrollTrigger';
 export * from './player';
 export * from './post/usePostMedia';
