@@ -5,6 +5,7 @@ import { usePlaylistRecommendations } from './usePlaylistRecommendations';
 import { PLAYLISTS_QUERY_KEY } from './usePlaylists';
 import { MOCK_PLAYLIST_BRIEFS, MOCK_PLAYLIST_DETAILS } from '@/constants';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
+import { playlistDetailQueryKey } from './usePlaylistDetail';
 
 jest.mock('@/api/internal', () => ({
   getAllPlaylists: jest.fn(),
@@ -142,5 +143,44 @@ describe('usePlaylistRecommendations.selectPlaylist — 특성화 테스트 (pla
       await result.current.refetch();
     });
     expect(result.current.errorMessage).toBeNull();
+  });
+});
+
+describe('usePlaylistRecommendations.selectPlaylist — playlistDetail 캐시 공유 계약 (playlist-detail-caching #194)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    getAllPlaylists.mockResolvedValue([]);
+  });
+
+  it('성공하면 playlistDetailQueryKey 캐시를 채운다 — PlaylistDetailModal과 같은 캐시를 공유', async () => {
+    const detail = { id: 'pl-1', title: '제목', musics: [] };
+    getPlaylistDetail.mockResolvedValue(detail);
+    const queryClient = createTestQueryClient();
+
+    const { result } = renderHook(() => usePlaylistRecommendations({ enabled: true }), { wrapper: createQueryClientWrapper(queryClient) });
+    await waitFor(() => expect(result.current.status).toBe('success'));
+
+    await act(async () => {
+      await result.current.selectPlaylist('pl-1');
+    });
+
+    expect(queryClient.getQueryData(playlistDetailQueryKey('pl-1'))).toEqual(detail);
+  });
+
+  it('이미 캐시에 있는 playlistId를 다시 선택하면(staleTime 내) getPlaylistDetail을 재호출하지 않는다', async () => {
+    const detail = { id: 'pl-1', title: '캐시된 제목', musics: [] };
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(playlistDetailQueryKey('pl-1'), detail);
+
+    const { result } = renderHook(() => usePlaylistRecommendations({ enabled: true }), { wrapper: createQueryClientWrapper(queryClient) });
+    await waitFor(() => expect(result.current.status).toBe('success'));
+
+    let returned: unknown;
+    await act(async () => {
+      returned = await result.current.selectPlaylist('pl-1');
+    });
+
+    expect(returned).toEqual(detail);
+    expect(getPlaylistDetail).not.toHaveBeenCalled();
   });
 });
