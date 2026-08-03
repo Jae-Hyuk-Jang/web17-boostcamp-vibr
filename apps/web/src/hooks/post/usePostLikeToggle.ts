@@ -1,9 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import type { PostResponseDto as Post } from '@repo/dto';
 
 import { addLike, removeLike } from '@/api/internal';
-import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
+import { postDetailQueryKey } from './usePostDetail';
 
 type Options = {
   postId: string;
@@ -29,9 +31,20 @@ type Result = {
 };
 
 export default function usePostLikeToggle({ postId, initialIsLiked, initialLikeCount, isAuthenticated, resetSubmittingOnSync }: Options): Result {
+  const queryClient = useQueryClient();
+
   const [isLiked, setIsLiked] = useState(initialIsLiked);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const broadcastLike = useCallback(
+    (nextIsLiked: boolean, nextLikeCount: number) => {
+      queryClient.setQueryData(postDetailQueryKey(postId), (prev: Post | undefined) =>
+        prev ? { ...prev, isLiked: nextIsLiked, likeCount: nextLikeCount } : prev,
+      );
+    },
+    [queryClient, postId],
+  );
 
   const prevPostIdRef = useRef(postId);
 
@@ -57,7 +70,7 @@ export default function usePostLikeToggle({ postId, initialIsLiked, initialLikeC
     setIsSubmitting(true);
     setIsLiked(isNextLiked);
     setLikeCount(nextCount);
-    usePostReactionOverridesStore.getState().setLikeOverride(postId, { isLiked: isNextLiked, likeCount: nextCount });
+    broadcastLike(isNextLiked, nextCount);
 
     try {
       if (isNextLiked) await addLike({ postId });
@@ -65,11 +78,11 @@ export default function usePostLikeToggle({ postId, initialIsLiked, initialLikeC
     } catch {
       setIsLiked(isPrevLiked);
       setLikeCount(prevCount);
-      usePostReactionOverridesStore.getState().setLikeOverride(postId, { isLiked: isPrevLiked, likeCount: prevCount });
+      broadcastLike(isPrevLiked, prevCount);
     } finally {
       setIsSubmitting(false);
     }
-  }, [isAuthenticated, isSubmitting, isLiked, likeCount, postId]);
+  }, [isAuthenticated, isSubmitting, isLiked, likeCount, postId, broadcastLike]);
 
   return { isLiked, likeCount, isSubmitting, toggleLike };
 }

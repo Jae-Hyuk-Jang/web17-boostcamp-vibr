@@ -1,12 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { GetCommentsResDto, UserDto } from '@repo/dto';
+import { useQueryClient } from '@tanstack/react-query';
+import type { GetCommentsResDto, PostResponseDto as Post, UserDto } from '@repo/dto';
 
 import { getComments, createComment } from '@/api/internal';
 import { useAuthMeQuery } from '@/hooks/auth/client/useAuthMeQuery';
-import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
 import usePostLikeToggle from './usePostLikeToggle';
+import { postDetailQueryKey } from './usePostDetail';
 
 type CommentItem = GetCommentsResDto['comments'][number];
 
@@ -70,6 +71,7 @@ const getEffectivePollMs = (base: number) => {
 };
 
 export default function usePostReactions({ enabled, postId, initialIsLiked, initialLikeCount, pollMs = 5000 }: Options): Result {
+  const queryClient = useQueryClient();
   const { data: me, isSuccess: isAuthenticated } = useAuthMeQuery(enabled);
 
   const {
@@ -117,10 +119,9 @@ export default function usePostReactions({ enabled, postId, initialIsLiked, init
 
   const setGlobalCommentCount = useCallback(
     (count: number) => {
-      // store가 없거나 미구현이면 여기서 타입 에러가 날 수 있음(스토어 확장 필요)
-      usePostReactionOverridesStore.getState().setCommentOverride(postId, { commentCount: count });
+      queryClient.setQueryData(postDetailQueryKey(postId), (prev: Post | undefined) => (prev ? { ...prev, commentCount: count } : prev));
     },
-    [postId],
+    [queryClient, postId],
   );
 
   /**

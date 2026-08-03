@@ -5,8 +5,7 @@ import { useCallback, useMemo } from 'react';
 import { PostHeader, PostMedia, PostActions, PostContentPreview } from './index';
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
 
-import { usePostLikeToggle } from '@/hooks';
-import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
+import { usePostLikeToggle, usePostCacheSync } from '@/hooks';
 import { useModalStore, useAuthStore, MODAL_TYPES } from '@/stores';
 
 interface PostCardProps {
@@ -26,14 +25,9 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { openModal } = useModalStore();
 
-  const likeOverride = usePostReactionOverridesStore((s) => s.likesByPostId[post.id]);
-
-  // 댓글 카운트 override 추가
-  const commentOverride = usePostReactionOverridesStore((s) => s.commentsByPostId[post.id]);
-  const baseCommentCount = commentOverride?.commentCount ?? post.commentCount;
-
-  const isBaseLiked = Boolean(likeOverride?.isLiked ?? post.isLiked);
-  const baseLikeCount = likeOverride?.likeCount ?? post.likeCount;
+  // postDetailQueryKey 캐시를 구독한다 — usePostLikeToggle/usePostReactions/usePostDetailModal가
+  // 이 캐시에 좋아요/댓글수/본문을 쓰면 그 값을 그대로 반영한다(usePostReactionOverridesStore 대체).
+  const { post: cachedPost } = usePostCacheSync(post.id, post);
 
   const {
     isLiked: isOptimisticLiked,
@@ -42,11 +36,11 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
     toggleLike: handleToggleLike,
   } = usePostLikeToggle({
     postId: post.id,
-    initialIsLiked: isBaseLiked,
-    initialLikeCount: baseLikeCount,
+    initialIsLiked: Boolean(cachedPost.isLiked),
+    initialLikeCount: cachedPost.likeCount,
     isAuthenticated,
-    // override/서버값 변경 시(예: 상세 모달에서 눌러서 store가 바뀜) 로컬 optimistic을 곧바로
-    // 동기화하는 기존 동작을 그대로 보존한다 — usePostReactionOverridesStore를 직접 구독하는 소비처의 기존 관례.
+    // 캐시 반영 값(예: 상세 모달에서 눌러서 캐시가 바뀜) 변경 시 로컬 optimistic을 곧바로
+    // 동기화하는 기존 동작을 그대로 보존한다 — 캐시를 직접 구독하는 소비처의 기존 관례.
     resetSubmittingOnSync: true,
   });
 
@@ -54,20 +48,18 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
 
   const postForActions: Post = useMemo(
     () => ({
-      ...post,
+      ...cachedPost,
       isLiked: isOptimisticLiked,
       likeCount: optimisticLikeCount,
-      // 댓글 카운트도 store 반영값 사용
-      commentCount: baseCommentCount,
     }),
-    [post, isOptimisticLiked, optimisticLikeCount, baseCommentCount],
+    [cachedPost, isOptimisticLiked, optimisticLikeCount],
   );
 
   const handleOpenDetail = useCallback(() => onOpenDetail(postForActions), [onOpenDetail, postForActions]);
 
   const openEditPostModal = useCallback(() => {
-    openModal(MODAL_TYPES.POST_DETAIL, { postId: post.id, initialIsEditing: true, initialEditingContent: post.content });
-  }, [openModal, post.id, post.content]);
+    openModal(MODAL_TYPES.POST_DETAIL, { postId: post.id, initialIsEditing: true, initialEditingContent: cachedPost.content });
+  }, [openModal, post.id, cachedPost.content]);
 
   return (
     <article onClick={handleOpenDetail} className="bg-white py-6 cursor-pointer">
@@ -96,7 +88,7 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
           disabledLike={!isAuthenticated || isLikeSubmitting}
         />
 
-        <PostContentPreview content={post.content} onClickMore={handleOpenDetail} />
+        <PostContentPreview content={cachedPost.content} onClickMore={handleOpenDetail} />
       </div>
     </article>
   );

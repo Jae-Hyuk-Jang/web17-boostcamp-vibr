@@ -1,7 +1,9 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
+import type { PostResponseDto as Post } from '@repo/dto';
 
 import usePostLikeToggle from './usePostLikeToggle';
-import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
+import { postDetailQueryKey } from './usePostDetail';
+import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api/internal', () => ({
   addLike: jest.fn(),
@@ -10,16 +12,33 @@ jest.mock('@/api/internal', () => ({
 
 const { addLike, removeLike } = jest.requireMock('@/api/internal') as { addLike: jest.Mock; removeLike: jest.Mock };
 
+const mockPost = (overrides: Partial<Post> = {}): Post => ({
+  id: 'post-1',
+  author: { id: 'author-1', nickname: 'author', profileImgUrl: null },
+  coverImgUrl: '',
+  musics: [],
+  content: 'content',
+  likeCount: 3,
+  commentCount: 0,
+  createdAt: new Date().toISOString(),
+  isEdited: false,
+  isLiked: false,
+  ...overrides,
+});
+
 describe('usePostLikeToggle', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    usePostReactionOverridesStore.setState({ likesByPostId: {}, commentsByPostId: {}, contentByPostId: {}, deletedPostId: null });
   });
 
-  it('좋아요 토글 성공 시 낙관적으로 반영하고 addLike를 호출하며 override 스토어에 브로드캐스트한다', async () => {
+  it('좋아요 토글 성공 시 낙관적으로 반영하고 addLike를 호출하며 postDetailQueryKey 캐시에 브로드캐스트한다', async () => {
     addLike.mockResolvedValue({});
-    const { result } = renderHook(() =>
-      usePostLikeToggle({ postId: 'post-1', initialIsLiked: false, initialLikeCount: 3, isAuthenticated: true, resetSubmittingOnSync: false }),
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(postDetailQueryKey('post-1'), mockPost({ isLiked: false, likeCount: 3 }));
+
+    const { result } = renderHook(
+      () => usePostLikeToggle({ postId: 'post-1', initialIsLiked: false, initialLikeCount: 3, isAuthenticated: true, resetSubmittingOnSync: false }),
+      { wrapper: createQueryClientWrapper(queryClient) },
     );
 
     await act(async () => {
@@ -30,13 +49,17 @@ describe('usePostLikeToggle', () => {
     expect(result.current.isLiked).toBe(true);
     expect(result.current.likeCount).toBe(4);
     expect(result.current.isSubmitting).toBe(false);
-    expect(usePostReactionOverridesStore.getState().likesByPostId['post-1']).toEqual({ isLiked: true, likeCount: 4 });
+    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ isLiked: true, likeCount: 4 });
   });
 
   it('좋아요 취소(이미 좋아요된 상태) 토글 성공 시 removeLike를 호출한다', async () => {
     removeLike.mockResolvedValue({});
-    const { result } = renderHook(() =>
-      usePostLikeToggle({ postId: 'post-1', initialIsLiked: true, initialLikeCount: 3, isAuthenticated: true, resetSubmittingOnSync: false }),
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(postDetailQueryKey('post-1'), mockPost({ isLiked: true, likeCount: 3 }));
+
+    const { result } = renderHook(
+      () => usePostLikeToggle({ postId: 'post-1', initialIsLiked: true, initialLikeCount: 3, isAuthenticated: true, resetSubmittingOnSync: false }),
+      { wrapper: createQueryClientWrapper(queryClient) },
     );
 
     await act(async () => {
@@ -48,10 +71,14 @@ describe('usePostLikeToggle', () => {
     expect(result.current.likeCount).toBe(2);
   });
 
-  it('토글 실패 시 이전 값으로 롤백하고 override 스토어도 롤백된 값으로 되돌린다', async () => {
+  it('토글 실패 시 이전 값으로 롤백하고 캐시도 롤백된 값으로 되돌린다', async () => {
     addLike.mockRejectedValue(new Error('network error'));
-    const { result } = renderHook(() =>
-      usePostLikeToggle({ postId: 'post-1', initialIsLiked: false, initialLikeCount: 3, isAuthenticated: true, resetSubmittingOnSync: false }),
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(postDetailQueryKey('post-1'), mockPost({ isLiked: false, likeCount: 3 }));
+
+    const { result } = renderHook(
+      () => usePostLikeToggle({ postId: 'post-1', initialIsLiked: false, initialLikeCount: 3, isAuthenticated: true, resetSubmittingOnSync: false }),
+      { wrapper: createQueryClientWrapper(queryClient) },
     );
 
     await act(async () => {
@@ -60,12 +87,13 @@ describe('usePostLikeToggle', () => {
 
     expect(result.current.isLiked).toBe(false);
     expect(result.current.likeCount).toBe(3);
-    expect(usePostReactionOverridesStore.getState().likesByPostId['post-1']).toEqual({ isLiked: false, likeCount: 3 });
+    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ isLiked: false, likeCount: 3 });
   });
 
   it('비로그인 상태(isAuthenticated=false)에서는 toggleLike가 API를 호출하지 않는다', async () => {
-    const { result } = renderHook(() =>
-      usePostLikeToggle({ postId: 'post-1', initialIsLiked: false, initialLikeCount: 3, isAuthenticated: false, resetSubmittingOnSync: false }),
+    const { result } = renderHook(
+      () => usePostLikeToggle({ postId: 'post-1', initialIsLiked: false, initialLikeCount: 3, isAuthenticated: false, resetSubmittingOnSync: false }),
+      { wrapper: createQueryClientWrapper() },
     );
 
     await act(async () => {
@@ -85,8 +113,9 @@ describe('usePostLikeToggle', () => {
       }),
     );
 
-    const { result } = renderHook(() =>
-      usePostLikeToggle({ postId: 'post-1', initialIsLiked: false, initialLikeCount: 3, isAuthenticated: true, resetSubmittingOnSync: false }),
+    const { result } = renderHook(
+      () => usePostLikeToggle({ postId: 'post-1', initialIsLiked: false, initialLikeCount: 3, isAuthenticated: true, resetSubmittingOnSync: false }),
+      { wrapper: createQueryClientWrapper() },
     );
 
     let firstCall!: Promise<void>;
@@ -111,7 +140,7 @@ describe('usePostLikeToggle', () => {
     const { result, rerender } = renderHook(
       ({ postId, initialIsLiked, initialLikeCount }) =>
         usePostLikeToggle({ postId, initialIsLiked, initialLikeCount, isAuthenticated: true, resetSubmittingOnSync: false }),
-      { initialProps: { postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 } },
+      { initialProps: { postId: 'post-1', initialIsLiked: false, initialLikeCount: 3 }, wrapper: createQueryClientWrapper() },
     );
 
     rerender({ postId: 'post-2', initialIsLiked: true, initialLikeCount: 10 });

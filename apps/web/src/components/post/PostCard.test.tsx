@@ -2,8 +2,9 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import PostCard from './PostCard';
-import { usePostReactionOverridesStore } from '@/stores/usePostReactionOverridesStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { postDetailQueryKey } from '@/hooks/post/usePostDetail';
+import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('./index', () => ({
   PostHeader: () => <div data-testid="post-header" />,
@@ -40,20 +41,22 @@ const mockPost = (overrides: Partial<Post> = {}): Post => ({
   ...overrides,
 });
 
-const renderPostCard = (post: Post) =>
-  render(<PostCard post={post} currentMusicId={null} isPlayingGlobal={false} onPlay={jest.fn()} onUserClick={jest.fn()} onOpenDetail={jest.fn()} />);
+const renderPostCard = (post: Post, queryClient = createTestQueryClient()) =>
+  render(<PostCard post={post} currentMusicId={null} isPlayingGlobal={false} onPlay={jest.fn()} onUserClick={jest.fn()} onOpenDetail={jest.fn()} />, {
+    wrapper: createQueryClientWrapper(queryClient),
+  });
 
 describe('PostCard — 게시글 반응 상태 특성화 테스트', () => {
   beforeEach(() => {
-    usePostReactionOverridesStore.setState({ likesByPostId: {}, commentsByPostId: {}, contentByPostId: {}, deletedPostId: null });
     useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
     jest.clearAllMocks();
   });
 
-  it('로그인 사용자가 좋아요를 누르면 즉시 낙관적으로 반영되고, 성공 시 전역 override에 기록된다', async () => {
+  it('로그인 사용자가 좋아요를 누르면 즉시 낙관적으로 반영되고, 성공 시 postDetailQueryKey 캐시에 기록된다', async () => {
     addLike.mockResolvedValue({});
+    const queryClient = createTestQueryClient();
 
-    renderPostCard(mockPost({ isLiked: false, likeCount: 3 }));
+    renderPostCard(mockPost({ isLiked: false, likeCount: 3 }), queryClient);
 
     const button = screen.getByTestId('like-button');
     expect(button).toHaveTextContent('like:false:3');
@@ -64,13 +67,14 @@ describe('PostCard — 게시글 반응 상태 특성화 테스트', () => {
     expect(button).toHaveTextContent('like:true:4');
 
     await waitFor(() => expect(addLike).toHaveBeenCalledWith({ postId: 'post-1' }));
-    expect(usePostReactionOverridesStore.getState().likesByPostId['post-1']).toEqual({ isLiked: true, likeCount: 4 });
+    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ isLiked: true, likeCount: 4 });
   });
 
-  it('좋아요 요청이 실패하면 로컬 상태와 전역 override 모두 이전 값으로 롤백된다', async () => {
+  it('좋아요 요청이 실패하면 로컬 상태와 캐시 모두 이전 값으로 롤백된다', async () => {
     removeLike.mockRejectedValue(new Error('network error'));
+    const queryClient = createTestQueryClient();
 
-    renderPostCard(mockPost({ isLiked: true, likeCount: 5 }));
+    renderPostCard(mockPost({ isLiked: true, likeCount: 5 }), queryClient);
 
     const button = screen.getByTestId('like-button');
     fireEvent.click(button);
@@ -78,7 +82,7 @@ describe('PostCard — 게시글 반응 상태 특성화 테스트', () => {
 
     await waitFor(() => expect(removeLike).toHaveBeenCalledWith('post-1'));
     await waitFor(() => expect(button).toHaveTextContent('like:true:5'));
-    expect(usePostReactionOverridesStore.getState().likesByPostId['post-1']).toEqual({ isLiked: true, likeCount: 5 });
+    expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ isLiked: true, likeCount: 5 });
   });
 
   it('비로그인 사용자는 좋아요 버튼이 비활성화되고, 클릭해도 API가 호출되지 않는다', () => {
@@ -94,28 +98,32 @@ describe('PostCard — 게시글 반응 상태 특성화 테스트', () => {
     expect(button).toHaveTextContent('like:false:3');
   });
 
-  it('[카드 ↔ 모달 동기화] 다른 화면(상세 모달)이 먼저 좋아요 override를 남겨두면, 카드는 마운트 즉시 그 값을 반영한다', () => {
-    // usePostReactions.toggleLike이 하는 것과 동일한 store 쓰기를 직접 시뮬레이션 —
+  it('[카드 ↔ 모달 동기화] 다른 화면(상세 모달)이 먼저 좋아요를 캐시에 남겨두면, 카드는 마운트 즉시 그 값을 반영한다', () => {
+    // usePostLikeToggle.toggleLike이 하는 것과 동일한 캐시 쓰기를 직접 시뮬레이션 —
     // "상세 모달에서 이미 좋아요를 눌러놓은 상태로 피드에 진입"하는 시나리오
-    usePostReactionOverridesStore.getState().setLikeOverride('post-1', { isLiked: true, likeCount: 4 });
+    const queryClient = createTestQueryClient();
+    const post = mockPost({ isLiked: false, likeCount: 3 });
+    queryClient.setQueryData(postDetailQueryKey('post-1'), { ...post, isLiked: true, likeCount: 4 });
 
-    // 카드가 들고 있는 건 override 반영 전의 "구" 서버 값
-    renderPostCard(mockPost({ isLiked: false, likeCount: 3 }));
+    // 카드가 props로 받은 건 캐시 반영 전의 "구" 서버 값 — usePostCacheSync가 캐시를 우선한다
+    renderPostCard(post, queryClient);
 
     expect(screen.getByTestId('like-button')).toHaveTextContent('like:true:4');
   });
 
-  it('[댓글 수 동기화] 상세 모달에서의 댓글 작성으로 남은 commentsByPostId override를 카드가 반영한다', () => {
-    usePostReactionOverridesStore.getState().setCommentOverride('post-1', { commentCount: 7 });
+  it('[댓글 수 동기화] 상세 모달에서의 댓글 작성으로 캐시에 남은 commentCount를 카드가 반영한다', () => {
+    const queryClient = createTestQueryClient();
+    const post = mockPost({ commentCount: 2 });
+    queryClient.setQueryData(postDetailQueryKey('post-1'), { ...post, commentCount: 7 });
 
-    renderPostCard(mockPost({ commentCount: 2 }));
+    renderPostCard(post, queryClient);
 
     expect(screen.getByTestId('like-button')).toHaveTextContent('comments:7');
   });
 
   it('[회귀 안전망 #44] 좋아요를 연달아 두 번 클릭하면 토글→역토글로 처리된다 (Fact: "진행 중 재클릭 차단"이 완전하지 않음)', async () => {
     // 애초 기대는 "진행 중이면 두 번째 클릭이 아예 무시된다"였지만, 실제로 실행해보면 그렇지 않다.
-    // override 동기화 useEffect(PostCard.tsx:59-63)가 1번째 클릭의 optimistic store 기록을 감지해
+    // 캐시 동기화 useEffect(PostCard.tsx의 resetSubmittingOnSync)가 1번째 클릭의 optimistic 캐시 기록을 감지해
     // isLikeSubmitting을 즉시 false로 되돌리기 때문에, 2번째 클릭이 가드를 통과해 반대 방향으로 토글된다.
     // 결과적으로 addLike 1회 + removeLike 1회가 나가고 화면은 원래 값으로 돌아온다 — "중복 요청"은 안 나가지만
     // "진행 중 재클릭 차단"이라는 이름이 암시하는 동작과는 다르다. 이건 리팩터링 대상이 아니라 현재 동작의
