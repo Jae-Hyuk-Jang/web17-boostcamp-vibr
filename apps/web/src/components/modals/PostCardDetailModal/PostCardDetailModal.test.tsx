@@ -4,7 +4,8 @@ import type { PostResponseDto as Post, MusicResponseDto as Music } from '@repo/d
 import { PostCardDetailModal } from './PostCardDetailModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 import { usePlayerStore } from '@/stores/usePlayerStore';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { seedAuthMe } from '@/test-utils/authMeTestUtils';
+import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 const mockPush = jest.fn();
 const mockUsePathname = jest.fn(() => '/');
@@ -185,10 +186,13 @@ const openModalFor = (post: Post) => {
 };
 
 describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
+  let queryClient: ReturnType<typeof createTestQueryClient>;
+
   beforeEach(() => {
     useModalStore.setState({ isOpen: false, modalType: null, modalProps: {} });
     usePlayerStore.setState({ currentMusic: null, isPlaying: false });
-    useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
+    queryClient = createTestQueryClient();
+    seedAuthMe(queryClient, { userId: 'me', isAuthenticated: true });
 
     usePostDetail.mockReturnValue({ post: mockPost(), isLoading: false, error: null, updatePostContent: jest.fn() });
     usePostReactions.mockReturnValue({ ...defaultReactions });
@@ -200,7 +204,7 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    render(<PostCardDetailModal />);
+    render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     // 데스크톱 배경 클릭으로 닫기(ModalShell backdrop, onMouseDown 기반 판정 — #70)
     fireEvent.mouseDown(screen.getByRole('dialog'));
@@ -216,7 +220,7 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { unmount } = render(<PostCardDetailModal />);
+    const { unmount } = render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
     unmount();
 
     expect(enqueueLog).toHaveBeenCalledTimes(1);
@@ -227,7 +231,7 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { unmount } = render(<PostCardDetailModal />);
+    const { unmount } = render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
     fireEvent.mouseDown(screen.getByRole('dialog'));
     unmount();
 
@@ -235,12 +239,12 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
   });
 
   it('비로그인 사용자는 모달을 닫아도 enqueueLog가 호출되지 않는다', () => {
-    useAuthStore.setState({ userId: null, isAuthenticated: false, isLoading: false });
+    seedAuthMe(queryClient, { userId: null, isAuthenticated: false });
     const post = mockPost();
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { unmount } = render(<PostCardDetailModal />);
+    const { unmount } = render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
     unmount();
 
     expect(enqueueLog).not.toHaveBeenCalled();
@@ -252,7 +256,7 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { unmount } = render(<PostCardDetailModal />);
+    const { unmount } = render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     act(() => {
       usePlayerStore.setState({ currentMusic: music, isPlaying: true });
@@ -276,7 +280,7 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { unmount } = render(<PostCardDetailModal />);
+    const { unmount } = render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     act(() => {
       usePlayerStore.setState({ currentMusic: otherMusic, isPlaying: true });
@@ -299,7 +303,7 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { container } = render(<PostCardDetailModal />);
+    const { container } = render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     // 모바일 바텀시트 backdrop(lg:hidden 래퍼의 첫 자식, onClick={handleClose})
     const mobileWrapper = container.firstElementChild as HTMLElement;
@@ -315,7 +319,7 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { unmount } = render(<PostCardDetailModal />);
+    const { unmount } = render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     fireEvent.click(screen.getByTestId('play-first-music'));
     unmount();
@@ -327,10 +331,13 @@ describe('PostCardDetailModal — UX 로그 특성화 테스트 (#56)', () => {
 });
 
 describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자목록 특성화 테스트 (post-detail-modal-responsibility-decomposition #126)', () => {
+  let queryClient: ReturnType<typeof createTestQueryClient>;
+
   beforeEach(() => {
     useModalStore.setState({ isOpen: false, modalType: null, modalProps: {} });
     usePlayerStore.setState({ currentMusic: null, isPlaying: false });
-    useAuthStore.setState({ userId: 'author-1', isAuthenticated: true, isLoading: false });
+    queryClient = createTestQueryClient();
+    seedAuthMe(queryClient, { userId: 'author-1', isAuthenticated: true });
 
     usePostReactions.mockReturnValue({ ...defaultReactions });
     mockPush.mockClear();
@@ -348,7 +355,7 @@ describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자�
     updatePost.mockResolvedValue(undefined);
     openModalFor(post);
 
-    render(<PostCardDetailModal />);
+    render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     fireEvent.click(screen.getByText('start-edit'));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'updated content' } });
@@ -371,7 +378,7 @@ describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자�
     updatePost.mockRejectedValue(new Error('fail'));
     openModalFor(post);
 
-    render(<PostCardDetailModal />);
+    render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     fireEvent.click(screen.getByText('start-edit'));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'updated content' } });
@@ -389,7 +396,7 @@ describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자�
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    render(<PostCardDetailModal />);
+    render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     fireEvent.click(screen.getByText('start-edit'));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'changed' } });
@@ -408,7 +415,7 @@ describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자�
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { rerender } = render(<PostCardDetailModal />);
+    const { rerender } = render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     mockUseIsMobile.mockReturnValue(true);
     rerender(<PostCardDetailModal />);
@@ -422,7 +429,7 @@ describe('PostCardDetailModal — 편집/라우팅전환/좋아요한사용자�
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    render(<PostCardDetailModal />);
+    render(<PostCardDetailModal />, { wrapper: createQueryClientWrapper(queryClient) });
 
     expect(screen.queryByTestId('liked-users-overlay-open')).not.toBeInTheDocument();
 

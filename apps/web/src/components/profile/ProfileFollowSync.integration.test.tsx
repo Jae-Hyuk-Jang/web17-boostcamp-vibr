@@ -4,7 +4,8 @@ import type { GetUserFollowDto, UserWithFollowStatusDto } from '@repo/dto';
 
 import ProfileView from './ProfileView';
 import { UserListModal } from '@/components/modals/UserListModal/UserListModal';
-import { useAuthStore, useModalStore, MODAL_TYPES } from '@/stores';
+import { useModalStore, MODAL_TYPES } from '@/stores';
+import { seedAuthMe } from '@/test-utils/authMeTestUtils';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({
@@ -55,7 +56,6 @@ describe('프로필 쓰기 전파 통합 테스트 — UserListModal ↔ Profile
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
-    useAuthStore.setState({ userId: 'my-id', isAuthenticated: true, isLoading: false });
     useModalStore.setState({ isOpen: true, modalType: MODAL_TYPES.FOLLOWING_USER, modalProps: { profileUserId: 'my-id' } });
     getUser.mockResolvedValue(myProfile);
     getUserProfilePosts.mockResolvedValue({ items: [], hasNext: false, nextCursor: undefined });
@@ -64,6 +64,7 @@ describe('프로필 쓰기 전파 통합 테스트 — UserListModal ↔ Profile
 
   it('UserListModal에서 내 프로필을 대상으로 팔로우하면, 같은 화면의 ProfileView 팔로잉 수가 즉시 갱신된다', async () => {
     const queryClient = createTestQueryClient();
+    seedAuthMe(queryClient, { userId: 'my-id', isAuthenticated: true });
     addFollow.mockResolvedValue(undefined);
 
     render(

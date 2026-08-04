@@ -13,7 +13,6 @@ import PwaRegister from '@/components/ui/PwaRegister';
 import ToastProvider from '@/components/ui/ToastContainer';
 import QueryProvider from '@/components/providers/QueryProvider';
 import { PrivacyConsentGate } from '@/hooks';
-import { AuthBootstrap } from '@/hooks/auth/client/AuthBootstrap';
 import AuthLoginQueryHandler from '@/hooks/auth/client/AuthLoginQueryHandler';
 import SpotifyTokenFromHash from '@/hooks/auth/client/SpotifyTokenFromHash';
 
@@ -59,7 +58,6 @@ export default function RootLayout({
             <AuthLoginQueryHandler />
           </Suspense>
           <ModalContainer />
-          <AuthBootstrap />
           <PrivacyConsentGate />
           <NotiPollingGate />
 

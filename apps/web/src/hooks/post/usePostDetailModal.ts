@@ -5,7 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-toastify';
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
 
-import { useModalStore, MODAL_TYPES, usePlayerStore, useAuthStore } from '@/stores';
+import { useModalStore, MODAL_TYPES, usePlayerStore } from '@/stores';
+import { useAuthMe } from '@/hooks/auth/client';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useScrollLock, usePostDetail, useLikedUsers, usePostReactions, usePostDetailUxLog, useInlineEditField } from '@/hooks';
 import { EMPTY_POST, DEFAULT_IMAGES } from '@/constants';
@@ -52,7 +53,7 @@ export interface UsePostDetailModalResult {
  * useSwipeToDismiss는 옮기지 않는다(이미 정상 재사용되던 부분).
  */
 export function usePostDetailModal(): UsePostDetailModalResult {
-  const userId = useAuthStore((s) => s.userId);
+  const { userId } = useAuthMe();
   const router = useRouter();
   const { isOpen, modalType, modalProps, closeModal } = useModalStore();
   const isEnabled = isOpen && modalType === MODAL_TYPES.POST_DETAIL;

@@ -5,7 +5,6 @@ import type { GetUserDto as Profile, PostPreviewDto as PostPreview } from '@repo
 
 import ProfileView from './ProfileView';
 import { profileGridQueryKey } from '@/query-keys';
-import { useAuthStore } from '@/stores';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({
@@ -21,6 +20,12 @@ jest.mock('@/api', () => ({
 // useProfile(#199)이 getUser를 '@/api/internal'에서 직접 가져오므로 별도로 모킹한다.
 jest.mock('@/api/internal', () => ({
   getUser: jest.fn(),
+}));
+
+// ProfileView가 내부적으로 useAuthMe()(→ authMe)를 구독한다 — 이 테스트들은 loggedInUserId 값 자체를
+// 검증하지 않으므로(ProfileInfo가 mock으로 대체됨) 실제 응답을 시딩하지 않고 mock만 등록해둔다.
+jest.mock('@/api/internal/auth', () => ({
+  authMe: jest.fn(),
 }));
 
 jest.mock('./ProfileInfo', () => ({
@@ -70,7 +75,6 @@ describe('ProfileView — 무한스크롤/쿼리 무효화 특성화(#166)', () 
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
-    useAuthStore.setState({ userId: 'user-1', isAuthenticated: true, isLoading: false });
   });
 
   it('초기 로드 시 프로필 정보와 게시글 목록을 렌더링한다', async () => {

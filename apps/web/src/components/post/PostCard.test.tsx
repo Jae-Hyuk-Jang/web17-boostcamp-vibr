@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import PostCard from './PostCard';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { seedAuthMe } from '@/test-utils/authMeTestUtils';
 import { postDetailQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
@@ -41,14 +41,20 @@ const mockPost = (overrides: Partial<Post> = {}): Post => ({
   ...overrides,
 });
 
-const renderPostCard = (post: Post, queryClient = createTestQueryClient()) =>
-  render(<PostCard post={post} currentMusicId={null} isPlayingGlobal={false} onPlay={jest.fn()} onUserClick={jest.fn()} onOpenDetail={jest.fn()} />, {
-    wrapper: createQueryClientWrapper(queryClient),
-  });
+const renderPostCard = (
+  post: Post,
+  queryClient = createTestQueryClient(),
+  loggedIn: { userId: string | null; isAuthenticated: boolean } = { userId: 'me', isAuthenticated: true },
+) => {
+  seedAuthMe(queryClient, loggedIn);
+  return render(
+    <PostCard post={post} currentMusicId={null} isPlayingGlobal={false} onPlay={jest.fn()} onUserClick={jest.fn()} onOpenDetail={jest.fn()} />,
+    { wrapper: createQueryClientWrapper(queryClient) },
+  );
+};
 
 describe('PostCard — 게시글 반응 상태 특성화 테스트', () => {
   beforeEach(() => {
-    useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
     jest.clearAllMocks();
   });
 
@@ -86,9 +92,7 @@ describe('PostCard — 게시글 반응 상태 특성화 테스트', () => {
   });
 
   it('비로그인 사용자는 좋아요 버튼이 비활성화되고, 클릭해도 API가 호출되지 않는다', () => {
-    useAuthStore.setState({ userId: null, isAuthenticated: false, isLoading: false });
-
-    renderPostCard(mockPost({ isLiked: false, likeCount: 3 }));
+    renderPostCard(mockPost({ isLiked: false, likeCount: 3 }), createTestQueryClient(), { userId: null, isAuthenticated: false });
 
     const button = screen.getByTestId('like-button');
     expect(button).toBeDisabled();
