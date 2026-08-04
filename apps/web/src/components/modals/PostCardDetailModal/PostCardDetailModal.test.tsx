@@ -143,7 +143,7 @@ const { toast } = jest.requireMock('react-toastify') as { toast: { success: jest
 const mockMusic = (overrides: Partial<Music> = {}): Music => ({
   id: 'music-1',
   trackUri: 'uri-1',
-  provider: 'SPOTIFY' as Music['provider'],
+  provider: 'YOUTUBE' as Music['provider'],
   albumCoverUrl: 'https://example.com/cover.jpg',
   title: 'Song',
   artistName: 'Artist',
