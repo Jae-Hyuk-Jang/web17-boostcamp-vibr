@@ -1,5 +1,5 @@
 // import { logout as logoutApi } from '@/api/internal/auth';
-import { useSpotifyAuthStore, usePlayerStore, useSpotifyPlayerStore, useModalStore } from '@/stores';
+import { useSpotifyAuthStore, usePlayerStore, useModalStore } from '@/stores';
 import { clearGuestQueueSession } from '@/hooks';
 import { APP_ACCESS_TOKEN_STORAGE_KEY } from '@/constants/auth';
 
@@ -11,7 +11,6 @@ export async function performLogout() {
   // 2) FE 상태 초기화
   useSpotifyAuthStore.getState().clear();
   usePlayerStore.getState().clearQueue();
-  useSpotifyPlayerStore.getState().reset();
   useModalStore.getState().closeModal();
   clearGuestQueueSession();
 

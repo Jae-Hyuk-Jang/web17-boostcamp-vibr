@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 import { APP_ACCESS_TOKEN_STORAGE_KEY } from '@/constants/auth';
-import { useModalStore, usePlayerStore, useSpotifyAuthStore, useSpotifyPlayerStore, MODAL_TYPES } from '@/stores';
+import { useModalStore, usePlayerStore, useSpotifyAuthStore, MODAL_TYPES } from '@/stores';
 
 type AuthMeta = {
   hadAuth: boolean;
@@ -31,7 +31,6 @@ const clearAuthState = () => {
   }
   useSpotifyAuthStore.getState().clear();
   usePlayerStore.getState().clearQueue();
-  useSpotifyPlayerStore.getState().reset();
   useModalStore.getState().closeModal();
 };
 
