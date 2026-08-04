@@ -2,6 +2,7 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import type { PostResponseDto as Post, MusicResponseDto as Music } from '@repo/dto';
 
 import { PostCardDetailModal } from './PostCardDetailModal';
+import { usePostDetailModalContext } from './PostDetailModalContext';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { seedAuthMe } from '@/test-utils/authMeTestUtils';
@@ -106,7 +107,10 @@ jest.mock('./partials/PostDetailEditForm', () => ({
 
 jest.mock('./partials/LikedUsersOverlay', () => ({
   __esModule: true,
-  default: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="liked-users-overlay-open" /> : null),
+  default: function MockLikedUsersOverlay() {
+    const { likedUsers } = usePostDetailModalContext();
+    return likedUsers.isOpen ? <div data-testid="liked-users-overlay-open" /> : null;
+  },
 }));
 
 // ModalShell/LoadingSpinner는 PostCardDetailModal.tsx가 '@/components/ModalShell',

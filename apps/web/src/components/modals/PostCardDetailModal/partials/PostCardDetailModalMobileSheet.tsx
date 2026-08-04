@@ -1,43 +1,21 @@
 'use client';
 
-import type { RefObject, TouchEvent } from 'react';
-
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
-import type { UsePostDetailModalResult } from '@/hooks/post/usePostDetailModal';
+import { useSwipeToDismiss } from '@/hooks';
 
+import { usePostDetailModalContext } from '../PostDetailModalContext';
 import PostDetailBody from './PostDetailBody';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 
-type CommentReactions = Pick<
-  UsePostDetailModalResult['reactions'],
-  'comments' | 'isCommentsLoading' | 'isAuthenticated' | 'isSubmittingComment' | 'commentText' | 'setCommentText' | 'submitComment'
->;
+export default function PostCardDetailModalMobileSheet() {
+  const { safePost, profileImg, handleClose: onClose } = usePostDetailModalContext();
+  const nickname = safePost.author.nickname;
+  const content = safePost.content;
 
-interface PostCardDetailModalMobileSheetProps {
-  /** 작성자 닉네임 — Post 전체가 아니라 실제로 쓰는 필드만 받는다 */
-  nickname: string;
-  content: string;
-  profileImg: string;
-  /** 댓글 관련 필드만 쓴다 — 좋아요 관련 필드(isLiked 등)는 이 화면에서 쓰지 않아 타입에서 제외 */
-  reactions: CommentReactions;
-  onClose: () => void;
-  sheetRef: RefObject<HTMLElement>;
-  onTouchStart: (e: TouchEvent) => void;
-  onTouchMove: (e: TouchEvent) => void;
-  onTouchEnd: () => void;
-}
+  // 스와이프다운 닫기 — 이 시트에서만 쓰이는 제스처라 여기서 직접 소유한다(부모가 대신 구독해 props로
+  // 내려줄 이유가 없음, PlaybackProvider와 달리 여러 컴포넌트가 공유하는 값이 아니다).
+  const { sheetRef, handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeToDismiss(onClose);
 
-export default function PostCardDetailModalMobileSheet({
-  nickname,
-  content,
-  profileImg,
-  reactions,
-  onClose,
-  sheetRef,
-  onTouchStart,
-  onTouchMove,
-  onTouchEnd,
-}: PostCardDetailModalMobileSheetProps) {
   return (
     <div className="lg:hidden">
       <div className="fixed inset-0 z-[10001] bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
@@ -45,9 +23,9 @@ export default function PostCardDetailModalMobileSheet({
       <section
         ref={sheetRef}
         className="fixed inset-x-0 bottom-0 z-[10002] h-[90vh] bg-white rounded-t-2xl border-t-2 border-x-2 border-primary flex flex-col animate-slide-up"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* 핸들 + 닫기 버튼 */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1 flex-shrink-0">
@@ -59,22 +37,10 @@ export default function PostCardDetailModalMobileSheet({
         </div>
 
         {/* 댓글 목록 */}
-        <PostDetailBody
-          profileImg={profileImg}
-          nickname={nickname}
-          content={content}
-          comments={reactions.comments}
-          commentsLoading={reactions.isCommentsLoading}
-        />
+        <PostDetailBody profileImg={profileImg} nickname={nickname} content={content} />
 
         {/* 댓글 입력 */}
-        <PostDetailCommentComposer
-          isAuthenticated={reactions.isAuthenticated}
-          isSubmitting={reactions.isSubmittingComment}
-          value={reactions.commentText}
-          onChange={(v) => reactions.setCommentText(v)}
-          onSubmit={() => reactions.submitComment()}
-        />
+        <PostDetailCommentComposer />
       </section>
     </div>
   );

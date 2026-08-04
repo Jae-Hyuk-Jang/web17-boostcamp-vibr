@@ -3,17 +3,16 @@
 import { Heart, Send } from 'lucide-react';
 import { toast } from 'react-toastify';
 
+import { usePostDetailReactionsContext } from '../PostDetailReactionsContext';
+
 type Props = {
-  isAuthenticated: boolean;
-  isSubmitting: boolean;
-  isLiked: boolean;
-  likeCount: number;
   postId: string;
-  onToggleLike: () => Promise<void> | void;
   onOpenLikedUsers: () => void;
 };
 
-export default function PostDetailActions({ isAuthenticated, isSubmitting, isLiked, likeCount, postId, onToggleLike, onOpenLikedUsers }: Props) {
+export default function PostDetailActions({ postId, onOpenLikedUsers }: Props) {
+  const { isAuthenticated, isSubmittingLike: isSubmitting, isLiked, likeCount, toggleLike: onToggleLike } = usePostDetailReactionsContext();
+
   const handleCopyLink = async (postId: string) => {
     const link = `${window.location.origin}/post/${postId}`;
 

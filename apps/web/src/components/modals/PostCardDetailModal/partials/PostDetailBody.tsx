@@ -1,23 +1,22 @@
 'use client';
 
-import type { GetCommentsResDto } from '@repo/dto';
 import Image from 'next/image';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc, formatRelativeTime } from '@/utils';
 
-type CommentItem = GetCommentsResDto['comments'][number];
+import { usePostDetailReactionsContext } from '../PostDetailReactionsContext';
 
 type Props = {
   profileImg: string;
   nickname: string;
   content: string;
-  comments: CommentItem[];
-  commentsLoading: boolean;
   hideAuthorRow?: boolean;
 };
 
-export default function PostDetailBody({ profileImg, nickname, content, comments, commentsLoading, hideAuthorRow }: Props) {
+export default function PostDetailBody({ profileImg, nickname, content, hideAuthorRow }: Props) {
+  const { comments, isCommentsLoading } = usePostDetailReactionsContext();
+
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
       {!hideAuthorRow && (
@@ -41,7 +40,7 @@ export default function PostDetailBody({ profileImg, nickname, content, comments
       )}
 
       <div className="space-y-6">
-        {commentsLoading ? (
+        {isCommentsLoading ? (
           <LoadingSpinner />
         ) : comments.length > 0 ? (
           comments.map((c) => (

@@ -5,15 +5,17 @@ import { useAutoResizeTextarea } from '@/hooks';
 import { handleEnterSubmitWithShiftNewline } from '@/utils';
 import Button from '@/components/ui/Button';
 
-type Props = {
-  isAuthenticated: boolean;
-  isSubmitting: boolean;
-  value: string;
-  onChange: (v: string) => void;
-  onSubmit: () => Promise<void> | void;
-};
+import { usePostDetailReactionsContext } from '../PostDetailReactionsContext';
 
-export default function PostDetailCommentComposer({ isAuthenticated, isSubmitting, value, onChange, onSubmit }: Props) {
+export default function PostDetailCommentComposer() {
+  const {
+    isAuthenticated,
+    isSubmittingComment: isSubmitting,
+    commentText: value,
+    setCommentText: onChange,
+    submitComment: onSubmit,
+  } = usePostDetailReactionsContext();
+
   const textareaRef = useAutoResizeTextarea(value, { maxHeightPx: 120 });
 
   return (

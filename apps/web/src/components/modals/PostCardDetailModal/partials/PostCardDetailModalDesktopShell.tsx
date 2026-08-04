@@ -1,65 +1,35 @@
 'use client';
 
-import type { PostResponseDto as Post } from '@repo/dto';
-
 import { PostHeader } from '@/components/post';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { PostMedia } from '@/components/post';
 import ModalShell from '@/components/ui/ModalShell';
-import type { UsePostDetailModalResult } from '@/hooks/post/usePostDetailModal';
 
+import { usePostDetailModalContext } from '../PostDetailModalContext';
 import PostDetailBody from './PostDetailBody';
 import PostDetailActions from './PostDetailActions';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 import PostDetailEditForm from './PostDetailEditForm';
 
-type PostDetailReactions = Pick<
-  UsePostDetailModalResult['reactions'],
-  | 'comments'
-  | 'isCommentsLoading'
-  | 'isAuthenticated'
-  | 'isSubmittingLike'
-  | 'isLiked'
-  | 'likeCount'
-  | 'toggleLike'
-  | 'isSubmittingComment'
-  | 'commentText'
-  | 'setCommentText'
-  | 'submitComment'
->;
+export default function PostCardDetailModalDesktopShell() {
+  const {
+    safePost: post,
+    postId,
+    isLoading,
+    error,
+    isOwner,
+    profileImg,
+    editing,
+    player,
+    likedUsers,
+    handleClose: onClose,
+    closeModal,
+    handleUserClick: onUserClick,
+  } = usePostDetailModalContext();
 
-interface PostCardDetailModalDesktopShellProps {
-  post: Post;
-  postId: string;
-  isLoading: boolean;
-  error: string | null;
-  isOwner: boolean;
-  profileImg: string;
-  /** commentCount/refetchComments는 이 화면에서 쓰지 않아 타입에서 제외 */
-  reactions: PostDetailReactions;
-  editing: UsePostDetailModalResult['editing'];
-  player: UsePostDetailModalResult['player'];
-  onClose: () => void;
-  onDeletePost: () => void;
-  onUserClick: (targetUserId: string) => void;
-  onOpenLikedUsers: () => void;
-}
+  const onDeletePost = () => closeModal();
+  const onOpenLikedUsers = () => likedUsers.open();
 
-export default function PostCardDetailModalDesktopShell({
-  post,
-  postId,
-  isLoading,
-  error,
-  isOwner,
-  profileImg,
-  reactions,
-  editing,
-  player,
-  onClose,
-  onDeletePost,
-  onUserClick,
-  onOpenLikedUsers,
-}: PostCardDetailModalDesktopShellProps) {
   return (
     <ModalShell
       onClose={onClose}
@@ -105,31 +75,11 @@ export default function PostCardDetailModalDesktopShell({
               onCancel={() => editing.cancel()}
             />
           ) : (
-            <PostDetailBody
-              profileImg={profileImg}
-              nickname={post.author.nickname}
-              content={post.content}
-              comments={reactions.comments}
-              commentsLoading={reactions.isCommentsLoading}
-            />
+            <PostDetailBody profileImg={profileImg} nickname={post.author.nickname} content={post.content} />
           )}
 
-          <PostDetailActions
-            isAuthenticated={reactions.isAuthenticated}
-            isSubmitting={reactions.isSubmittingLike}
-            isLiked={reactions.isLiked}
-            likeCount={reactions.likeCount}
-            postId={postId}
-            onToggleLike={() => reactions.toggleLike()}
-            onOpenLikedUsers={onOpenLikedUsers}
-          />
-          <PostDetailCommentComposer
-            isAuthenticated={reactions.isAuthenticated}
-            isSubmitting={reactions.isSubmittingComment}
-            value={reactions.commentText}
-            onChange={(v) => reactions.setCommentText(v)}
-            onSubmit={() => reactions.submitComment()}
-          />
+          <PostDetailActions postId={postId} onOpenLikedUsers={onOpenLikedUsers} />
+          <PostDetailCommentComposer />
         </div>
       </div>
     </ModalShell>
