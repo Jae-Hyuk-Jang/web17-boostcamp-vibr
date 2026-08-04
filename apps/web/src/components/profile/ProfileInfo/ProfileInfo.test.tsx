@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { GetUserDto as Profile } from '@repo/dto';
 
 import ProfileInfo from './ProfileInfo';
-import { profileQueryKey } from '@/hooks/profile/useProfile';
+import { profileQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api', () => ({

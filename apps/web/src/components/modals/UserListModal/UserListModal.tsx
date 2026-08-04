@@ -12,7 +12,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useInfiniteScrollTrigger } from '@/hooks';
-import { profileQueryKey } from '@/hooks/profile/useProfile';
+import { profileQueryKey, userListQueryKey } from '@/query-keys';
 
 interface UserListModalProps {
   title: string;
@@ -24,8 +24,6 @@ type Page = {
   hasNext: boolean;
   nextCursor?: string;
 };
-
-export const userListQueryKey = (profileUserId: string, title: string) => ['userList', profileUserId, title] as const;
 
 export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
   const { modalProps, closeModal } = useModalStore();

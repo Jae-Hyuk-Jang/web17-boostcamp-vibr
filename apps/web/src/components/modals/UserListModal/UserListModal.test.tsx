@@ -5,7 +5,7 @@ import type { GetUserFollowDto, UserWithFollowStatusDto } from '@repo/dto';
 import { UserListModal } from './UserListModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 import { useAuthStore } from '@/stores';
-import { profileQueryKey } from '@/hooks/profile/useProfile';
+import { profileQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({

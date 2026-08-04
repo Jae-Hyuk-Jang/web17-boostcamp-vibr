@@ -3,7 +3,8 @@ import { act, Component, type ReactNode } from 'react';
 import { useInView } from 'react-intersection-observer';
 import type { GetUserDto as Profile, PostPreviewDto as PostPreview } from '@repo/dto';
 
-import ProfileView, { profileGridQueryKey } from './ProfileView';
+import ProfileView from './ProfileView';
+import { profileGridQueryKey } from '@/query-keys';
 import { useAuthStore } from '@/stores';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 

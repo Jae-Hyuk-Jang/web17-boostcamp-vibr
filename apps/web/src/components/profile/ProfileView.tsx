@@ -9,14 +9,13 @@ import { ProfileSkeleton } from '../skeleton';
 import { ProfileInfo } from './ProfileInfo';
 import ProfilePosts from './ProfilePosts';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import { profileGridQueryKey } from '@/query-keys';
 
 type Page = {
   items: PostPreview[];
   hasNext: boolean;
   nextCursor?: string;
 };
-
-export const profileGridQueryKey = (userId: string) => ['profileGrid', userId] as const;
 
 export default function ProfileView({ userId }: { userId: string }) {
   const loggedInUserId = useAuthStore((s) => s.userId);
