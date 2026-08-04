@@ -8,6 +8,7 @@ import { FeedSkeleton } from '../skeleton';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import FeedList from './FeedList';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
+import { feedQueryKey } from '@/query-keys';
 import { PostResponseDto as Post, Cursor } from '@repo/dto';
 
 interface FeedViewProps {
@@ -19,8 +20,6 @@ export type FeedPage = {
   hasNext: boolean;
   nextCursor?: Cursor;
 };
-
-export const feedQueryKey = ['feed'] as const;
 
 /** postId 기반 게시글 목록 중복 제거 함수 */
 const dedupePosts = (posts: Post[]) => Array.from(new Map(posts.map((post) => [post.id, post])).values());

@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import useNotifications from '@/hooks/noti/useNotifications';
 import { useNotiOverlayStore } from '@/stores/useNotiOverlayStore';
-import { feedQueryKey } from '@/components/feed/FeedView';
+import { feedQueryKey } from '@/query-keys';
 
 export default function Header() {
   const pathname = usePathname();
