@@ -1,6 +1,5 @@
 'use client';
 
-import { useSwipeToDismiss } from '@/hooks';
 import { usePostDetailModal } from '@/hooks/post/usePostDetailModal';
 
 import { PostCardDetailModalMobileSheet, PostCardDetailModalDesktopShell, LikedUsersOverlay } from './partials';
@@ -24,8 +23,6 @@ export const PostCardDetailModal = () => {
     handleUserClick,
   } = usePostDetailModal();
 
-  const { sheetRef, handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeToDismiss(handleClose);
-
   if (!isEnabled || !postId) return null;
 
   return (
@@ -36,10 +33,6 @@ export const PostCardDetailModal = () => {
           content={safePost.content}
           profileImg={profileImg}
           onClose={handleClose}
-          sheetRef={sheetRef}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         />
 
         <PostCardDetailModalDesktopShell
