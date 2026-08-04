@@ -2,18 +2,20 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Check, X } from 'lucide-react';
 import ProfileActionButton from './ProfileActionButton';
 import FollowStats from './FollowStats';
 import { DEFAULT_IMAGES } from '@/constants/defaultImages';
 import { useProfileStore } from '@/stores';
+import { profileQueryKey } from '@/hooks/profile/useProfile';
 import { GetUserDto as Profile } from '@repo/dto';
 import { EditTextarea, EditInput } from './ProfileInputs';
 import { updateProfile } from '@/api';
 
 export default function ProfileInfo({ profile, loggedInUserId }: { profile: Profile; loggedInUserId: string | null }) {
   const toggleFollow = useProfileStore((s) => s.toggleFollow);
-  const updateProfileInfo = useProfileStore((s) => s.updateProfileInfo);
+  const queryClient = useQueryClient();
 
   const isOwner = loggedInUserId === profile.id;
   const [isEditing, setIsEditing] = useState(false);
@@ -22,16 +24,17 @@ export default function ProfileInfo({ profile, loggedInUserId }: { profile: Prof
     bio: profile.bio || '',
   });
 
-  const handleSave = async () => {
-    await updateProfile({
-      nickname: editForm.nickname,
-      bio: editForm.bio,
-    });
-    updateProfileInfo({
-      nickname: editForm.nickname,
-      bio: editForm.bio,
-    });
-    setIsEditing(false);
+  // 현재도 낙관적 업데이트가 아니다 — updateProfile 성공 이후에만 캐시를 바꾼다.
+  const updateProfileMutation = useMutation({
+    mutationFn: (updates: { nickname: string; bio: string }) => updateProfile(updates),
+    onSuccess: (updatedProfile) => {
+      queryClient.setQueryData(profileQueryKey(profile.id), updatedProfile);
+      setIsEditing(false);
+    },
+  });
+
+  const handleSave = () => {
+    updateProfileMutation.mutate({ nickname: editForm.nickname, bio: editForm.bio });
   };
 
   const handleCancel = () => {
