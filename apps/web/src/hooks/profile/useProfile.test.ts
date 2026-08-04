@@ -71,4 +71,21 @@ describe('useProfile — 공용 쿼리 훅 (profile-info-caching #199)', () => {
     expect(profileQueryKey('user-1')).toEqual(['profile', 'user-1']);
     expect(profileQueryKey('user-2')).toEqual(['profile', 'user-2']);
   });
+
+  it('서로 다른 userId를 연속 조회해도 캐시가 섞이지 않는다 — userId 격리 계약 (profile-info-caching #206, Success Criteria)', async () => {
+    const queryClient = createTestQueryClient();
+    const profileA = mockProfile({ id: 'user-a', nickname: 'A' });
+    const profileB = mockProfile({ id: 'user-b', nickname: 'B' });
+    getUser.mockImplementation((userId: string) => Promise.resolve(userId === 'user-a' ? profileA : profileB));
+
+    const { result: resultA } = renderHook(() => useProfile('user-a'), { wrapper: createQueryClientWrapper(queryClient) });
+    const { result: resultB } = renderHook(() => useProfile('user-b'), { wrapper: createQueryClientWrapper(queryClient) });
+
+    await waitFor(() => expect(resultA.current.data).toEqual(profileA));
+    await waitFor(() => expect(resultB.current.data).toEqual(profileB));
+
+    // 두 캐시가 서로 값을 덮어쓰지 않았는지 재확인
+    expect(queryClient.getQueryData(profileQueryKey('user-a'))).toEqual(profileA);
+    expect(queryClient.getQueryData(profileQueryKey('user-b'))).toEqual(profileB);
+  });
 });
