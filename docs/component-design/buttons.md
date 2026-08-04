@@ -31,7 +31,7 @@ shape와 별개로 색상도 다양하다. `Button`은 `primary`(네이비)와 `
 | `primary`(네이비)   | 대부분의 filled/outline                                                                                                                     | `variant="primary"`/`"secondary"`로 커버                                                         |
 | `accent-pink`       | 삭제/추천 등 강조 액션                                                                                                                      | `variant="danger"`로 커버                                                                        |
 | `accent-cyan`       | `PwaInstallBanner` 설치 버튼, `MiniPlayerBar`/`QueueList` hover 그림자 색                                                                   | **variant 없음**                                                                                 |
-| 브랜드 고유색       | `GoogleLoginButton`(흰 배경), `SpotifyLoginButton`(`#1ED760`)                                                                               | **의도적으로 앱 팔레트와 다름 — variant화하면 안 됨**                                            |
+| 브랜드 고유색       | `GoogleLoginButton`(흰 배경)                                                                                                                | **의도적으로 앱 팔레트와 다름 — variant화하면 안 됨**                                            |
 | raw Tailwind 팔레트 | `ErrorScreen`(`red-600`), `LoginRequestScreen`(`accent-yellow`), `ConfirmToast`(`gray-200`/`red-500`), `ProfileInfo`(`green-600`/`red-500`) | **variant 없음, `docs/design-system.md` §11이 이미 "raw 회색/색상 혼용"을 알려진 불일치로 지적** |
 | 조건부 다중 스킴    | `PrivacyConsentForm` 제출 버튼(`isRequiredChecked`에 따라 색 전체가 바뀜, `disabled` 속성과 별개)                                           | **`Button`의 disabled 의사 클래스 모델과 안 맞음**                                               |
 
