@@ -306,6 +306,27 @@ graph TD
     </div>
   </section>
 
+  <!-- ===================== QueryClient 전역 정책 ===================== -->
+  <section id="querypolicy">
+    <h2>QueryClient 전역 정책 — defaultOptions·MutationCache</h2>
+    <p class="lede">
+      <code>components/providers/QueryProvider.tsx</code>의 <code>new QueryClient()</code>가 인자 없이 생성돼 있던 것을,
+      <code>query-client-policy</code> 사이클(#220~#222)에서 전역 <code>defaultOptions</code>와 <code>MutationCache</code> 에러 핸들러를 추가하는 쪽으로 바꿨습니다.
+      <code>query-key-centralization</code>(#209~#216) 종료 후 TanStack Query 사용처 전수 조사에서, mutation 9개 중 4개가 실패해도 사용자에게 아무 피드백이 없다는 게 드러난 게 계기입니다.
+    </p>
+    <table class="spec">
+      <tr><th>옵션</th><th>값</th><th>왜</th></tr>
+      <tr><td class="mono">defaultOptions.queries.staleTime</td><td>60초(전역)</td><td>이미 개별적으로 60초를 선택했던 3개 쿼리(<code>profile</code>/<code>playlistDetail</code>/<code>postDetail</code>)의 값을 그대로 전역화. <code>staleTime</code>을 깜빡해도 즉시 재요청(0)이 아니라 60초 캐시가 기본값이 된다.</td></tr>
+      <tr><td class="mono">mutationCache</td><td><code>new MutationCache({'{'} onError {'}'})</code> — 공통 토스트 "요청 처리에 실패했습니다."</td><td>mutation은 성공하면 화면이 바로 바뀌어서 실패도 바로 눈치챌 거라 가정하기 쉽지만, 실제로는 <code>updateProfileMutation</code>/알림 3종/댓글 작성이 실패를 캐시 롤백만 하고 조용히 삼키고 있었다(코드 전수 확인). 이제 새 mutation을 추가해도 아무것도 안 해도 최소한의 피드백이 보장된다.</td></tr>
+    </table>
+    <div class="callout cyan">
+      <b>QueryCache(일반 쿼리 실패)는 의도적으로 건드리지 않았습니다.</b> 이미 컴포넌트 단위로 <code>isError</code>를 읽어 인라인 에러 UI를 그리는 쿼리가 여럿 있고, <code>internal/client.ts</code>의 <code>/user/me</code> 401 인터셉터(로그인 모달을 여는 로직)와 겹치면 같은 실패에 모달+토스트가 중복으로 뜨는 문제가 생긴다 — ADR 조사 중 확인된 구체적 충돌 위험이라 범위에서 제외했다.
+    </div>
+    <div class="callout">
+      <b>알려진 트레이드오프</b>: <code>PlaylistDetailModal</code>·<code>ProfileActionButton</code>이 갖고 있던 개별 실패 메시지(예: "플레이리스트 삭제에 실패했습니다")는 이 사이클에서 공통 문구로 대체됐다 — 유지보수 지점을 하나로 줄이는 대신 메시지의 구체성을 잃는 트레이드오프를 의도적으로 선택했다(<code>docs/refactors/query-client-policy/prd.md</code>의 목표 인터뷰 참고).
+    </div>
+  </section>
+
   <!-- ===================== 핵심 개념 ===================== -->
   <section id="concepts">
     <h2>핵심 개념 8가지</h2>
@@ -323,8 +344,8 @@ graph TD
       </div>
       <div class="concept-card">
         <h4>staleTime</h4>
-        <p class="desc">이 시간 안에는 같은 쿼리가 다시 mount돼도 재요청하지 않는다. 기본값은 0 — <b>0인 채로 두면 컴포넌트가 매번 새로 mount되는 화면(모달 열고 닫기 등)에서 캐시가 있어도 계속 재요청된다</b>. authMe/postDetail 모두 <code>pnpm dev</code> 실동작 확인 중에야 이 함정을 실제로 재현하고서 추가했다.</p>
-        <span class="src">useAuthMeQuery.ts:11 AUTH_ME_STALE_TIME_MS = 5분</span>
+        <p class="desc">이 시간 안에는 같은 쿼리가 다시 mount돼도 재요청하지 않는다. <code>query-client-policy</code> 사이클부터 <b>전역 기본값이 60초</b>다(이전엔 라이브러리 기본값 0이라, 컴포넌트가 매번 새로 mount되는 화면에서 캐시가 있어도 계속 재요청됐다). authMe는 그보다 더 긴 5분을 개별 override로 유지한다 — 개별 옵션이 항상 전역값보다 우선한다.</p>
+        <span class="src">query-keys/auth.ts, useAuthMeQuery.ts:11 AUTH_ME_STALE_TIME_MS = 5분 / QueryProvider.tsx 전역 60초</span>
       </div>
       <div class="concept-card">
         <h4>invalidateQueries vs setQueryData</h4>
@@ -738,8 +759,8 @@ const readNotiMutation = useMutation({
       <li><b>목록/무한스크롤이면 <code>useInfiniteQuery</code> + <code>useInfiniteScrollTrigger</code>를 재사용한다.</b> 새 스크롤 배선을 직접 구현하지 않는다.</li>
       <li><b>다른 화면 변경이 이 데이터에 반영돼야 하면 <code>invalidateQueries</code>를, 네트워크 왕복 없이 즉시 반영해야 하면 <code>setQueryData</code>/<code>setQueriesData</code>를 쓴다.</b> 새 zustand nonce/bump 스토어를 만들지 않는다.</li>
       <li><b>폴링이 필요하면 <code>refetchInterval</code>을 쓴다.</b> 조건부로 멈춰야 하면(입력 중 등) 숫자 대신 함수를 전달해 클로저로 조건을 반영한다.</li>
-      <li><b>낙관적 갱신이 필요하면 <code>useMutation</code>의 <code>onMutate</code>/<code>onSuccess</code>/<code>onError</code> 3단을 쓴다.</b> 롤백 설계 전에 "이 mutation이 항목을 추가하는지, 필드를 갱신/교체하는지"부터 정한다 — 두 경우 롤백 전략(tmp-id filter vs snapshot-restore)이 다르다. <code>setQueryData</code>의 updater가 <code>undefined</code>를 반환하면 no-op이라는 점을 미리 감안한다.</li>
-      <li><b>staleTime을 반드시 검토한다.</b> 같은 화면이 반복 mount되는 경로(모달 열고 닫기 등)가 있다면 기본값 0으로는 캐시가 있어도 재요청이 발생한다 — 유닛 테스트만으로는 이 문제가 드러나지 않을 수 있으므로 <code>pnpm dev</code> 실동작으로 직접 확인한다.</li>
+      <li><b>낙관적 갱신이 필요하면 <code>useMutation</code>의 <code>onMutate</code>/<code>onSuccess</code>/<code>onError</code> 3단을 쓴다.</b> 롤백 설계 전에 "이 mutation이 항목을 추가하는지, 필드를 갱신/교체하는지"부터 정한다 — 두 경우 롤백 전략(tmp-id filter vs snapshot-restore)이 다르다. <code>setQueryData</code>의 updater가 <code>undefined</code>를 반환하면 no-op이라는 점을 미리 감안한다. <b>실패를 사용자에게 알리는 토스트는 이제 직접 안 써도 된다</b> — <code>QueryProvider.tsx</code>의 전역 <code>MutationCache.onError</code>가 모든 mutation 실패에 공통 문구 토스트를 자동으로 띄운다(<a href="#querypolicy">QueryClient 전역 정책</a> 참고). <code>onError</code>는 캐시 롤백 로직만 책임지면 된다.</li>
+      <li><b>staleTime은 전역 기본값(60초)을 먼저 믿고, 다르게 동작해야 할 근거가 있을 때만 override한다.</b> 실시간성이 필요한 화면(폴링 중인 알림/댓글처럼 <code>refetchInterval</code>로 신선도를 확보하는 경우, 혹은 그 반대로 authMe처럼 더 긴 시간이 필요한 경우)만 개별 <code>staleTime</code>을 명시한다. <code>staleTime</code>은 순수 클라이언트 캐시 동작이라 유닛 테스트로는 잘 안 드러나므로, 새로 override했다면 <code>pnpm dev</code> 실동작으로 직접 확인한다.</li>
       <li><b>서버 데이터를 zustand에 새로 담지 않는다.</b> "여러 컴포넌트가 같은 서버 값을 봐야 한다"는 요구가 생기면 그 자체가 <code>queryKey</code> 캐시가 필요하다는 신호다(<a href="#boundary">경계 원칙</a> 참고).</li>
     </ol>
   </section>
@@ -751,6 +772,7 @@ const readNotiMutation = useMutation({
       <li><code>docs/refactors/feed-list-query-migration/{adr,result}.md</code> — PR #177</li>
       <li><code>docs/refactors/server-polling-optimistic-update/{adr,result}.md</code> — PR #184, 버그 #39</li>
       <li><code>docs/refactors/query-key-centralization/{adr,result}.md</code> — 이슈 #216(#209~#215)</li>
+      <li><code>docs/refactors/query-client-policy/{adr,result}.md</code> — 이슈 #220(#221~#222)</li>
       <li><code>docs/architecture/index.html</code> — 저장소 전체 아키텍처/ERD/의존성 다이어그램</li>
     </ul>
   </footer>
