@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import ProfileActionButton from './ProfileActionButton';
+import { createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-toastify', () => ({
   toast: { error: jest.fn() },
@@ -14,22 +15,33 @@ jest.mock('@/api', () => ({
 const { addFollow, removeFollow } = jest.requireMock('@/api') as { addFollow: jest.Mock; removeFollow: jest.Mock };
 const { toast } = jest.requireMock('react-toastify') as { toast: { error: jest.Mock } };
 
+const renderButton = (props: Partial<React.ComponentProps<typeof ProfileActionButton>> = {}) =>
+  render(
+    <ProfileActionButton
+      loggedInUserId="me"
+      profileUserId="other"
+      isFollowing={false}
+      renderIn="page"
+      onFollowActionComplete={jest.fn()}
+      {...props}
+    />,
+    { wrapper: createQueryClientWrapper() },
+  );
+
 describe('ProfileActionButton — 특성화 테스트 (profile-info-caching #198)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('내 프로필이면(renderIn="page") Recap 버튼을 보여준다', () => {
-    render(<ProfileActionButton loggedInUserId="me" profileUserId="me" isFollowing={false} renderIn="page" onFollowActionComplete={jest.fn()} />);
+    renderButton({ profileUserId: 'me' });
 
     expect(screen.getByTitle('프로필 리캡 생성')).toBeInTheDocument();
     expect(screen.queryByText('팔로우')).not.toBeInTheDocument();
   });
 
   it('내 프로필이면(renderIn="modal") 아무것도 렌더링하지 않는다', () => {
-    const { container } = render(
-      <ProfileActionButton loggedInUserId="me" profileUserId="me" isFollowing={false} renderIn="modal" onFollowActionComplete={jest.fn()} />,
-    );
+    const { container } = renderButton({ profileUserId: 'me', renderIn: 'modal' });
 
     expect(container).toBeEmptyDOMElement();
   });
@@ -38,15 +50,7 @@ describe('ProfileActionButton — 특성화 테스트 (profile-info-caching #198
     addFollow.mockResolvedValue(undefined);
     const onFollowActionComplete = jest.fn();
 
-    render(
-      <ProfileActionButton
-        loggedInUserId="me"
-        profileUserId="other"
-        isFollowing={false}
-        renderIn="page"
-        onFollowActionComplete={onFollowActionComplete}
-      />,
-    );
+    renderButton({ isFollowing: false, onFollowActionComplete });
 
     fireEvent.click(screen.getByText('팔로우'));
 
@@ -59,15 +63,7 @@ describe('ProfileActionButton — 특성화 테스트 (profile-info-caching #198
     removeFollow.mockResolvedValue(undefined);
     const onFollowActionComplete = jest.fn();
 
-    render(
-      <ProfileActionButton
-        loggedInUserId="me"
-        profileUserId="other"
-        isFollowing={true}
-        renderIn="page"
-        onFollowActionComplete={onFollowActionComplete}
-      />,
-    );
+    renderButton({ isFollowing: true, onFollowActionComplete });
 
     fireEvent.click(screen.getByText('팔로잉'));
 
@@ -79,15 +75,7 @@ describe('ProfileActionButton — 특성화 테스트 (profile-info-caching #198
     addFollow.mockRejectedValue(new Error('fail'));
     const onFollowActionComplete = jest.fn();
 
-    render(
-      <ProfileActionButton
-        loggedInUserId="me"
-        profileUserId="other"
-        isFollowing={false}
-        renderIn="page"
-        onFollowActionComplete={onFollowActionComplete}
-      />,
-    );
+    renderButton({ isFollowing: false, onFollowActionComplete });
 
     fireEvent.click(screen.getByText('팔로우'));
 
@@ -103,7 +91,7 @@ describe('ProfileActionButton — 특성화 테스트 (profile-info-caching #198
       }),
     );
 
-    render(<ProfileActionButton loggedInUserId="me" profileUserId="other" isFollowing={false} renderIn="page" onFollowActionComplete={jest.fn()} />);
+    renderButton({ isFollowing: false });
 
     const button = screen.getByRole('button');
     fireEvent.click(button);
@@ -115,9 +103,7 @@ describe('ProfileActionButton — 특성화 테스트 (profile-info-caching #198
   });
 
   it('로그인하지 않은 경우 버튼이 disabled 상태다', () => {
-    render(
-      <ProfileActionButton loggedInUserId={null} profileUserId="other" isFollowing={false} renderIn="page" onFollowActionComplete={jest.fn()} />,
-    );
+    renderButton({ loggedInUserId: null });
 
     expect(screen.getByRole('button')).toBeDisabled();
   });
