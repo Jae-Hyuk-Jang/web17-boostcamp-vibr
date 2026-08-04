@@ -32,7 +32,7 @@ src
 │   └── redis/                                # redis-keys, redis-stream 유틸/타입 (Streams 이벤트 버스)
 └── modules
     ├── algorithm/     # Neo4j 그래프 기록·조회 (algorithm-stream.consumer.ts)
-    ├── auth/           # Google/Spotify OAuth, JWT 발급 (dto/, types.ts)
+    ├── auth/           # Google OAuth, JWT 발급 (dto/, types.ts)
     ├── comment/        # controller/service/repository + entities/
     ├── feed/           # 홈 피드 조합 (policy/, sources/, spec/)
     ├── follow/
@@ -59,7 +59,7 @@ app
 ├── (home)/                    # 홈 피드
 ├── api/youtube-search/        # 유튜브 검색 프록시 route handler
 ├── archive/                   # 보관함
-├── auth/{google,spotify}/callback/   # OAuth 콜백 route handler
+├── auth/google/callback/      # OAuth 콜백 route handler
 ├── post/[id]/
 ├── profile/[id]/posts/, profile/
 ├── setting/terms/, setting/
@@ -69,7 +69,7 @@ app
 src
 ├── api
 │   ├── internal/     # apps/api 호출 래퍼 (client.ts + 도메인별 파일)
-│   ├── itunes/ spotify/ youtube/   # 서드파티 음악 검색 직접 호출
+│   ├── itunes/ youtube/   # 서드파티 음악 검색 직접 호출
 ├── components
 │   ├── archive/ feed/ layout/ noti/ player/(nowPlaying) playlist/
 │   ├── modals/       # ContentWriteModal, LoginModal, PlaylistDetailModal, PlaylistPickerModal,
@@ -79,9 +79,8 @@ src
 ├── hooks
 │   ├── auth/{client,config,server}   # 클라이언트/서버 인증 훅 분리
 │   ├── noti/ player/(youtube) playlist/ post/ privacy/ queue/ search/
-├── mappers            # itunes/spotify/youtube 트랙 → 내부 Music 타입 정규화
-├── stores             # Zustand: auth, player, spotify(auth/player), modal,
-│                       # feedRefresh, playlistRefresh, postReactionOverrides, profile
+├── mappers            # itunes/youtube 트랙 → 내부 Music 타입 정규화
+├── stores             # Zustand: player, modal, notiOverlay
 ├── types / utils
 ```
 
@@ -146,19 +145,19 @@ NestJS, `src/modules/*` 아래 도메인별 모듈 구조 (auth, user, post, com
 - `modules/trending` — Redis 스트림 기반 랭킹(`stream/`, `rank/trending-rank.store.ts`)과 `@nestjs/schedule`을 이용한 스케줄 감쇠(`jobs/trending-decay.job.ts`)로 구성됩니다.
 - `modules/algorithm` — 상호작용 이벤트를 배치로 Neo4j 그래프에 기록하고, 그래프 기반 추천의 조회 경로 역할도 합니다.
 
-인증: 커스텀 JWT(`@nestjs/jwt`, 30분 만료)를 `AuthGuard`(`common/guards/auth.guard.ts`, `Authorization: Bearer <token>` 헤더 필요)로 검증하며, 인증이 선택적인 엔드포인트는 `auth.optional-guard.ts`를 사용합니다. 유저 id는 `common/decorators/userId.decorator.ts`로 추출합니다. OAuth는 Google + Spotify(`modules/auth`)이며 토큰 교환은 서버 사이드에서 이뤄집니다. 업로드는 `modules/upload`를 거쳐 NCP(네이버 클라우드) 오브젝트 스토리지로 전송됩니다(`@aws-sdk/client-s3`, S3 호환 엔드포인트). 전역 예외 응답 형식은 `common/filter/all-exception.filter.ts`에서 정의합니다.
+인증: 커스텀 JWT(`@nestjs/jwt`, 30분 만료)를 `AuthGuard`(`common/guards/auth.guard.ts`, `Authorization: Bearer <token>` 헤더 필요)로 검증하며, 인증이 선택적인 엔드포인트는 `auth.optional-guard.ts`를 사용합니다. 유저 id는 `common/decorators/userId.decorator.ts`로 추출합니다. OAuth는 Google(`modules/auth`)이며 토큰 교환은 서버 사이드에서 이뤄집니다. 업로드는 `modules/upload`를 거쳐 NCP(네이버 클라우드) 오브젝트 스토리지로 전송됩니다(`@aws-sdk/client-s3`, S3 호환 엔드포인트). 전역 예외 응답 형식은 `common/filter/all-exception.filter.ts`에서 정의합니다.
 
 ## 프론트엔드 아키텍처 (`apps/web`)
 
 Next.js App Router 구조로, `app/`에는 라우트/레이아웃만 두고 나머지(`components`, `hooks`, `stores`, `api`, `mappers`, `constants`, `types`, `utils`)는 모두 `src/`에 둡니다. import alias `@/*` → `src/*`.
 
-- **상태 관리**: `src/stores`의 Zustand 스토어(auth, player, spotify player/auth, modal, feed/playlist refresh 트리거, post reaction override, profile). 전역 데이터 페칭/캐시 라이브러리는 없고, 서버 상태는 API 레이어를 통해 직접 조회한 뒤 컴포넌트/훅 상태나 이 스토어들에 보관합니다.
+- **상태 관리**: `src/stores`의 Zustand 스토어(player, modal, notiOverlay). 전역 데이터 페칭/캐시 라이브러리는 없고, 서버 상태는 API 레이어를 통해 직접 조회한 뒤 컴포넌트/훅 상태나 이 스토어들에 보관합니다.
 - **API 레이어** (`src/api`):
   - `internal/client.ts` — `apps/api` 호출용 공용 axios 인스턴스(`baseURL: /api`). `sessionStorage`의 bearer 토큰을 주입하며, `/user/me` 요청에서 401이 발생했을 때만(다른 요청의 401은 무시) 인증 관련 스토어를 정리하고 로그인 모달을 다시 엽니다 — 모든 요청 실패마다 전역 로그아웃되는 것을 막기 위한 의도된 좁은 범위입니다.
   - `internal/*.ts` — 백엔드 도메인당 하나씩, `@repo/dto` 타입을 사용하는 `internalClient`의 얇은 래퍼.
-  - `itunes/`, `spotify/`, `youtube/` — 서드파티 음악 검색 API를 직접 호출하고, `src/mappers/*ToMusic.ts`로 앱 내부 `Music` 형태로 정규화합니다.
-  - `app/api/youtube-search/route.ts`, `app/auth/{google,spotify}/**/route.ts` — 서버 사이드 프록시/콜백 역할을 하는 Next.js route handler(프로바이더 시크릿과 `INTERNAL_API_URL` 기반 SSR 호출을 클라이언트에 노출하지 않기 위함).
-- **플레이어**: Spotify Web Playback SDK, YouTube iframe API, iTunes 미리듣기를 아우르는 멀티 프로바이더 재생을 `hooks/player/*`와 `stores/usePlayerStore.ts` / `useSpotifyPlayerStore.ts` 뒤로 통합하고, `mappers/*`가 각 프로바이더의 트랙 형태를 플레이어/큐에 도달하기 전에 하나의 `Music` 타입으로 정규화합니다.
+  - `itunes/`, `youtube/` — 서드파티 음악 검색 API를 직접 호출하고, `src/mappers/*ToMusic.ts`로 앱 내부 `Music` 형태로 정규화합니다.
+  - `app/api/youtube-search/route.ts`, `app/auth/google/**/route.ts` — 서버 사이드 프록시/콜백 역할을 하는 Next.js route handler(프로바이더 시크릿과 `INTERNAL_API_URL` 기반 SSR 호출을 클라이언트에 노출하지 않기 위함).
+- **플레이어**: YouTube iframe API, iTunes 미리듣기를 아우르는 멀티 프로바이더 재생을 `hooks/player/*`와 `stores/usePlayerStore.ts` 뒤로 통합하고, `mappers/*`가 각 프로바이더의 트랙 형태를 플레이어/큐에 도달하기 전에 하나의 `Music` 타입으로 정규화합니다.
 - **Auth 분리**: `hooks/auth/client` vs `hooks/auth/server` — 이 경계를 지켜야 합니다. 서버 사이드 훅은 RSC/route handler에서 실행되며 `INTERNAL_API_URL`을 사용하고, 클라이언트 사이드 훅은 브라우저에서 실행되며 `API_BASE_URL` / axios client를 사용합니다.
 
 ## 프론트엔드 구현 패턴 (`apps/web`)
