@@ -16,6 +16,10 @@ jest.mock('@/api/internal/auth', () => ({
   authMe: jest.fn(),
 }));
 
+jest.mock('react-toastify', () => ({
+  toast: { error: jest.fn() },
+}));
+
 const { addLike, removeLike, getComments, createComment } = jest.requireMock('@/api/internal') as {
   addLike: jest.Mock;
   removeLike: jest.Mock;
@@ -23,6 +27,7 @@ const { addLike, removeLike, getComments, createComment } = jest.requireMock('@/
   createComment: jest.Mock;
 };
 const { authMe } = jest.requireMock('@/api/internal/auth') as { authMe: jest.Mock };
+const { toast } = jest.requireMock('react-toastify') as { toast: { error: jest.Mock } };
 
 const mockPost = (overrides: Partial<Post> = {}): Post => ({
   id: 'post-1',
@@ -201,6 +206,8 @@ describe('usePostReactions — 게시글 반응 상태 특성화 테스트 (상�
 
     await waitFor(() => expect(result.current.comments).toHaveLength(0));
     expect(queryClient.getQueryData(postDetailQueryKey('post-1'))).toMatchObject({ commentCount: 0 });
+    // createCommentMutation 자체에는 onError에 토스트가 없다 — 전역 MutationCache 핸들러가 대신 띄운다(query-client-policy #221).
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('요청 처리에 실패했습니다.'));
   });
 
   it('[회귀 안전망 #44] 좋아요 요청이 진행 중일 때 다시 toggleLike를 호출해도 API가 한 번만 호출된다', async () => {

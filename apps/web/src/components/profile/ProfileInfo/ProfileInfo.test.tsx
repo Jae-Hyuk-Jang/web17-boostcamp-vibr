@@ -9,6 +9,10 @@ jest.mock('@/api', () => ({
   updateProfile: jest.fn(),
 }));
 
+jest.mock('react-toastify', () => ({
+  toast: { error: jest.fn() },
+}));
+
 jest.mock('./ProfileActionButton', () => ({
   __esModule: true,
   default: ({ onFollowActionComplete }: { onFollowActionComplete: () => void }) => (
@@ -19,6 +23,7 @@ jest.mock('./ProfileActionButton', () => ({
 }));
 
 const { updateProfile } = jest.requireMock('@/api') as { updateProfile: jest.Mock };
+const { toast } = jest.requireMock('react-toastify') as { toast: { error: jest.Mock } };
 
 const mockProfile = (overrides: Partial<Profile> = {}): Profile => ({
   id: 'user-1',
@@ -71,6 +76,21 @@ describe('ProfileInfo — 특성화 테스트 (profile-info-caching #198)', () =
     await waitFor(() => expect(updateProfile).toHaveBeenCalledWith({ nickname: '새 닉네임', bio: '소개글' }));
     await waitFor(() => expect(queryClient.getQueryData(profileQueryKey('user-1'))).toEqual(mockProfile({ nickname: '새 닉네임', bio: '소개글' })));
     expect(screen.queryByLabelText('저장')).not.toBeInTheDocument();
+  });
+
+  it('저장 실패 시 전역 MutationCache 핸들러가 공통 에러 토스트를 띄운다 (query-client-policy #221)', async () => {
+    updateProfile.mockRejectedValue(new Error('network error'));
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(profileQueryKey('user-1'), mockProfile());
+
+    renderProfileInfo({}, queryClient);
+
+    fireEvent.click(screen.getByLabelText('프로필 수정'));
+    fireEvent.click(screen.getByLabelText('저장'));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('요청 처리에 실패했습니다.'));
+    // updateProfileMutation 자체에는 onError가 없다 — 이전엔 실패해도 아무 피드백이 없었다(#220에서 확인된 사실).
+    expect(screen.getByLabelText('저장')).toBeInTheDocument();
   });
 
   it('취소하면 편집 모드를 종료하고 updateProfile을 호출하지 않는다', () => {
