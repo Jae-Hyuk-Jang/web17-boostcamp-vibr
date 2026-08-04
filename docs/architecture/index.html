@@ -21,7 +21,7 @@
 </head>
 <body>
   <h1>VIBR 아키텍처 다이어그램</h1>
-  <p class="sub">apps/api/src/modules/*, apps/web/src/{components,hooks,stores,api,mappers,...} 폴더 단위 의존성 스캔 결과 (mermaid-diagram 스킬 자동 생성) · 마지막 갱신: 2026-07-22 (server-state-caching #139~145 반영, apps/api는 07-20 이후 변경 없음)</p>
+  <p class="sub">apps/api/src/modules/*, apps/web/src/{components,hooks,stores,api,mappers,...} 폴더 단위 의존성 스캔 결과 (mermaid-diagram 스킬 자동 생성) · 마지막 갱신: 2026-08-04 (architecture-diagram-drift #245~247 — query-key-centralization #211~215·auth-state-ownership #232~236·spotify-integration #237~241 이후 누적된 9개 다이어그램의 drift를 전수 재검증해 반영. apps/api 모듈 import 관계는 이번에도 변경 없음, now-playlist 모듈 노드 누락만 보완)</p>
 
   <h2>백엔드 (apps/api) — 도메인 모듈 &amp; 데이터스토어</h2>
   <p class="legend">실선 = 모듈 간 직접 import · 점선 = Redis Streams 이벤트 버스를 통한 비동기 연결</p>
@@ -51,6 +51,8 @@ graph TD
     algorithm[algorithm]
     seed[seed]
   end
+
+  now_playlist["now-playlist<br/>(다른 모듈과 cross-import 없음)"]
 
   redis_streams[["Redis Streams<br/>이벤트 버스"]]
   neo4j[("Neo4j<br/>관계 그래프")]
@@ -103,6 +105,7 @@ graph TD
   constants[constants]
   types[types]
   utils[utils]
+  queryKeys["query-keys<br/>(query-key-centralization #211~215 신설)"]
 
   components --> api
   components --> hooks
@@ -110,6 +113,7 @@ graph TD
   components --> constants
   components --> types
   components --> utils
+  components --> queryKeys
 
   hooks --> api
   hooks --> stores
@@ -117,6 +121,7 @@ graph TD
   hooks --> constants
   hooks --> types
   hooks --> utils
+  hooks --> queryKeys
 
   stores --> api
   api --> stores
@@ -150,7 +155,7 @@ erDiagram
   <p class="legend">참고: Follow와 Noti는 같은 대상 엔티티(User)를 두 개의 서로 다른 FK로 참조합니다(팔로우하는/팔로우받는 사용자, 알림 수신자/발신자) — 위 다이어그램의 두 USER-FOLLOW, 두 USER-NOTI 관계선이 이를 나타냅니다.</p>
 
   <h2>프론트엔드 컴포넌트 간 의존성 (components/* 도메인 단위 cross-import)</h2>
-  <p class="legend">화살표 = "components/{domain}" 폴더의 파일이 다른 "components/{domain}" 폴더나 components/ui의 공용 컴포넌트를 import. 2026-07-22 기준 재스캔.</p>
+  <p class="legend">화살표 = "components/{domain}" 폴더의 파일이 다른 "components/{domain}" 폴더나 components/ui의 공용 컴포넌트를 import(타입 전용 import 포함). 2026-08-04 기준 재스캔.</p>
   <pre class="mermaid">
 graph TD
   subgraph domains["도메인 컴포넌트"]
@@ -184,6 +189,7 @@ graph TD
   noti --> ui
   player --> layout
   player --> ui
+  post --> feed
   post --> ui
   profile --> post
   profile --> ui
@@ -191,22 +197,23 @@ graph TD
   sidebar --> layout
   sidebar --> ui
   </pre>
-  <p class="legend">shared-component-duplication(#101~109)과 modal-shell-duplication(#72~94) 이후, 예전엔 컴포넌트 루트에 흩어져 있던 공용 컴포넌트(ConfirmOverlay·LoadingSpinner·TickerText 등)와 ModalShell 계열이 모두 <code>components/ui/</code>로 통합됐습니다 — 이전 다이어그램의 "루트 공용 컴포넌트" 서브그래프는 이제 정식 도메인 폴더입니다. <code>feed→post</code>·<code>player→layout</code>·<code>sidebar→layout</code>은 이번 재스캔에서 새로 확인된 연결입니다. <code>providers</code>(server-state-caching #139 이후 신설, <code>QueryProvider</code>)는 아직 다른 도메인이 import하지 않는 리프 노드입니다(<code>app/layout.tsx</code>에서만 조합). <code>playlist</code>/<code>setting</code>/<code>skeleton</code>은 여전히 다른 도메인을 직접 import하지 않습니다.</p>
+  <p class="legend">shared-component-duplication(#101~109)과 modal-shell-duplication(#72~94) 이후, 예전엔 컴포넌트 루트에 흩어져 있던 공용 컴포넌트(ConfirmOverlay·LoadingSpinner·TickerText 등)와 ModalShell 계열이 모두 <code>components/ui/</code>로 통합됐습니다 — 이전 다이어그램의 "루트 공용 컴포넌트" 서브그래프는 이제 정식 도메인 폴더입니다. <code>feed→post</code>·<code>player→layout</code>·<code>sidebar→layout</code>은 2026-07-22 재스캔에서 새로 확인된 연결입니다. <code>post→feed</code>(<code>PostHeader.tsx</code>가 <code>FeedView.tsx</code>의 <code>type FeedPage</code>를 import)는 2026-08-04 재스캔에서 새로 확인됐습니다 — <code>feed↔post</code> 양방향 참조가 생겼다는 뜻이라 이후 두 도메인을 정리할 때 참고할 지점입니다. <code>providers</code>(server-state-caching #139 이후 신설, <code>QueryProvider</code>)는 아직 다른 도메인이 import하지 않는 리프 노드입니다(<code>app/layout.tsx</code>에서만 조합). <code>playlist</code>/<code>setting</code>/<code>skeleton</code>은 여전히 다른 도메인을 직접 import하지 않습니다.</p>
 
-  <h2>상태 흐름도 — 인증 세션 (useAuthStore + internalClient)</h2>
-  <p class="legend">근거: apps/web/src/stores/useAuthStore.ts, apps/web/src/api/internal/client.ts의 401 인터셉터</p>
+  <h2>상태 흐름도 — 인증 세션 (useAuthMe() + internalClient)</h2>
+  <p class="legend">근거: apps/web/src/hooks/auth/client/{useAuthMe.ts, useAuthMeQuery.ts, AuthLoginQueryHandler.tsx, logout.ts}, apps/web/src/api/internal/client.ts의 401 인터셉터. auth-state-ownership(#232~236)에서 useAuthStore가 삭제되고 useAuthMe()(TanStack Query 구독)로 대체된 뒤 2026-08-04 기준 재작성.</p>
   <pre class="mermaid">
 stateDiagram-v2
-  [*] --> Loading: 앱 로드 (isLoading=true)
-  Loading --> Guest: 세션 토큰 없음
-  Loading --> Authenticated: /user/me 조회 성공 (setAuth)
+  [*] --> Loading: 앱 로드 (useAuthMeQuery, isPending=true)
+  Loading --> Guest: 조회 실패 또는 데이터 없음 (isError)
+  Loading --> Authenticated: /user/me 조회 성공 (data 있음)
 
-  Guest --> Authenticated: 로그인 성공 (setAuth)
-  Authenticated --> Guest: 로그아웃 (clearAuth)
+  Guest --> Loading: Google 로그인 성공\n(OAuth 콜백이 sessionStorage에 토큰 저장 후\n전체 페이지 리로드 — QueryClient가 새로 생성되며 재조회)
+  Authenticated --> Loading: 로그아웃(performLogout)\n(sessionStorage 토큰 제거 후 전체 페이지 리로드)
 
   Authenticated --> SessionExpired: /user/me 401 + 토큰 일치 확인\n(client.ts, 다른 API의 401은 무시)
-  SessionExpired --> Guest: clearAuthState()\n(store 초기화 + LoginModal 오픈)
+  SessionExpired --> Guest: clearAuthState()\n(sessionStorage 토큰 제거 + LoginModal 오픈,\nuseAuthMeQuery는 이미 isError 상태)
   </pre>
+  <p class="legend">setAuth/clearAuth 같은 store 액션은 더 이상 없습니다 — 로그인·로그아웃 모두 전체 페이지 리로드로 QueryClient를 새로 만들어 인증 상태를 재평가하는 방식으로 바뀌었습니다(zustand의 명령형 상태 갱신 대신 쿼리 재조회에 의존).</p>
 
   <h2>상태 흐름도 — 음악 재생 (usePlayerStore)</h2>
   <p class="legend">근거: apps/web/src/stores/usePlayerStore.ts의 currentMusic / isPlaying / queue 액션</p>
@@ -227,7 +234,7 @@ stateDiagram-v2
   </pre>
 
   <h2>zustand 스토어 사용 현황 (store별 소비 도메인 — components/hooks fan-in)</h2>
-  <p class="legend">근거: apps/web/src/{components,hooks}에서 각 store 이름을 직접 참조하는 파일을 grep, 최상위 도메인 폴더 단위로 축약. 화살표 = "이 도메인이 이 store를 읽거나 쓴다". 2026-07-22 기준 재스캔 — server-state-caching(#139) 이후 <code>usePlaylistRefreshStore</code>가 삭제돼 목록에서 빠졌습니다.</p>
+  <p class="legend">근거: apps/web/src/{components,hooks}에서 각 store 이름을 직접 참조하는 파일을 grep, 최상위 도메인 폴더 단위로 축약. 화살표 = "이 도메인이 이 store를 읽거나 쓴다". 2026-08-04 기준 재스캔 — 현재 살아있는 zustand 스토어는 이 3개뿐입니다(<code>apps/web/src/stores/</code> 확인). <code>useAuthStore</code>(#232~236)·<code>useNotiStore</code>(#184)·<code>usePostReactionOverridesStore</code>·<code>useProfileStore</code>(#208)·<code>useFeedRefreshStore</code>(#177)는 각각 다른 사이클에서 TanStack Query 기반으로 대체되며 삭제됐습니다.</p>
   <pre class="mermaid">
 graph LR
   subgraph comp["components/*"]
@@ -246,7 +253,6 @@ graph LR
 
   subgraph hks["hooks/*"]
     h_auth[auth]
-    h_noti[noti]
     h_player[player]
     h_post[post]
     h_privacy[privacy]
@@ -255,27 +261,10 @@ graph LR
   end
 
   subgraph st["stores"]
-    s_auth[[useAuthStore]]
     s_modal[[useModalStore]]
     s_notiOverlay[[useNotiOverlayStore]]
-    s_noti[[useNotiStore]]
     s_player[[usePlayerStore]]
-    s_postReaction[[usePostReactionOverridesStore]]
-    s_profile[[useProfileStore]]
-    s_feedRefresh[[useFeedRefreshStore]]
   end
-
-  c_layout --> s_auth
-  c_modals --> s_auth
-  c_player --> s_auth
-  c_post --> s_auth
-  c_profile --> s_auth
-  c_search --> s_auth
-  c_sidebar --> s_auth
-  h_auth --> s_auth
-  h_noti --> s_auth
-  h_post --> s_auth
-  h_privacy --> s_auth
 
   c_ui --> s_modal
   c_archive --> s_modal
@@ -289,15 +278,11 @@ graph LR
   c_search --> s_modal
   c_sidebar --> s_modal
   h_auth --> s_modal
+  h_post --> s_modal
   h_privacy --> s_modal
   h_music --> s_modal
 
   c_layout --> s_notiOverlay
-
-  c_layout --> s_noti
-  c_noti --> s_noti
-  c_sidebar --> s_noti
-  h_noti --> s_noti
 
   c_feed --> s_player
   c_modals --> s_player
@@ -305,52 +290,43 @@ graph LR
   c_profile --> s_player
   h_auth --> s_player
   h_player --> s_player
+  h_post --> s_player
   h_queue --> s_player
   h_music --> s_player
-
-  c_feed --> s_postReaction
-  c_modals --> s_postReaction
-  c_post --> s_postReaction
-  h_post --> s_postReaction
-
-  c_modals --> s_profile
-  c_profile --> s_profile
-
-  c_feed --> s_feedRefresh
-  c_layout --> s_feedRefresh
-  c_profile --> s_feedRefresh
-  h_post --> s_feedRefresh
   </pre>
-  <p class="legend">눈에 띄는 지점: <code>useAuthStore</code>·<code>useModalStore</code>는 도메인 10개 이상이 공유(전역 UI/인증이라 예상된 결과), <code>usePostReactionOverridesStore</code>는 4개 도메인(feed/modals/post/hooks-post)이 공유 — post-reaction-state 리팩터링(#48)이 정확히 이 4개의 접근 방식을 통일하려 한 지점입니다. 예전엔 여기 있던 <code>usePlaylistRefreshStore</code>(archive·modals가 소비)는 server-state-caching(#139)에서 TanStack Query로 대체돼 삭제됐고, <code>useSpotifyAuthStore</code>/<code>useSpotifyPlayerStore</code>도 spotify-integration(#237~#241)에서 Spotify 연동 전체와 함께 삭제됐습니다 — 아래 "서버 상태 캐싱" 다이어그램 참고.</p>
+  <p class="legend">눈에 띄는 지점: <code>useModalStore</code>는 여전히 도메인 10개 이상이 공유하는 전역 UI 상태입니다. <code>h_post</code>(<code>hooks/post/usePostDetailModal.ts</code>)가 <code>useModalStore</code>·<code>usePlayerStore</code> 둘 다에 새로 연결된 건 이번 재스캔에서 확인된 사실입니다. <code>hooks/noti</code>는 더 이상 어떤 zustand 스토어도 참조하지 않아(알림 폴링이 #184에서 TanStack Query로 전환됨) 이 다이어그램에서 빠졌습니다. post-reaction-state 리팩터링(#48)이 통일하려 했던 <code>usePostReactionOverridesStore</code>(옛 4개 도메인 공유)와, server-state-caching(#139)에서 대체된 <code>usePlaylistRefreshStore</code>, spotify-integration(#237~#241)에서 삭제된 <code>useSpotifyAuthStore</code>/<code>useSpotifyPlayerStore</code>는 전부 TanStack Query로 옮겨갔습니다 — 아래 "서버 상태 캐싱" 다이어그램 참고.</p>
 
-  <h2>usePostReactionOverridesStore 상세 흐름 (post-detail-modal-responsibility-decomposition #125~131 이후)</h2>
-  <p class="legend">근거: apps/web/src/{stores/usePostReactionOverridesStore.ts, components/post/PostCard.tsx, components/post/partials/PostHeader.tsx, hooks/post/usePostDetailModal.ts, components/feed/FeedView.tsx, hooks/post/usePostLikeToggle.ts, hooks/post/usePostReactions.ts} — 파일 단위. 점선 = "내부적으로 사용/합성", 실선 = store에 대한 실제 read/write. 2026-07-22 기준 재스캔.</p>
+  <h2>게시글 반응(좋아요·댓글수·본문·삭제) 상세 흐름 — TanStack Query 캐시 기반</h2>
+  <p class="legend">근거: apps/web/src/{components/post/PostCard.tsx, components/post/partials/PostHeader.tsx, hooks/post/{usePostCacheSync.ts, usePostDetail.ts, usePostDetailModal.ts, usePostLikeToggle.ts, usePostReactions.ts}, query-keys/post.ts} — 파일 단위. 점선 = "내부적으로 사용/합성", 실선 = 쿼리 캐시에 대한 실제 read/write. <code>usePostReactionOverridesStore</code>(zustand)가 삭제되며 대체된 흐름을 2026-08-04 기준 재스캔.</p>
   <pre class="mermaid">
 graph TD
-  store[["usePostReactionOverridesStore<br/>likesByPostId · commentsByPostId · contentByPostId · deletedPostId"]]
+  q_postDetail[["postDetailQueryKey(postId)<br/>likeCount · liked · commentCount · content"]]
+  q_comments[["commentsQueryKey(postId)"]]
+  q_feed[["feedQueryKey<br/>(useInfiniteQuery pages, FeedView.tsx가 구독)"]]
 
   PostCard["PostCard.tsx<br/>(components/post)"]
   PostHeader["PostHeader.tsx<br/>(components/post/partials)"]
-  usePostDetailModal["usePostDetailModal.ts<br/>(hooks/post) — #128 신설"]
-  FeedView["FeedView.tsx<br/>(components/feed)"]
+  usePostCacheSync["usePostCacheSync.ts<br/>(hooks/post)"]
   usePostLikeToggle["usePostLikeToggle.ts<br/>(hooks/post)"]
+  usePostDetail["usePostDetail.ts<br/>(hooks/post)"]
+  usePostDetailModal["usePostDetailModal.ts<br/>(hooks/post)"]
   usePostReactions["usePostReactions.ts<br/>(hooks/post)"]
 
-  PostCard -->|"read likesByPostId · commentsByPostId"| store
+  PostCard -.->|사용| usePostCacheSync
+  usePostCacheSync -->|"read (구독 전용, enabled:false)"| q_postDetail
   PostCard -.->|사용| usePostLikeToggle
-  usePostLikeToggle -->|"write setLikeOverride"| store
+  usePostLikeToggle -->|"write likeCount · liked"| q_postDetail
 
-  usePostDetailModal -->|"read likesByPostId"| store
-  usePostDetailModal -->|"write setContentOverride"| store
-  usePostDetailModal -.->|사용| usePostReactions
+  usePostDetailModal -.->|합성| usePostDetail
+  usePostDetail -->|"read/write content"| q_postDetail
+  usePostDetailModal -.->|합성| usePostReactions
   usePostReactions -.->|합성| usePostLikeToggle
-  usePostReactions -->|"write setCommentOverride"| store
+  usePostReactions -->|"write commentCount"| q_postDetail
+  usePostReactions -->|"read/write (댓글 낙관적 추가·롤백)"| q_comments
 
-  PostHeader -->|"write setDeletedPostId"| store
-
-  FeedView -->|"read + clear<br/>contentByPostId · deletedPostId"| store
+  PostHeader -->|"write (삭제 시 페이지에서 항목 제거)"| q_feed
   </pre>
-  <p class="legend">post-detail-modal-responsibility-decomposition(#125~131) 이후 <code>PostCardDetailModal.tsx</code> 컴포넌트 자체는 스토어를 전혀 건드리지 않습니다 — 이전에 컴포넌트가 직접 하던 <code>likesByPostId</code> read와 <code>setContentOverride</code> write가 새 오케스트레이션 훅 <code>usePostDetailModal.ts</code>로 옮겨갔습니다. 좋아요(likesByPostId)는 여전히 <code>usePostLikeToggle</code> 하나로 접근이 응집돼 있지만, 삭제(deletedPostId)는 이번에도 <code>PostHeader.tsx</code>가 컴포넌트에서 직접 write합니다 — 이 비대칭은 그대로 남아 있습니다.</p>
+  <p class="legend">삭제 흐름이 좋아요/댓글수/본문 흐름과 완전히 분리된 게 눈에 띕니다 — <code>PostHeader.tsx</code>는 <code>postDetailQueryKey</code>를 전혀 건드리지 않고 <code>feedQueryKey</code>(무한 스크롤 피드 캐시)에서 직접 항목을 필터링합니다(feed-list-query-migration 이후). <code>usePostCacheSync</code>는 목록 카드가 상세보기와 같은 캐시를 "구독만" 하도록 만든 경량 훅(자체 fetch 없음, <code>initialData</code>로 시딩)입니다. <code>ProfilePostsFeed.tsx</code>도 같은 <code>postDetailQueryKey</code> 캐시를 프리페치로 시딩합니다 — 아래 "서버 상태 캐싱" 다이어그램 참고.</p>
 
   <h2>서버 상태 캐싱 — TanStack Query (server-state-caching #139~145)</h2>
   <p class="legend">근거: docs/refactors/server-state-caching/{adr,result}.md. 위 zustand 다이어그램과 달리 이 3개 데이터 경로는 컴포넌트/훅 상태가 아니라 <code>queryKey</code> 기반 공유 캐시로 동기화됩니다 — 무효화는 <code>invalidateQueries</code>가 구조적으로 보장합니다.</p>
@@ -361,14 +337,14 @@ graph LR
   q_postDetail[["queryKey: ['postDetail', postId]<br/>usePostDetail()"]]
 
   c1["usePlaylistRecommendations<br/>ArchiveView / ArchiveViewHeader<br/>PlaylistDetailModal · PlaylistPickerModal"]
-  c2["AuthBootstrap<br/>usePostReactions"]
+  c2["useAuthMe()<br/>Sidebar · RightPanel · PostCard ·<br/>usePostDetailModal 등 15개 소비처"]
   c3["usePostDetailModal<br/>ProfilePostsFeed(프리페치 시딩)"]
 
   c1 <-->|"read + invalidateQueries"| q_playlists
   c2 <-->|"read (staleTime 5분)"| q_authMe
   c3 <-->|"read/write (staleTime 1분)"| q_postDetail
   </pre>
-  <p class="legend"><code>usePlaylistRefreshStore</code>(zustand nonce+bump)를 대체해, 플레이리스트를 변경하는 3곳(ArchiveView·ArchiveViewHeader·PlaylistDetailModal) 중 하나만 구독을 빠뜨려도 반영이 안 되던 재현된 버그를 구조적으로 없앴습니다. authMe·게시글상세는 <code>staleTime</code>이 없으면 컴포넌트가 다시 mount될 때마다 재요청이 발생한다는 것이 구현 중(실제 <code>pnpm dev</code> 확인) 드러나 추가됐습니다. 좋아요/댓글/본문수정/삭제 오버라이드(<code>usePostReactionOverridesStore</code>)는 이번 사이클 범위 밖이라 여전히 zustand를 그대로 씁니다.</p>
+  <p class="legend"><code>usePlaylistRefreshStore</code>(zustand nonce+bump)를 대체해, 플레이리스트를 변경하는 3곳(ArchiveView·ArchiveViewHeader·PlaylistDetailModal) 중 하나만 구독을 빠뜨려도 반영이 안 되던 재현된 버그를 구조적으로 없앴습니다. authMe·게시글상세는 <code>staleTime</code>이 없으면 컴포넌트가 다시 mount될 때마다 재요청이 발생한다는 것이 구현 중(실제 <code>pnpm dev</code> 확인) 드러나 추가됐습니다. <code>AuthBootstrap</code>은 auth-state-ownership(#232~236)에서 삭제되고 <code>useAuthMe()</code>를 직접 구독하는 15개 소비처로 대체됐습니다(<code>c2</code>). 좋아요/댓글/본문수정/삭제 오버라이드(옛 <code>usePostReactionOverridesStore</code>)도 이후 TanStack Query 캐시 기반으로 옮겨갔습니다 — 위 "게시글 반응 상세 흐름" 다이어그램 참고.</p>
 
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
