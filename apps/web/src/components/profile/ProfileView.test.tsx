@@ -4,7 +4,7 @@ import { useInView } from 'react-intersection-observer';
 import type { GetUserDto as Profile, PostPreviewDto as PostPreview } from '@repo/dto';
 
 import ProfileView, { profileGridQueryKey } from './ProfileView';
-import { useAuthStore, useProfileStore } from '@/stores';
+import { useAuthStore } from '@/stores';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({
@@ -14,8 +14,12 @@ jest.mock('react-intersection-observer', () => ({
 const mockUseInView = useInView as jest.Mock;
 
 jest.mock('@/api', () => ({
-  getUser: jest.fn(),
   getUserProfilePosts: jest.fn(),
+}));
+
+// useProfile(#199)이 getUser를 '@/api/internal'에서 직접 가져오므로 별도로 모킹한다.
+jest.mock('@/api/internal', () => ({
+  getUser: jest.fn(),
 }));
 
 jest.mock('./ProfileInfo', () => ({
@@ -33,7 +37,8 @@ jest.mock('./ProfilePosts', () => ({
   ),
 }));
 
-const { getUser, getUserProfilePosts } = jest.requireMock('@/api') as { getUser: jest.Mock; getUserProfilePosts: jest.Mock };
+const { getUserProfilePosts } = jest.requireMock('@/api') as { getUserProfilePosts: jest.Mock };
+const { getUser } = jest.requireMock('@/api/internal') as { getUser: jest.Mock };
 
 const mockProfile = (overrides: Partial<Profile> = {}): Profile => ({
   id: 'user-1',
@@ -65,7 +70,6 @@ describe('ProfileView — 무한스크롤/쿼리 무효화 특성화(#166)', () 
     jest.clearAllMocks();
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
     useAuthStore.setState({ userId: 'user-1', isAuthenticated: true, isLoading: false });
-    useProfileStore.setState({ profile: null });
   });
 
   it('초기 로드 시 프로필 정보와 게시글 목록을 렌더링한다', async () => {
@@ -138,8 +142,7 @@ describe('ProfileView — 무한스크롤/쿼리 무효화 특성화(#166)', () 
     consoleErrorSpy.mockRestore();
   });
 
-  it('스토어에 다른 유저의 프로필이 남아있으면 새 프로필이 로드되기 전까지 스켈레톤을 유지한다', async () => {
-    useProfileStore.setState({ profile: mockProfile({ id: 'other-user' }) });
+  it('프로필 조회가 끝나기 전까지는 스켈레톤을 유지한다', async () => {
     let resolveGetUser: (p: Profile) => void = () => {};
     getUser.mockReturnValue(
       new Promise<Profile>((resolve) => {
@@ -158,5 +161,19 @@ describe('ProfileView — 무한스크롤/쿼리 무효화 특성화(#166)', () 
     });
 
     await waitFor(() => expect(screen.getByTestId('profile-info')).toBeInTheDocument());
+  });
+
+  it('다른 userId로 이동하면 새 캐시 키로 프로필을 다시 조회한다(캐시 격리)', async () => {
+    getUser.mockImplementation((userId: string) => Promise.resolve(mockProfile({ id: userId, nickname: `nick-${userId}` })));
+    getUserProfilePosts.mockResolvedValue({ items: [], hasNext: false, nextCursor: undefined });
+
+    const queryClient = createTestQueryClient();
+    const { rerender } = render(<ProfileView userId="user-1" />, { wrapper: createQueryClientWrapper(queryClient) });
+    await waitFor(() => expect(screen.getByTestId('profile-info')).toBeInTheDocument());
+    expect(getUser).toHaveBeenCalledWith('user-1');
+
+    rerender(<ProfileView userId="user-2" />);
+
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith('user-2'));
   });
 });
