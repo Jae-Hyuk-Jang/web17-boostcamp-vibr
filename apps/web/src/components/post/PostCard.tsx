@@ -6,7 +6,8 @@ import { PostHeader, PostMedia, PostActions, PostContentPreview } from './index'
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
 
 import { usePostLikeToggle, usePostCacheSync } from '@/hooks';
-import { useModalStore, useAuthStore, MODAL_TYPES } from '@/stores';
+import { useAuthMe } from '@/hooks/auth/client';
+import { useModalStore, MODAL_TYPES } from '@/stores';
 
 interface PostCardProps {
   post: Post;
@@ -21,8 +22,7 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay, onPlayAll, onUserClick, onOpenDetail }: PostCardProps) {
-  const userId = useAuthStore((s) => s.userId);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { userId, isAuthenticated } = useAuthMe();
   const { openModal } = useModalStore();
 
   // postDetailQueryKey 캐시를 구독한다 — usePostLikeToggle/usePostReactions/usePostDetailModal가

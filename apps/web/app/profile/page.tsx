@@ -2,15 +2,14 @@
 
 import LoginRequestScreen from '@/components/ui/LoginRequestScreen';
 import { ProfileSkeleton } from '@/components/skeleton';
-import { useAuthStore } from '@/stores';
+import { useAuthMe } from '@/hooks/auth/client';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 /** 내 프로필(me) 페이지 접근 > 동적 경로로 이동하는 역할만 */
 export default function Profile() {
   const router = useRouter();
-  const userId = useAuthStore((s) => s.userId);
-  const isLoading = useAuthStore((s) => s.isLoading);
+  const { userId, isLoading } = useAuthMe();
 
   useEffect(() => {
     if (!isLoading && userId) {

@@ -1,9 +1,12 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import type { PostResponseDto as Post } from '@repo/dto';
 
+import type { QueryClient } from '@tanstack/react-query';
+
 import { usePostDetailModal } from './usePostDetailModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { seedAuthMe } from '@/test-utils/authMeTestUtils';
+import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 const mockPush = jest.fn();
 
@@ -61,9 +64,12 @@ const openModalFor = (post: Post, extraProps: Record<string, unknown> = {}) => {
 };
 
 describe('usePostDetailModal', () => {
+  let queryClient: QueryClient;
+
   beforeEach(() => {
     useModalStore.setState({ isOpen: false, modalType: null, modalProps: {} });
-    useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
+    queryClient = createTestQueryClient();
+    seedAuthMe(queryClient, { userId: 'me', isAuthenticated: true });
 
     usePostDetail.mockReturnValue({ post: mockPost(), isLoading: false, error: null, updatePostContent: jest.fn() });
     useLikedUsers.mockReturnValue({ users: [], isLoading: false, errorMsg: null, refetch: jest.fn() });
@@ -93,7 +99,7 @@ describe('usePostDetailModal', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    renderHook(() => usePostDetailModal());
+    renderHook(() => usePostDetailModal(), { wrapper: createQueryClientWrapper(queryClient) });
 
     expect(usePostReactions).toHaveBeenCalledWith(
       expect.objectContaining({ enabled: true, postId: 'post-1', initialIsLiked: false, initialLikeCount: 1 }),
@@ -105,7 +111,7 @@ describe('usePostDetailModal', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { result, rerender } = renderHook(() => usePostDetailModal());
+    const { result, rerender } = renderHook(() => usePostDetailModal(), { wrapper: createQueryClientWrapper(queryClient) });
 
     expect(useLikedUsers).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false, postId: 'post-1' }));
 
@@ -122,7 +128,7 @@ describe('usePostDetailModal', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post, { initialIsEditing: true, initialEditingContent: 'draft from feed' });
 
-    const { result } = renderHook(() => usePostDetailModal());
+    const { result } = renderHook(() => usePostDetailModal(), { wrapper: createQueryClientWrapper(queryClient) });
 
     expect(result.current.editing.isEditing).toBe(true);
     expect(result.current.editing.draft).toBe('draft from feed');
@@ -135,7 +141,7 @@ describe('usePostDetailModal', () => {
     updatePost.mockResolvedValue(undefined);
     openModalFor(post);
 
-    const { result } = renderHook(() => usePostDetailModal());
+    const { result } = renderHook(() => usePostDetailModal(), { wrapper: createQueryClientWrapper(queryClient) });
 
     act(() => {
       result.current.editing.startEdit('original');
@@ -156,7 +162,7 @@ describe('usePostDetailModal', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { result } = renderHook(() => usePostDetailModal());
+    const { result } = renderHook(() => usePostDetailModal(), { wrapper: createQueryClientWrapper(queryClient) });
 
     act(() => {
       result.current.handleClose();
@@ -170,7 +176,7 @@ describe('usePostDetailModal', () => {
     usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
     openModalFor(post);
 
-    const { result } = renderHook(() => usePostDetailModal());
+    const { result } = renderHook(() => usePostDetailModal(), { wrapper: createQueryClientWrapper(queryClient) });
 
     act(() => {
       result.current.handleUserClick('other-user');
@@ -182,7 +188,7 @@ describe('usePostDetailModal', () => {
   it('postId가 없으면 모달을 자동으로 닫는다', async () => {
     useModalStore.getState().openModal(MODAL_TYPES.POST_DETAIL, {});
 
-    renderHook(() => usePostDetailModal());
+    renderHook(() => usePostDetailModal(), { wrapper: createQueryClientWrapper(queryClient) });
 
     await waitFor(() => {
       expect(useModalStore.getState().isOpen).toBe(false);

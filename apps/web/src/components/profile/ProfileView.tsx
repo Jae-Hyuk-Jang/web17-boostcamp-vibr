@@ -3,7 +3,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserProfilePosts } from '@/api';
 import { useInfiniteScrollTrigger, useProfile } from '@/hooks';
-import { useAuthStore } from '@/stores';
+import { useAuthMe } from '@/hooks/auth/client';
 import type { PostPreviewDto as PostPreview } from '@repo/dto';
 import { ProfileSkeleton } from '../skeleton';
 import { ProfileInfo } from './ProfileInfo';
@@ -18,7 +18,7 @@ type Page = {
 };
 
 export default function ProfileView({ userId }: { userId: string }) {
-  const loggedInUserId = useAuthStore((s) => s.userId);
+  const { userId: loggedInUserId } = useAuthMe();
 
   const isMyProfile = loggedInUserId === userId;
 

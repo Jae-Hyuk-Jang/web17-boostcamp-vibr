@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NotiResponseDto } from '@repo/dto';
 
 import { fetchNotis, markNotiRead, markAllNotiRead, deleteAllNotis as deleteAllNotisApi } from '@/api';
-import { useAuthStore } from '@/stores';
+import { useAuthMe } from '@/hooks/auth/client';
 import { notiQueryKey } from '@/query-keys';
 
 const NOTI_POLLING_INTERVAL_MS = 5000;
@@ -23,8 +23,7 @@ type Result = {
 
 export default function useNotifications(): Result {
   const queryClient = useQueryClient();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isLoading = useAuthStore((s) => s.isLoading);
+  const { isAuthenticated, isLoading } = useAuthMe();
   const isEnabled = isAuthenticated && !isLoading;
 
   const {

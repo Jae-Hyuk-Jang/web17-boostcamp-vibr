@@ -11,7 +11,7 @@ import UserSearchResults from './UserSearchResults';
 import { getHintMessage } from '@/utils';
 import { useSearchDrawer } from '@/hooks';
 import { SearchMode } from '@/types';
-import { useAuthStore } from '@/stores';
+import { useAuthMe } from '@/hooks/auth/client';
 
 const SEARCH_TAB_TITLES = {
   music: '음원',
@@ -24,8 +24,7 @@ export const SEARCH_TAB_ENTRIES = Object.entries(SEARCH_TAB_TITLES) as [SearchMo
 type Props = { enabled?: boolean };
 
 function SearchDrawerInner({ enabled = true }: Props) {
-  const userId = useAuthStore((s) => s.userId);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { userId, isAuthenticated } = useAuthMe();
   const { query, setQuery, clearQuery, mode, handleChangeMode, itunes, users, videos, active, followOverrides, setFollowState } = useSearchDrawer({
     enabled,
   });

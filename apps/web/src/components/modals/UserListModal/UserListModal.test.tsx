@@ -4,7 +4,7 @@ import type { GetUserFollowDto, UserWithFollowStatusDto } from '@repo/dto';
 
 import { UserListModal } from './UserListModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import { useAuthStore } from '@/stores';
+import { seedAuthMe } from '@/test-utils/authMeTestUtils';
 import { profileQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
@@ -38,8 +38,9 @@ const emptyFetchFn = jest.fn<Promise<GetUserFollowDto>, [string, string | undefi
   nextCursor: undefined,
 });
 
-const renderModal = (fetchFn: jest.Mock = emptyFetchFn, profileUserId = 'user-1', queryClient = createTestQueryClient()) => {
+const renderModal = (fetchFn: jest.Mock = emptyFetchFn, profileUserId = 'user-1', queryClient = createTestQueryClient(), loggedInUserId = 'me') => {
   useModalStore.setState({ isOpen: true, modalType: MODAL_TYPES.FOLLOWER_USER, modalProps: { profileUserId } });
+  seedAuthMe(queryClient, { userId: loggedInUserId, isAuthenticated: true });
   return render(<UserListModal title="팔로워" fetchFn={fetchFn} />, { wrapper: createQueryClientWrapper(queryClient) });
 };
 
@@ -47,7 +48,6 @@ describe('UserListModal — 배경 클릭/닫기 버튼 특성화 테스트 (#66
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
-    useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
     emptyFetchFn.mockClear();
     emptyFetchFn.mockResolvedValue({ users: [], hasNext: false, nextCursor: undefined });
   });
@@ -74,7 +74,6 @@ describe('UserListModal — 무한스크롤/팔로우 토글 특성화(#166)', (
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
-    useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
   });
 
   it('초기 로드 시 목록을 렌더링한다', async () => {
@@ -106,7 +105,6 @@ describe('UserListModal — 무한스크롤/팔로우 토글 특성화(#166)', (
   });
 
   it('내 프로필에서 팔로우 토글 시 profile 캐시(팔로잉 수)가 증가한다 (profile-info-caching #204)', async () => {
-    useAuthStore.setState({ userId: 'my-id', isAuthenticated: true, isLoading: false });
     const queryClient = createTestQueryClient();
     queryClient.setQueryData(profileQueryKey('my-id'), {
       id: 'my-id',
@@ -124,7 +122,7 @@ describe('UserListModal — 무한스크롤/팔로우 토글 특성화(#166)', (
       nextCursor: undefined,
     });
 
-    renderModal(fetchFn, 'my-id', queryClient);
+    renderModal(fetchFn, 'my-id', queryClient, 'my-id');
     await waitFor(() => expect(screen.getByTestId('follow-btn-user-a')).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('follow-btn-user-a'));
@@ -133,7 +131,6 @@ describe('UserListModal — 무한스크롤/팔로우 토글 특성화(#166)', (
   });
 
   it('내 프로필이 아닌 목록에서 팔로우 토글해도 내 프로필 캐시에는 영향이 없다', async () => {
-    useAuthStore.setState({ userId: 'my-id', isAuthenticated: true, isLoading: false });
     const queryClient = createTestQueryClient();
     queryClient.setQueryData(profileQueryKey('my-id'), {
       id: 'my-id',
@@ -151,7 +148,7 @@ describe('UserListModal — 무한스크롤/팔로우 토글 특성화(#166)', (
       nextCursor: undefined,
     });
 
-    renderModal(fetchFn, 'someone-elses-profile', queryClient);
+    renderModal(fetchFn, 'someone-elses-profile', queryClient, 'my-id');
     await waitFor(() => expect(screen.getByTestId('follow-btn-user-a')).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('follow-btn-user-a'));

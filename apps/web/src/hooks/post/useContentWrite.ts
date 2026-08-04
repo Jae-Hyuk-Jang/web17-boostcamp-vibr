@@ -8,7 +8,7 @@ import { useMusicActions, type PlaylistDetail } from '@/hooks';
 import { createPost } from '@/api';
 import { DEFAULT_IMAGES } from '@/constants';
 import { reorder } from '@/utils';
-import { useAuthStore } from '@/stores';
+import { useAuthMe } from '@/hooks/auth/client';
 import { feedQueryKey, profileGridQueryKey } from '@/query-keys';
 
 type Options = {
@@ -79,7 +79,7 @@ const toMusicPayload = (m: Music) => ({
 export const useContentWrite = ({ initialMusic, initialMusics, onSuccess }: Options): Return => {
   const { ensureMusicInDb } = useMusicActions();
   const queryClient = useQueryClient();
-  const userId = useAuthStore((s) => s.userId);
+  const { userId } = useAuthMe();
 
   const [selectedMusics, setSelectedMusics] = useState<Music[]>(() => toInitialSelected(initialMusics, initialMusic));
   const [content, setContent] = useState('');

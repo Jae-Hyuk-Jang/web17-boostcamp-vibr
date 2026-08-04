@@ -7,7 +7,8 @@ import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import { ProfileActionButton } from '@/components/profile';
 import { DEFAULT_IMAGES } from '@/constants';
 import type { GetUserDto as Profile, GetUserFollowDto, UserWithFollowStatusDto } from '@repo/dto';
-import { useAuthStore, useModalStore } from '@/stores';
+import { useModalStore } from '@/stores';
+import { useAuthMe } from '@/hooks/auth/client';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
@@ -30,7 +31,7 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
   const { profileUserId } = modalProps as { profileUserId: string };
 
   const router = useRouter();
-  const loggedInUserId = useAuthStore((s) => s.userId);
+  const { userId: loggedInUserId } = useAuthMe();
   const queryClient = useQueryClient();
 
   const queryKey = userListQueryKey(profileUserId, title);
