@@ -3,18 +3,15 @@
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import { useSwipeToDismiss } from '@/hooks';
 
+import { usePostDetailModalContext } from '../PostDetailModalContext';
 import PostDetailBody from './PostDetailBody';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 
-interface PostCardDetailModalMobileSheetProps {
-  /** 작성자 닉네임 — Post 전체가 아니라 실제로 쓰는 필드만 받는다 */
-  nickname: string;
-  content: string;
-  profileImg: string;
-  onClose: () => void;
-}
+export default function PostCardDetailModalMobileSheet() {
+  const { safePost, profileImg, handleClose: onClose } = usePostDetailModalContext();
+  const nickname = safePost.author.nickname;
+  const content = safePost.content;
 
-export default function PostCardDetailModalMobileSheet({ nickname, content, profileImg, onClose }: PostCardDetailModalMobileSheetProps) {
   // 스와이프다운 닫기 — 이 시트에서만 쓰이는 제스처라 여기서 직접 소유한다(부모가 대신 구독해 props로
   // 내려줄 이유가 없음, PlaybackProvider와 달리 여러 컴포넌트가 공유하는 값이 아니다).
   const { sheetRef, handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeToDismiss(onClose);

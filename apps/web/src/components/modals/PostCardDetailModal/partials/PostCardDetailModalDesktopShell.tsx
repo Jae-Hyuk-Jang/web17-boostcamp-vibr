@@ -1,47 +1,35 @@
 'use client';
 
-import type { PostResponseDto as Post } from '@repo/dto';
-
 import { PostHeader } from '@/components/post';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { PostMedia } from '@/components/post';
 import ModalShell from '@/components/ui/ModalShell';
-import type { UsePostDetailModalResult } from '@/hooks/post/usePostDetailModal';
 
+import { usePostDetailModalContext } from '../PostDetailModalContext';
 import PostDetailBody from './PostDetailBody';
 import PostDetailActions from './PostDetailActions';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 import PostDetailEditForm from './PostDetailEditForm';
 
-interface PostCardDetailModalDesktopShellProps {
-  post: Post;
-  postId: string;
-  isLoading: boolean;
-  error: string | null;
-  isOwner: boolean;
-  profileImg: string;
-  editing: UsePostDetailModalResult['editing'];
-  player: UsePostDetailModalResult['player'];
-  onClose: () => void;
-  onDeletePost: () => void;
-  onUserClick: (targetUserId: string) => void;
-  onOpenLikedUsers: () => void;
-}
+export default function PostCardDetailModalDesktopShell() {
+  const {
+    safePost: post,
+    postId,
+    isLoading,
+    error,
+    isOwner,
+    profileImg,
+    editing,
+    player,
+    likedUsers,
+    handleClose: onClose,
+    closeModal,
+    handleUserClick: onUserClick,
+  } = usePostDetailModalContext();
 
-export default function PostCardDetailModalDesktopShell({
-  post,
-  postId,
-  isLoading,
-  error,
-  isOwner,
-  profileImg,
-  editing,
-  player,
-  onClose,
-  onDeletePost,
-  onUserClick,
-  onOpenLikedUsers,
-}: PostCardDetailModalDesktopShellProps) {
+  const onDeletePost = () => closeModal();
+  const onOpenLikedUsers = () => likedUsers.open();
+
   return (
     <ModalShell
       onClose={onClose}

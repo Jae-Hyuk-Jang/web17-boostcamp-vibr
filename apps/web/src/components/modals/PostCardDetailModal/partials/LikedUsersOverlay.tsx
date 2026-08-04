@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import type { LikedUserDto } from '@repo/dto';
 
 import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc } from '@/utils';
@@ -10,18 +9,13 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import ModalPanel from '@/components/ui/ModalPanel';
 
-type Props = {
-  isOpen: boolean;
-  onClose: () => void;
+import { usePostDetailModalContext } from '../PostDetailModalContext';
 
-  users: LikedUserDto[];
-  isLoading: boolean;
-  errorMsg: string | null;
-  onRetry: () => void;
-};
-
-export default function LikedUsersOverlay({ isOpen, onClose, users, isLoading, errorMsg, onRetry }: Props) {
+export default function LikedUsersOverlay() {
   const router = useRouter();
+  const { likedUsers } = usePostDetailModalContext();
+  const { isOpen, close: onClose, users, isLoading, errorMsg, refetch: onRetry } = likedUsers;
+
   if (!isOpen) return null;
 
   const handleUserClick = (userId: string) => {

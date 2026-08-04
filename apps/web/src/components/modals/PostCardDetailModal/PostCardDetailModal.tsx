@@ -1,64 +1,12 @@
 'use client';
 
-import { usePostDetailModal } from '@/hooks/post/usePostDetailModal';
-
 import { PostCardDetailModalMobileSheet, PostCardDetailModalDesktopShell, LikedUsersOverlay } from './partials';
-import { PostDetailReactionsProvider } from './PostDetailReactionsContext';
+import { PostDetailModalProvider } from './PostDetailModalContext';
 
-export const PostCardDetailModal = () => {
-  const {
-    isEnabled,
-    postId,
-    safePost,
-    isLoading,
-    error,
-    isOwner,
-    profileImg,
-    reactions,
-    likedUsers,
-    editing,
-    player,
-    handleClose,
-    closeModal,
-    handleUserClick,
-  } = usePostDetailModal();
-
-  if (!isEnabled || !postId) return null;
-
-  return (
-    <>
-      <PostDetailReactionsProvider value={reactions}>
-        <PostCardDetailModalMobileSheet
-          nickname={safePost.author.nickname}
-          content={safePost.content}
-          profileImg={profileImg}
-          onClose={handleClose}
-        />
-
-        <PostCardDetailModalDesktopShell
-          post={safePost}
-          postId={postId}
-          isLoading={isLoading}
-          error={error}
-          isOwner={isOwner}
-          profileImg={profileImg}
-          editing={editing}
-          player={player}
-          onClose={handleClose}
-          onDeletePost={() => closeModal()}
-          onUserClick={handleUserClick}
-          onOpenLikedUsers={() => likedUsers.open()}
-        />
-      </PostDetailReactionsProvider>
-
-      <LikedUsersOverlay
-        isOpen={likedUsers.isOpen}
-        onClose={() => likedUsers.close()}
-        users={likedUsers.users}
-        isLoading={likedUsers.isLoading}
-        errorMsg={likedUsers.errorMsg}
-        onRetry={() => likedUsers.refetch()}
-      />
-    </>
-  );
-};
+export const PostCardDetailModal = () => (
+  <PostDetailModalProvider>
+    <PostCardDetailModalMobileSheet />
+    <PostCardDetailModalDesktopShell />
+    <LikedUsersOverlay />
+  </PostDetailModalProvider>
+);
