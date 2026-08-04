@@ -8,17 +8,14 @@ import type { UsePostDetailModalResult } from '@/hooks/post/usePostDetailModal';
 import PostDetailBody from './PostDetailBody';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 
-type CommentReactions = Pick<
-  UsePostDetailModalResult['reactions'],
-  'comments' | 'isCommentsLoading' | 'isAuthenticated' | 'isSubmittingComment' | 'commentText' | 'setCommentText' | 'submitComment'
->;
+type CommentReactions = Pick<UsePostDetailModalResult['reactions'], 'comments' | 'isCommentsLoading'>;
 
 interface PostCardDetailModalMobileSheetProps {
   /** 작성자 닉네임 — Post 전체가 아니라 실제로 쓰는 필드만 받는다 */
   nickname: string;
   content: string;
   profileImg: string;
-  /** 댓글 관련 필드만 쓴다 — 좋아요 관련 필드(isLiked 등)는 이 화면에서 쓰지 않아 타입에서 제외 */
+  /** PostDetailBody가 쓰는 필드만 남긴다 — 좋아요/댓글 액션은 PostDetailReactionsContext로 직접 구독 */
   reactions: CommentReactions;
   onClose: () => void;
   sheetRef: RefObject<HTMLElement>;
@@ -68,13 +65,7 @@ export default function PostCardDetailModalMobileSheet({
         />
 
         {/* 댓글 입력 */}
-        <PostDetailCommentComposer
-          isAuthenticated={reactions.isAuthenticated}
-          isSubmitting={reactions.isSubmittingComment}
-          value={reactions.commentText}
-          onChange={(v) => reactions.setCommentText(v)}
-          onSubmit={() => reactions.submitComment()}
-        />
+        <PostDetailCommentComposer />
       </section>
     </div>
   );

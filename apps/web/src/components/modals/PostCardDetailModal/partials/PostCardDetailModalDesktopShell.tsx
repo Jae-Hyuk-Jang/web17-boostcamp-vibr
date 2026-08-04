@@ -13,20 +13,7 @@ import PostDetailActions from './PostDetailActions';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 import PostDetailEditForm from './PostDetailEditForm';
 
-type PostDetailReactions = Pick<
-  UsePostDetailModalResult['reactions'],
-  | 'comments'
-  | 'isCommentsLoading'
-  | 'isAuthenticated'
-  | 'isSubmittingLike'
-  | 'isLiked'
-  | 'likeCount'
-  | 'toggleLike'
-  | 'isSubmittingComment'
-  | 'commentText'
-  | 'setCommentText'
-  | 'submitComment'
->;
+type PostDetailReactions = Pick<UsePostDetailModalResult['reactions'], 'comments' | 'isCommentsLoading'>;
 
 interface PostCardDetailModalDesktopShellProps {
   post: Post;
@@ -114,22 +101,8 @@ export default function PostCardDetailModalDesktopShell({
             />
           )}
 
-          <PostDetailActions
-            isAuthenticated={reactions.isAuthenticated}
-            isSubmitting={reactions.isSubmittingLike}
-            isLiked={reactions.isLiked}
-            likeCount={reactions.likeCount}
-            postId={postId}
-            onToggleLike={() => reactions.toggleLike()}
-            onOpenLikedUsers={onOpenLikedUsers}
-          />
-          <PostDetailCommentComposer
-            isAuthenticated={reactions.isAuthenticated}
-            isSubmitting={reactions.isSubmittingComment}
-            value={reactions.commentText}
-            onChange={(v) => reactions.setCommentText(v)}
-            onSubmit={() => reactions.submitComment()}
-          />
+          <PostDetailActions postId={postId} onOpenLikedUsers={onOpenLikedUsers} />
+          <PostDetailCommentComposer />
         </div>
       </div>
     </ModalShell>
