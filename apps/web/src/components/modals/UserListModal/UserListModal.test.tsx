@@ -4,8 +4,9 @@ import type { GetUserFollowDto, UserWithFollowStatusDto } from '@repo/dto';
 
 import { UserListModal } from './UserListModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import { useAuthStore, useProfileStore } from '@/stores';
-import { createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
+import { useAuthStore } from '@/stores';
+import { profileQueryKey } from '@/hooks/profile/useProfile';
+import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({
   useInView: jest.fn(),
@@ -37,9 +38,9 @@ const emptyFetchFn = jest.fn<Promise<GetUserFollowDto>, [string, string | undefi
   nextCursor: undefined,
 });
 
-const renderModal = (fetchFn: jest.Mock = emptyFetchFn, profileUserId = 'user-1') => {
+const renderModal = (fetchFn: jest.Mock = emptyFetchFn, profileUserId = 'user-1', queryClient = createTestQueryClient()) => {
   useModalStore.setState({ isOpen: true, modalType: MODAL_TYPES.FOLLOWER_USER, modalProps: { profileUserId } });
-  return render(<UserListModal title="팔로워" fetchFn={fetchFn} />, { wrapper: createQueryClientWrapper() });
+  return render(<UserListModal title="팔로워" fetchFn={fetchFn} />, { wrapper: createQueryClientWrapper(queryClient) });
 };
 
 describe('UserListModal — 배경 클릭/닫기 버튼 특성화 테스트 (#66)', () => {
@@ -74,7 +75,6 @@ describe('UserListModal — 무한스크롤/팔로우 토글 특성화(#166)', (
     jest.clearAllMocks();
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
     useAuthStore.setState({ userId: 'me', isAuthenticated: true, isLoading: false });
-    useProfileStore.setState({ profile: null });
   });
 
   it('초기 로드 시 목록을 렌더링한다', async () => {
@@ -105,18 +105,17 @@ describe('UserListModal — 무한스크롤/팔로우 토글 특성화(#166)', (
     expect(screen.getByTestId('follow-btn-user-a')).toBeInTheDocument();
   });
 
-  it('내 프로필에서 팔로우 토글 시 전역 프로필(팔로잉 수)이 증가한다', async () => {
+  it('내 프로필에서 팔로우 토글 시 profile 캐시(팔로잉 수)가 증가한다 (profile-info-caching #204)', async () => {
     useAuthStore.setState({ userId: 'my-id', isAuthenticated: true, isLoading: false });
-    useProfileStore.setState({
-      profile: {
-        id: 'my-id',
-        nickname: 'me',
-        profileImgUrl: null,
-        bio: '',
-        followerCount: 0,
-        followingCount: 5,
-        isFollowing: false,
-      },
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(profileQueryKey('my-id'), {
+      id: 'my-id',
+      nickname: 'me',
+      profileImgUrl: null,
+      bio: '',
+      followerCount: 0,
+      followingCount: 5,
+      isFollowing: false,
     });
 
     const fetchFn = jest.fn<Promise<GetUserFollowDto>, [string, string | undefined, number | undefined]>().mockResolvedValue({
@@ -125,12 +124,39 @@ describe('UserListModal — 무한스크롤/팔로우 토글 특성화(#166)', (
       nextCursor: undefined,
     });
 
-    renderModal(fetchFn, 'my-id');
+    renderModal(fetchFn, 'my-id', queryClient);
     await waitFor(() => expect(screen.getByTestId('follow-btn-user-a')).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('follow-btn-user-a'));
 
-    expect(useProfileStore.getState().profile?.followingCount).toBe(6);
+    expect(queryClient.getQueryData<{ followingCount: number }>(profileQueryKey('my-id'))?.followingCount).toBe(6);
+  });
+
+  it('내 프로필이 아닌 목록에서 팔로우 토글해도 내 프로필 캐시에는 영향이 없다', async () => {
+    useAuthStore.setState({ userId: 'my-id', isAuthenticated: true, isLoading: false });
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(profileQueryKey('my-id'), {
+      id: 'my-id',
+      nickname: 'me',
+      profileImgUrl: null,
+      bio: '',
+      followerCount: 0,
+      followingCount: 5,
+      isFollowing: false,
+    });
+
+    const fetchFn = jest.fn<Promise<GetUserFollowDto>, [string, string | undefined, number | undefined]>().mockResolvedValue({
+      users: [mockUser({ id: 'user-a', isFollowing: false })],
+      hasNext: false,
+      nextCursor: undefined,
+    });
+
+    renderModal(fetchFn, 'someone-elses-profile', queryClient);
+    await waitFor(() => expect(screen.getByTestId('follow-btn-user-a')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('follow-btn-user-a'));
+
+    expect(queryClient.getQueryData<{ followingCount: number }>(profileQueryKey('my-id'))?.followingCount).toBe(5);
   });
 
   it('에러 발생 시 에러 메시지를 표시한다', async () => {
