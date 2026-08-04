@@ -9,8 +9,7 @@ import { createPost } from '@/api';
 import { DEFAULT_IMAGES } from '@/constants';
 import { reorder } from '@/utils';
 import { useAuthStore } from '@/stores';
-import { feedQueryKey } from '@/components/feed/FeedView';
-import { profileGridQueryKey } from '@/components/profile/ProfileView';
+import { feedQueryKey, profileGridQueryKey } from '@/query-keys';
 
 type Options = {
   /**

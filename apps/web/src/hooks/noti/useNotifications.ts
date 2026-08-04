@@ -5,8 +5,7 @@ import type { NotiResponseDto } from '@repo/dto';
 
 import { fetchNotis, markNotiRead, markAllNotiRead, deleteAllNotis as deleteAllNotisApi } from '@/api';
 import { useAuthStore } from '@/stores';
-
-export const notiQueryKey = ['notifications'] as const;
+import { notiQueryKey } from '@/query-keys';
 
 const NOTI_POLLING_INTERVAL_MS = 5000;
 

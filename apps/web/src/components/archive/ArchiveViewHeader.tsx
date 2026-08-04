@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 
 import { createNewPlaylist } from '@/api';
-import { PLAYLISTS_QUERY_KEY } from '@/hooks/playlist/usePlaylists';
+import { PLAYLISTS_QUERY_KEY } from '@/query-keys';
 import { Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
 

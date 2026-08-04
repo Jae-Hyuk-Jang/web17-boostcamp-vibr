@@ -1,7 +1,8 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import type { GetPlaylistDetailResDto } from '@repo/dto';
 
-import { usePlaylistDetail, playlistDetailQueryKey } from './usePlaylistDetail';
+import { usePlaylistDetail } from './usePlaylistDetail';
+import { playlistDetailQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api/internal', () => ({

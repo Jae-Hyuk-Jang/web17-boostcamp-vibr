@@ -1,7 +1,8 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import type { NotiResponseDto } from '@repo/dto';
 
-import useNotifications, { notiQueryKey } from './useNotifications';
+import useNotifications from './useNotifications';
+import { notiQueryKey } from '@/query-keys';
 import { useAuthStore } from '@/stores';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 

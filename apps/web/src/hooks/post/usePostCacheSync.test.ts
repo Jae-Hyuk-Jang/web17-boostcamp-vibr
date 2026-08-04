@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import { usePostCacheSync } from './usePostCacheSync';
-import { postDetailQueryKey } from './usePostDetail';
+import { postDetailQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api/internal/post', () => ({

@@ -3,8 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { getAllPlaylists } from '@/api/internal';
-
-export const PLAYLISTS_QUERY_KEY = ['playlists'] as const;
+import { PLAYLISTS_QUERY_KEY } from '@/query-keys';
 
 export const usePlaylists = (enabled: boolean = true) =>
   useQuery({

@@ -3,7 +3,7 @@ import { useInView } from 'react-intersection-observer';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import ProfilePostsFeed from './ProfilePostsFeed';
-import { postDetailQueryKey } from '@/hooks';
+import { postDetailQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({

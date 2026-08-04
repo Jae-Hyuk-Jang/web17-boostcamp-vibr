@@ -2,7 +2,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import PostHeader from './PostHeader';
-import { feedQueryKey, type FeedPage } from '@/components/feed/FeedView';
+import { type FeedPage } from '@/components/feed/FeedView';
+import { feedQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-toastify', () => ({

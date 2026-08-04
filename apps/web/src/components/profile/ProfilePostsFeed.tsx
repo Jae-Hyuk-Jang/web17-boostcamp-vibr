@@ -6,11 +6,12 @@ import { ArrowLeft } from 'lucide-react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getUserProfilePosts, getPostDetail } from '@/api';
-import { useInfiniteScrollTrigger, postDetailQueryKey } from '@/hooks';
+import { useInfiniteScrollTrigger } from '@/hooks';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useModalStore, MODAL_TYPES, usePlayerStore } from '@/stores';
 import { PostCard } from '@/components/post';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { profilePostsFeedQueryKey, postDetailQueryKey } from '@/query-keys';
 import type { PostResponseDto as Post, MusicResponseDto as Music } from '@repo/dto';
 
 interface Props {
@@ -23,8 +24,6 @@ type Page = {
   hasNext: boolean;
   nextCursor?: string;
 };
-
-export const profilePostsFeedQueryKey = (userId: string) => ['profilePostsFeed', userId] as const;
 
 export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
   const router = useRouter();

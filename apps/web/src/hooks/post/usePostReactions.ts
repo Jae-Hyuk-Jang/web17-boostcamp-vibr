@@ -7,11 +7,9 @@ import type { GetCommentsResDto, PostResponseDto as Post, UserDto } from '@repo/
 import { getComments, createComment } from '@/api/internal';
 import { useAuthMeQuery } from '@/hooks/auth/client/useAuthMeQuery';
 import usePostLikeToggle from './usePostLikeToggle';
-import { postDetailQueryKey } from './usePostDetail';
+import { postDetailQueryKey, commentsQueryKey } from '@/query-keys';
 
 type CommentItem = GetCommentsResDto['comments'][number];
-
-export const commentsQueryKey = (postId: string) => ['comments', postId] as const;
 
 type Options = {
   enabled: boolean;

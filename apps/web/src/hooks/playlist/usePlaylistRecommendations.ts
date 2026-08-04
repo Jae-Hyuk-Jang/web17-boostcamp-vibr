@@ -7,7 +7,8 @@ import type { GetAllPlaylistsResDto, GetPlaylistDetailResDto } from '@repo/dto';
 import { getPlaylistDetail } from '@/api/internal';
 import { MOCK_PLAYLIST_BRIEFS, MOCK_PLAYLIST_DETAILS } from '@/constants';
 import { usePlaylists } from './usePlaylists';
-import { playlistDetailQueryKey, PLAYLIST_DETAIL_STALE_TIME_MS } from './usePlaylistDetail';
+import { PLAYLIST_DETAIL_STALE_TIME_MS } from './usePlaylistDetail';
+import { playlistDetailQueryKey } from '@/query-keys';
 
 export type PlaylistBrief = GetAllPlaylistsResDto['playlists'][number];
 export type PlaylistDetail = Pick<GetPlaylistDetailResDto, 'id' | 'title' | 'musics'>;

@@ -2,10 +2,9 @@ import { act } from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 
 import { usePlaylistRecommendations } from './usePlaylistRecommendations';
-import { PLAYLISTS_QUERY_KEY } from './usePlaylists';
 import { MOCK_PLAYLIST_BRIEFS, MOCK_PLAYLIST_DETAILS } from '@/constants';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
-import { playlistDetailQueryKey } from './usePlaylistDetail';
+import { PLAYLISTS_QUERY_KEY, playlistDetailQueryKey } from '@/query-keys';
 
 jest.mock('@/api/internal', () => ({
   getAllPlaylists: jest.fn(),

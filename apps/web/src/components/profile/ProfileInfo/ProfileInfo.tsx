@@ -7,7 +7,7 @@ import { Pencil, Check, X } from 'lucide-react';
 import ProfileActionButton from './ProfileActionButton';
 import FollowStats from './FollowStats';
 import { DEFAULT_IMAGES } from '@/constants/defaultImages';
-import { profileQueryKey } from '@/hooks/profile/useProfile';
+import { profileQueryKey } from '@/query-keys';
 import { GetUserDto as Profile } from '@repo/dto';
 import { EditTextarea, EditInput } from './ProfileInputs';
 import { updateProfile } from '@/api';

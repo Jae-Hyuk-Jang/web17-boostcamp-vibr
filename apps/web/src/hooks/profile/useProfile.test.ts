@@ -1,7 +1,8 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import type { GetUserDto as Profile } from '@repo/dto';
 
-import { useProfile, profileQueryKey } from './useProfile';
+import { useProfile } from './useProfile';
+import { profileQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api/internal', () => ({

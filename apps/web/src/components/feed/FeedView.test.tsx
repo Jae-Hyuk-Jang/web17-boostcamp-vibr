@@ -4,7 +4,8 @@ import { useInView } from 'react-intersection-observer';
 import type { InfiniteData } from '@tanstack/react-query';
 import type { PostResponseDto as Post, Cursor } from '@repo/dto';
 
-import FeedView, { feedQueryKey, type FeedPage } from './FeedView';
+import FeedView, { type FeedPage } from './FeedView';
+import { feedQueryKey } from '@/query-keys';
 import { useModalStore } from '@/stores';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
