@@ -13,12 +13,17 @@ jest.mock('@/api', () => ({
   deleteAllNotis: jest.fn(),
 }));
 
+jest.mock('react-toastify', () => ({
+  toast: { error: jest.fn() },
+}));
+
 const { fetchNotis, markNotiRead, markAllNotiRead, deleteAllNotis } = jest.requireMock('@/api') as {
   fetchNotis: jest.Mock;
   markNotiRead: jest.Mock;
   markAllNotiRead: jest.Mock;
   deleteAllNotis: jest.Mock;
 };
+const { toast } = jest.requireMock('react-toastify') as { toast: { error: jest.Mock } };
 
 const mockNoti = (overrides: Partial<NotiResponseDto> = {}): NotiResponseDto =>
   ({
@@ -104,6 +109,8 @@ describe('useNotifications — 알림 폴링/낙관적 갱신 특성화 테스�
 
     await waitFor(() => expect(result.current.notis.find((n) => n.id === 'a')?.isRead).toBe(false));
     expect(result.current.unreadCount).toBe(1);
+    // readNoti 자체에는 onError에 토스트가 없다 — 전역 MutationCache 핸들러가 대신 띄운다(query-client-policy #221).
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('요청 처리에 실패했습니다.'));
   });
 
   it('readAllNotis 성공 시 모든 알림이 isRead=true가 되고 unreadCount가 0이 된다', async () => {
