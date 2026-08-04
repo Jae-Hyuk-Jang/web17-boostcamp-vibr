@@ -314,7 +314,7 @@ graph TD
       <div class="concept-card">
         <h4>queryKey</h4>
         <p class="desc">캐시의 유일한 식별자. 배열이며 뒤에 변수를 붙여 항목별로 캐시를 격리한다(예: postId별로 다른 캐시). <b>키 설계 실수(변수 누락)는 서로 다른 데이터가 섞이는 사고로 직결</b>되므로 이 저장소는 모든 키를 <code>xxxQueryKey(...)</code> 함수로 export해 오너십을 명확히 한다.</p>
-        <span class="src">usePostDetail.ts:24 postDetailQueryKey(postId)</span>
+        <span class="src">query-keys/post.ts:1 postDetailQueryKey(postId)</span>
       </div>
       <div class="concept-card">
         <h4>enabled</h4>
@@ -357,20 +357,21 @@ graph TD
   <!-- ===================== Query Key 지도 ===================== -->
   <section id="querykeys">
     <h2>Query Key 지도 — 현재 저장소의 10개 캐시</h2>
-    <p class="legend">근거: <code>grep -rn "QueryKey\s*=" apps/web/src</code>. 각 키는 정의 파일이 <code>export</code>해 오너십을 명확히 하고, 소비처는 이 함수를 import해서만 캐시에 접근한다 — 문자열 키를 직접 하드코딩하는 곳은 없다.</p>
+    <p class="legend">근거: <code>grep -rn "QueryKey\s*=" apps/web/src</code>. <code>query-key-centralization</code> 사이클(#209~#215)부터 모든 키는 정의를 소비 훅/컴포넌트에서 분리해 <code>src/query-keys/{'{'}domain{'}'}.ts</code>에서만 <code>export</code>한다 — 소비처는 이 함수를 <code>@/query-keys</code>에서 import해서만 캐시에 접근한다(문자열 키를 직접 하드코딩하는 곳은 없다).</p>
     <table class="spec">
       <tr><th class="mono">queryKey</th><th>소유 파일</th><th>종류</th><th>주요 소비처</th><th>쓰기 지점</th></tr>
-      <tr><td class="mono">['playlists']</td><td class="mono">usePlaylists.ts</td><td>useQuery</td><td>ArchiveView, ArchiveViewHeader, PlaylistDetailModal, PlaylistPickerModal</td><td><code>invalidateQueries</code>(3곳)</td></tr>
-      <tr><td class="mono">['authMe']</td><td class="mono">useAuthMeQuery.ts</td><td>useQuery(staleTime 5분)</td><td>AuthBootstrap, usePostReactions</td><td>없음(읽기 전용, 로그인/로그아웃은 별도 store)</td></tr>
-      <tr><td class="mono">['postDetail', postId]</td><td class="mono">usePostDetail.ts</td><td>useQuery(staleTime 1분, initialData)</td><td>usePostDetailModal, ProfilePostsFeed(프리페치 시딩)</td><td><code>setQueryData</code>(좋아요/댓글수/본문수정)</td></tr>
-      <tr><td class="mono">['comments', postId]</td><td class="mono">usePostReactions.ts</td><td>useQuery(refetchInterval 함수형) + useMutation</td><td>게시글 상세 댓글 UI</td><td><code>setQueryData</code>(onMutate/onSuccess/onError)</td></tr>
-      <tr><td class="mono">['notifications']</td><td class="mono">useNotifications.ts</td><td>useQuery(refetchInterval 5000) + useMutation×3</td><td>Header, Sidebar, NotiDrawerContent, NotiPollingGate</td><td><code>setQueryData</code>(onMutate/onError 롤백)</td></tr>
-      <tr><td class="mono">['feed']</td><td class="mono">FeedView.tsx</td><td>useInfiniteQuery</td><td>FeedView</td><td><code>invalidateQueries</code>(글 작성), <code>setQueriesData</code>(PostHeader 삭제)</td></tr>
-      <tr><td class="mono">['profileGrid', userId]</td><td class="mono">ProfileView.tsx</td><td>useInfiniteQuery</td><td>ProfileView</td><td>사용자별 키 격리로 별도 무효화 불필요</td></tr>
-      <tr><td class="mono">['profilePostsFeed', userId]</td><td class="mono">ProfilePostsFeed.tsx</td><td>useInfiniteQuery</td><td>ProfilePostsFeed</td><td>각 항목이 postDetailQueryKey로 프리페치 시딩</td></tr>
-      <tr><td class="mono">['userList', userId, title]</td><td class="mono">UserListModal.tsx</td><td>useInfiniteQuery</td><td>UserListModal(팔로워/팔로잉)</td><td><code>setQueryData</code>(팔로우 토글 로컬 갱신)</td></tr>
-      <tr><td class="mono">['userSearch', trimmedQuery]</td><td class="mono">useUserSearch.ts</td><td>useInfiniteQuery(디바운스 300ms)</td><td>검색 위젯</td><td>없음(읽기 전용)</td></tr>
+      <tr><td class="mono">['playlists']</td><td class="mono">query-keys/playlist.ts</td><td>useQuery</td><td>ArchiveView, ArchiveViewHeader, PlaylistDetailModal, PlaylistPickerModal</td><td><code>invalidateQueries</code>(3곳)</td></tr>
+      <tr><td class="mono">['authMe']</td><td class="mono">query-keys/auth.ts</td><td>useQuery(staleTime 5분)</td><td>AuthBootstrap, usePostReactions</td><td>없음(읽기 전용, 로그인/로그아웃은 별도 store)</td></tr>
+      <tr><td class="mono">['postDetail', postId]</td><td class="mono">query-keys/post.ts</td><td>useQuery(staleTime 1분, initialData)</td><td>usePostDetailModal, ProfilePostsFeed(프리페치 시딩)</td><td><code>setQueryData</code>(좋아요/댓글수/본문수정)</td></tr>
+      <tr><td class="mono">['comments', postId]</td><td class="mono">query-keys/post.ts</td><td>useQuery(refetchInterval 함수형) + useMutation</td><td>게시글 상세 댓글 UI</td><td><code>setQueryData</code>(onMutate/onSuccess/onError)</td></tr>
+      <tr><td class="mono">['notifications']</td><td class="mono">query-keys/noti.ts</td><td>useQuery(refetchInterval 5000) + useMutation×3</td><td>Header, Sidebar, NotiDrawerContent, NotiPollingGate</td><td><code>setQueryData</code>(onMutate/onError 롤백)</td></tr>
+      <tr><td class="mono">['feed']</td><td class="mono">query-keys/feed.ts</td><td>useInfiniteQuery</td><td>FeedView</td><td><code>invalidateQueries</code>(글 작성), <code>setQueriesData</code>(PostHeader 삭제)</td></tr>
+      <tr><td class="mono">['profileGrid', userId]</td><td class="mono">query-keys/profile.ts</td><td>useInfiniteQuery</td><td>ProfileView</td><td>사용자별 키 격리로 별도 무효화 불필요</td></tr>
+      <tr><td class="mono">['profilePostsFeed', userId]</td><td class="mono">query-keys/profile.ts</td><td>useInfiniteQuery</td><td>ProfilePostsFeed</td><td>각 항목이 postDetailQueryKey로 프리페치 시딩</td></tr>
+      <tr><td class="mono">['userList', userId, title]</td><td class="mono">query-keys/profile.ts</td><td>useInfiniteQuery</td><td>UserListModal(팔로워/팔로잉)</td><td><code>setQueryData</code>(팔로우 토글 로컬 갱신)</td></tr>
+      <tr><td class="mono">['userSearch', trimmedQuery]</td><td class="mono">query-keys/search.ts</td><td>useInfiniteQuery(디바운스 300ms)</td><td>검색 위젯</td><td>없음(읽기 전용)</td></tr>
     </table>
+    <p class="legend">이 표는 <code>['playlistDetail', playlistId]</code>(<code>query-keys/playlist.ts</code>)와 <code>['profile', userId]</code>(<code>query-keys/profile.ts</code>) 두 캐시를 원래부터 누락하고 있었다(이번 사이클 이전부터의 문서 공백, 별도 확인 필요 — <code>docs/refactors/query-key-centralization/result.md</code> Remaining Debt 참고).</p>
     <h3>소비 관계 다이어그램</h3>
     <pre class="mermaid">
 graph LR
@@ -733,7 +734,7 @@ const readNotiMutation = useMutation({
     <h2>새 서버 데이터를 추가할 때 따라야 할 패턴</h2>
     <p class="lede">이 저장소에 새 API 연동 화면/기능을 추가한다면, 지금까지의 세 사이클이 만든 컨벤션은 다음과 같습니다.</p>
     <ol class="howto">
-      <li><b>queryKey를 먼저 함수로 정의하고 export한다.</b> 문자열 배열을 직접 여러 곳에 하드코딩하지 않는다 — <code>xxxQueryKey(...)</code> 형태로 소유 파일에서 export(<code>commentsQueryKey(postId)</code> 등 참고).</li>
+      <li><b>queryKey를 먼저 함수로 정의하고 <code>src/query-keys/{'{'}domain{'}'}.ts</code>에서 export한다.</b> 문자열 배열을 직접 여러 곳에 하드코딩하지 않고, 훅/컴포넌트 파일에 로컬로 정의하지도 않는다 — <code>xxxQueryKey(...)</code> 형태로 도메인 파일에서 export(<code>commentsQueryKey(postId)</code> 등 참고. <code>query-key-centralization</code> 사이클 #209~#215에서 정착된 컨벤션).</li>
       <li><b>목록/무한스크롤이면 <code>useInfiniteQuery</code> + <code>useInfiniteScrollTrigger</code>를 재사용한다.</b> 새 스크롤 배선을 직접 구현하지 않는다.</li>
       <li><b>다른 화면 변경이 이 데이터에 반영돼야 하면 <code>invalidateQueries</code>를, 네트워크 왕복 없이 즉시 반영해야 하면 <code>setQueryData</code>/<code>setQueriesData</code>를 쓴다.</b> 새 zustand nonce/bump 스토어를 만들지 않는다.</li>
       <li><b>폴링이 필요하면 <code>refetchInterval</code>을 쓴다.</b> 조건부로 멈춰야 하면(입력 중 등) 숫자 대신 함수를 전달해 클로저로 조건을 반영한다.</li>
@@ -749,6 +750,7 @@ const readNotiMutation = useMutation({
       <li><code>docs/refactors/server-state-caching/{adr,result}.md</code> — PR #148</li>
       <li><code>docs/refactors/feed-list-query-migration/{adr,result}.md</code> — PR #177</li>
       <li><code>docs/refactors/server-polling-optimistic-update/{adr,result}.md</code> — PR #184, 버그 #39</li>
+      <li><code>docs/refactors/query-key-centralization/{adr,result}.md</code> — 이슈 #216(#209~#215)</li>
       <li><code>docs/architecture/index.html</code> — 저장소 전체 아키텍처/ERD/의존성 다이어그램</li>
     </ul>
   </footer>
