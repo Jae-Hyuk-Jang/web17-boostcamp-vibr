@@ -4,6 +4,7 @@ import { useSwipeToDismiss } from '@/hooks';
 import { usePostDetailModal } from '@/hooks/post/usePostDetailModal';
 
 import { PostCardDetailModalMobileSheet, PostCardDetailModalDesktopShell, LikedUsersOverlay } from './partials';
+import { PostDetailReactionsProvider } from './PostDetailReactionsContext';
 
 export const PostCardDetailModal = () => {
   const {
@@ -29,33 +30,35 @@ export const PostCardDetailModal = () => {
 
   return (
     <>
-      <PostCardDetailModalMobileSheet
-        nickname={safePost.author.nickname}
-        content={safePost.content}
-        profileImg={profileImg}
-        reactions={reactions}
-        onClose={handleClose}
-        sheetRef={sheetRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      />
+      <PostDetailReactionsProvider value={reactions}>
+        <PostCardDetailModalMobileSheet
+          nickname={safePost.author.nickname}
+          content={safePost.content}
+          profileImg={profileImg}
+          reactions={reactions}
+          onClose={handleClose}
+          sheetRef={sheetRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        />
 
-      <PostCardDetailModalDesktopShell
-        post={safePost}
-        postId={postId}
-        isLoading={isLoading}
-        error={error}
-        isOwner={isOwner}
-        profileImg={profileImg}
-        reactions={reactions}
-        editing={editing}
-        player={player}
-        onClose={handleClose}
-        onDeletePost={() => closeModal()}
-        onUserClick={handleUserClick}
-        onOpenLikedUsers={() => likedUsers.open()}
-      />
+        <PostCardDetailModalDesktopShell
+          post={safePost}
+          postId={postId}
+          isLoading={isLoading}
+          error={error}
+          isOwner={isOwner}
+          profileImg={profileImg}
+          reactions={reactions}
+          editing={editing}
+          player={player}
+          onClose={handleClose}
+          onDeletePost={() => closeModal()}
+          onUserClick={handleUserClick}
+          onOpenLikedUsers={() => likedUsers.open()}
+        />
+      </PostDetailReactionsProvider>
 
       <LikedUsersOverlay
         isOpen={likedUsers.isOpen}
