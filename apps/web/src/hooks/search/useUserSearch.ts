@@ -7,6 +7,7 @@ import { useInfiniteScrollTrigger, useDebouncedValue } from '@/hooks';
 import { ITUNES_SEARCH } from '@/constants';
 import { searchUsers } from '@/api';
 import { SearchStatus } from '@/types';
+import { userSearchQueryKey } from '@/query-keys';
 import type { SearchUsersResDto } from '@repo/dto';
 
 type SearchUser = SearchUsersResDto['users'][number];
@@ -39,8 +40,6 @@ type Page = {
 const DEFAULT_LIMIT = 10;
 
 const shouldFetch = (enabled: boolean, q: string, minLen: number) => enabled && q.length >= minLen;
-
-export const userSearchQueryKey = (trimmedQuery: string) => ['userSearch', trimmedQuery] as const;
 
 export default function useUserSearch({
   query,
