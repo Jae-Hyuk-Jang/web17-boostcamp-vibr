@@ -14,7 +14,6 @@ import ToastProvider from '@/components/ui/ToastContainer';
 import QueryProvider from '@/components/providers/QueryProvider';
 import { PrivacyConsentGate } from '@/hooks';
 import AuthLoginQueryHandler from '@/hooks/auth/client/AuthLoginQueryHandler';
-import SpotifyTokenFromHash from '@/hooks/auth/client/SpotifyTokenFromHash';
 
 export const metadata: Metadata = {
   title: 'VIBR - Sharing your Music Vibe',
@@ -53,7 +52,6 @@ export default function RootLayout({
         <QueryProvider>
           <PwaRegister />
           <PwaInstallBanner />
-          <SpotifyTokenFromHash />
           <Suspense fallback={<LoadingSpinner />}>
             <AuthLoginQueryHandler />
           </Suspense>

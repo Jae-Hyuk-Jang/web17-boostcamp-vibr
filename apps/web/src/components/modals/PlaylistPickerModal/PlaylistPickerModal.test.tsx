@@ -20,7 +20,7 @@ const { getAllPlaylists } = jest.requireMock('@/api/internal') as { getAllPlayli
 const mockMusic: Music = {
   id: 'music-1',
   trackUri: 'uri-1',
-  provider: 'SPOTIFY' as Music['provider'],
+  provider: 'YOUTUBE' as Music['provider'],
   albumCoverUrl: '',
   title: 'Song',
   artistName: 'Artist',

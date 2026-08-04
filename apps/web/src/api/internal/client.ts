@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 import { APP_ACCESS_TOKEN_STORAGE_KEY } from '@/constants/auth';
-import { useModalStore, usePlayerStore, useSpotifyAuthStore, MODAL_TYPES } from '@/stores';
+import { useModalStore, usePlayerStore, MODAL_TYPES } from '@/stores';
 
 type AuthMeta = {
   hadAuth: boolean;
@@ -29,7 +29,6 @@ const clearAuthState = () => {
   if (typeof window !== 'undefined') {
     sessionStorage.removeItem(APP_ACCESS_TOKEN_STORAGE_KEY);
   }
-  useSpotifyAuthStore.getState().clear();
   usePlayerStore.getState().clearQueue();
   useModalStore.getState().closeModal();
 };

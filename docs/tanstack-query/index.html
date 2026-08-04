@@ -727,13 +727,16 @@ const readNotiMutation = useMutation({
       <tr><th>남은 zustand 스토어</th><th>왜 Query로 옮기지 않았는가</th></tr>
       <tr><td class="mono">useModalStore</td><td>모달/드로어 UI 상태, 서버 데이터 아님</td></tr>
       <tr><td class="mono">useNotiOverlayStore</td><td>모바일 알림 오버레이 열림/닫힘 UI 신호</td></tr>
-      <tr><td class="mono">usePlayerStore / useSpotifyAuthStore</td><td>재생 큐/재생 상태 — 서버가 아니라 브라우저 SDK/iframe 상태를 반영</td></tr>
+      <tr><td class="mono">usePlayerStore</td><td>재생 큐/재생 상태 — 서버가 아니라 브라우저 SDK/iframe 상태를 반영</td></tr>
     </table>
     <div class="callout cyan">
       <b>판단 기준</b>: "여러 컴포넌트에 걸쳐 동기화가 필요한 서버 데이터의 값"이면 <code>queryKey</code> 캐시(<code>setQueryData</code>)로, "전역 UI 상태/이벤트성 신호"면 zustand로 — <code>CLAUDE.md</code>의 상태 관리 원칙과 동일하다. 새 데이터를 어디에 둘지 헷갈리면 <a href="#howto">아래 가이드</a>를 따른다.
     </div>
     <div class="callout">
       <b><code>useAuthStore</code> 제거(<code>auth-state-ownership</code> 사이클, #231~#234)</b>: 이전까지는 <code>authMe</code> 쿼리의 파생 상태를 <code>AuthBootstrap</code>이 <code>useEffect</code>로 매 렌더 zustand에 복사해 넣었다. 전수 확인 결과 컴포넌트 밖(<code>getState()</code>)에서 동기 접근하는 소비처가 0곳이라 인다이렉션을 유지할 이유가 없었다 — 16개 소비처 전부 <code>useAuthMe()</code>(<code>authMe</code> 쿼리를 감싼 파생 훅)를 직접 구독하도록 전환했다. 같은 조사에서 <code>usePostReactionOverridesStore</code>(PR #167)·<code>useProfileStore</code>(#208)·<code>useSpotifyPlayerStore</code>(소비처 0곳, PR #232)도 이미 삭제됐지만 이 표에 반영되지 않고 있던 걸 함께 발견해 정리했다.
+    </div>
+    <div class="callout">
+      <b><code>useSpotifyAuthStore</code> 제거(<code>spotify-integration</code> 사이클, #237~#240)</b>: 검색/재생 용도로 Spotify 토큰을 캐치만 하고 아무도 읽지 않던 스토어였다. 로그인·검색·재생 세 용도 모두 실사용 경로가 없다는 게 확인돼 Spotify 연동 코드 전체(프론트엔드+백엔드)와 함께 삭제됐다 — <code>docs/refactors/spotify-integration/result.md</code> 참고.
     </div>
   </section>
 
