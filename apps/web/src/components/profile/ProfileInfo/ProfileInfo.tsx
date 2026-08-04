@@ -7,15 +7,26 @@ import { Pencil, Check, X } from 'lucide-react';
 import ProfileActionButton from './ProfileActionButton';
 import FollowStats from './FollowStats';
 import { DEFAULT_IMAGES } from '@/constants/defaultImages';
-import { useProfileStore } from '@/stores';
 import { profileQueryKey } from '@/hooks/profile/useProfile';
 import { GetUserDto as Profile } from '@repo/dto';
 import { EditTextarea, EditInput } from './ProfileInputs';
 import { updateProfile } from '@/api';
 
 export default function ProfileInfo({ profile, loggedInUserId }: { profile: Profile; loggedInUserId: string | null }) {
-  const toggleFollow = useProfileStore((s) => s.toggleFollow);
   const queryClient = useQueryClient();
+
+  /** 팔로우 토글 완료 시 이 프로필의 캐시(isFollowing/followerCount)를 갱신 */
+  const handleFollowActionComplete = () => {
+    queryClient.setQueryData(profileQueryKey(profile.id), (prev: Profile | undefined) => {
+      if (!prev) return prev;
+      const isFollowingNext = !prev.isFollowing;
+      return {
+        ...prev,
+        isFollowing: isFollowingNext,
+        followerCount: isFollowingNext ? prev.followerCount + 1 : prev.followerCount - 1,
+      };
+    });
+  };
 
   const isOwner = loggedInUserId === profile.id;
   const [isEditing, setIsEditing] = useState(false);
@@ -93,7 +104,7 @@ export default function ProfileInfo({ profile, loggedInUserId }: { profile: Prof
               profileUserId={profile.id}
               isFollowing={isFollowing}
               renderIn="page"
-              onFollowActionComplete={toggleFollow}
+              onFollowActionComplete={handleFollowActionComplete}
             />
           </div>
 

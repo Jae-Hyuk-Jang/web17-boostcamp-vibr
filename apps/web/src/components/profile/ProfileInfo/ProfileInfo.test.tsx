@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { GetUserDto as Profile } from '@repo/dto';
 
 import ProfileInfo from './ProfileInfo';
-import { useProfileStore } from '@/stores';
 import { profileQueryKey } from '@/hooks/profile/useProfile';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
@@ -38,7 +37,6 @@ const renderProfileInfo = (props: Partial<React.ComponentProps<typeof ProfileInf
 describe('ProfileInfo — 특성화 테스트 (profile-info-caching #198)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    useProfileStore.setState({ profile: null });
   });
 
   it('내 프로필이 아니면 수정 버튼을 보여주지 않는다', () => {
@@ -84,12 +82,14 @@ describe('ProfileInfo — 특성화 테스트 (profile-info-caching #198)', () =
     expect(screen.queryByLabelText('저장')).not.toBeInTheDocument();
   });
 
-  it('ProfileActionButton의 onFollowActionComplete로 useProfileStore.toggleFollow가 그대로 전달된다', () => {
-    useProfileStore.setState({ profile: mockProfile({ isFollowing: false, followerCount: 3 }) });
-    renderProfileInfo({ loggedInUserId: 'other-user' });
+  it('ProfileActionButton의 onFollowActionComplete 완료 시 profile 캐시의 isFollowing/followerCount가 갱신된다 (profile-info-caching #203)', () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(profileQueryKey('user-1'), mockProfile({ isFollowing: false, followerCount: 3 }));
+
+    renderProfileInfo({ loggedInUserId: 'other-user' }, queryClient);
 
     fireEvent.click(screen.getByTestId('follow-action'));
 
-    expect(useProfileStore.getState().profile).toMatchObject({ isFollowing: true, followerCount: 4 });
+    expect(queryClient.getQueryData(profileQueryKey('user-1'))).toMatchObject({ isFollowing: true, followerCount: 4 });
   });
 });
