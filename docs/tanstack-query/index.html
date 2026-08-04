@@ -721,19 +721,19 @@ const readNotiMutation = useMutation({
   <section id="boundary">
     <h2>zustand ↔ TanStack Query 경계 원칙</h2>
     <p class="lede">
-      세 사이클을 거치며 삭제된 4개 스토어(<code>usePlaylistRefreshStore</code>, <code>useFeedRefreshStore</code>, <code>usePostDeletionSignalStore</code>, <code>useNotiStore</code>)는 모두 <b>"서버 데이터를 들고 있거나, 그 무효화 시점을 수동으로 알리는" 스토어</b>였습니다. 반대로 지금 남아있는 zustand 스토어는 전부 이 기준에 해당하지 않습니다.
+      여러 사이클을 거치며 삭제된 스토어(<code>usePlaylistRefreshStore</code>, <code>useFeedRefreshStore</code>, <code>usePostDeletionSignalStore</code>, <code>useNotiStore</code>, <code>usePostReactionOverridesStore</code>, <code>useProfileStore</code>, <code>useSpotifyPlayerStore</code>, <code>useAuthStore</code>)는 모두 <b>"서버 데이터를 들고 있거나, 그 무효화 시점을 수동으로 알리거나, 아무도 안 읽는" 스토어</b>였습니다. 반대로 지금 남아있는 zustand 스토어는 전부 이 기준에 해당하지 않습니다.
     </p>
     <table class="spec">
       <tr><th>남은 zustand 스토어</th><th>왜 Query로 옮기지 않았는가</th></tr>
-      <tr><td class="mono">useAuthStore</td><td>인증 상태 자체(전역 UI 게이트) — <code>authMe</code> 쿼리의 파생 상태를 담는 저장소일 뿐, 별도 네트워크 호출을 만들지 않는다</td></tr>
       <tr><td class="mono">useModalStore</td><td>모달/드로어 UI 상태, 서버 데이터 아님</td></tr>
       <tr><td class="mono">useNotiOverlayStore</td><td>모바일 알림 오버레이 열림/닫힘 UI 신호</td></tr>
-      <tr><td class="mono">usePlayerStore / useSpotifyPlayerStore / useSpotifyAuthStore</td><td>재생 큐/재생 상태 — 서버가 아니라 브라우저 SDK/iframe 상태를 반영</td></tr>
-      <tr><td class="mono">usePostReactionOverridesStore</td><td>좋아요/댓글수/본문/삭제 오버라이드 — 각 사이클 PRD에서 명시적으로 Out of Scope로 남긴 항목(아래 <a href="#debt">남은 부채</a> 참고)</td></tr>
-      <tr><td class="mono">useProfileStore</td><td>프로필 화면의 팔로우/팔로잉 카운트 등 — 마찬가지로 Out of Scope, 백로그 #178</td></tr>
+      <tr><td class="mono">usePlayerStore / useSpotifyAuthStore</td><td>재생 큐/재생 상태 — 서버가 아니라 브라우저 SDK/iframe 상태를 반영</td></tr>
     </table>
     <div class="callout cyan">
       <b>판단 기준</b>: "여러 컴포넌트에 걸쳐 동기화가 필요한 서버 데이터의 값"이면 <code>queryKey</code> 캐시(<code>setQueryData</code>)로, "전역 UI 상태/이벤트성 신호"면 zustand로 — <code>CLAUDE.md</code>의 상태 관리 원칙과 동일하다. 새 데이터를 어디에 둘지 헷갈리면 <a href="#howto">아래 가이드</a>를 따른다.
+    </div>
+    <div class="callout">
+      <b><code>useAuthStore</code> 제거(<code>auth-state-ownership</code> 사이클, #231~#234)</b>: 이전까지는 <code>authMe</code> 쿼리의 파생 상태를 <code>AuthBootstrap</code>이 <code>useEffect</code>로 매 렌더 zustand에 복사해 넣었다. 전수 확인 결과 컴포넌트 밖(<code>getState()</code>)에서 동기 접근하는 소비처가 0곳이라 인다이렉션을 유지할 이유가 없었다 — 16개 소비처 전부 <code>useAuthMe()</code>(<code>authMe</code> 쿼리를 감싼 파생 훅)를 직접 구독하도록 전환했다. 같은 조사에서 <code>usePostReactionOverridesStore</code>(PR #167)·<code>useProfileStore</code>(#208)·<code>useSpotifyPlayerStore</code>(소비처 0곳, PR #232)도 이미 삭제됐지만 이 표에 반영되지 않고 있던 걸 함께 발견해 정리했다.
     </div>
   </section>
 
@@ -742,8 +742,8 @@ const readNotiMutation = useMutation({
     <h2>남은 부채 — 아직 Query로 옮기지 않은 것들</h2>
     <table class="spec">
       <tr><th>항목</th><th>현재 상태</th><th>비고</th></tr>
-      <tr><td class="mono">usePostReactionOverridesStore</td><td>여전히 zustand(좋아요/댓글수/본문/삭제 오버라이드)</td><td><span class="badge badge-cyan">백로그 #185</span> 세 사이클 모두 명시적으로 Out of Scope — 4개 도메인(feed/modals/post/hooks-post)이 공유 중</td></tr>
-      <tr><td class="mono">useProfileStore</td><td>여전히 zustand(52줄, 팔로우 토글 등)</td><td><span class="badge badge-cyan">백로그 #178</span> 쿼리 캐시 전환 검토 대상으로 남아있음</td></tr>
+      <tr><td class="mono">usePostReactionOverridesStore</td><td><code>postDetailQueryKey</code> 캐시로 정규화 완료(삭제됨)</td><td><span class="badge badge-gray">완료 PR #167</span> 이 표가 한동안 stale했다 — 백로그 #185도 이미 끝난 일을 다루던 유령 이슈라 <code>auth-state-ownership</code> 사이클에서 닫음</td></tr>
+      <tr><td class="mono">useProfileStore</td><td><code>profileQueryKey</code>(<code>useProfile</code>) 캐시로 전환 완료(삭제됨)</td><td><span class="badge badge-gray">완료 #208</span> <code>profile-info-caching</code> 사이클, 백로그 #178은 이미 닫혀 있었음</td></tr>
       <tr><td class="mono">ProfilePostsFeed N+1</td><td>서로 다른 postId N개를 각각 요청 — 캐시 공유로 "재요청"만 없앴을 뿐 최초 요청 개수는 그대로</td><td><span class="badge badge-cyan">백로그 #146</span> 목록 API가 상세 필드를 함께 내려주는 API 계약 변경 필요(프론트엔드 단독으로 해결 불가)</td></tr>
       <tr><td class="mono">플레이리스트 상세(selectPlaylist)</td><td><code>playlistDetailQueryKey</code> 공유 캐시로 전환 완료</td><td><span class="badge badge-gray">완료 #186</span> <code>playlist-detail-caching</code> 사이클(#187~#196)에서 <code>PlaylistDetailModal</code>과 캐시 공유 — <code>docs/refactors/playlist-detail-caching/result.md</code></td></tr>
       <tr><td class="mono">읽기-후-쓰기 일관성</td><td>백엔드 replica lag이 폴링 주기(5초)보다 길면 #39류 race가 이론적으로 재현 가능</td><td>프론트엔드 구조 변경으로는 완전히 없앨 수 없는 영역 — PRD Out of Scope로 명시</td></tr>
@@ -773,6 +773,7 @@ const readNotiMutation = useMutation({
       <li><code>docs/refactors/server-polling-optimistic-update/{adr,result}.md</code> — PR #184, 버그 #39</li>
       <li><code>docs/refactors/query-key-centralization/{adr,result}.md</code> — 이슈 #216(#209~#215)</li>
       <li><code>docs/refactors/query-client-policy/{adr,result}.md</code> — 이슈 #220(#221~#222)</li>
+      <li><code>docs/refactors/auth-state-ownership/{adr,result}.md</code> — 이슈 #231(#233~#234)</li>
       <li><code>docs/architecture/index.html</code> — 저장소 전체 아키텍처/ERD/의존성 다이어그램</li>
     </ul>
   </footer>
