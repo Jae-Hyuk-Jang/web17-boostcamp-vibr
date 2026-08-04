@@ -1,7 +1,7 @@
 import { render, waitFor } from '@testing-library/react';
 
 import ArchiveView from './ArchiveView';
-import { PLAYLISTS_QUERY_KEY } from '@/hooks/playlist/usePlaylists';
+import { PLAYLISTS_QUERY_KEY } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api', () => ({

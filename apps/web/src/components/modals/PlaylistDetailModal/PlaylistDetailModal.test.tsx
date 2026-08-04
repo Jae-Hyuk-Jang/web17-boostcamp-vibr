@@ -3,7 +3,7 @@ import { render, fireEvent, screen, waitFor, within } from '@testing-library/rea
 import PlaylistDetailModal from './PlaylistDetailModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
-import { playlistDetailQueryKey } from '@/hooks/playlist/usePlaylistDetail';
+import { playlistDetailQueryKey } from '@/query-keys';
 import type { MusicResponseDto, GetPlaylistDetailResDto } from '@repo/dto';
 
 jest.mock('react-toastify', () => ({

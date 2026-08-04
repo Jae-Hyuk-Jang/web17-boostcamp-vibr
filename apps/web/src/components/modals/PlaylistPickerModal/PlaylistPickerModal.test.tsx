@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import PlaylistPickerModal from './PlaylistPickerModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import { PLAYLISTS_QUERY_KEY } from '@/hooks/playlist/usePlaylists';
+import { PLAYLISTS_QUERY_KEY } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 import type { MusicResponseDto as Music } from '@repo/dto';
 

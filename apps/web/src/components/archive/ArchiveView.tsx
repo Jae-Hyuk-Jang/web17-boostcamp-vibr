@@ -5,7 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { PlaylistItem } from './PlaylistItems';
 import ArchiveViewHeader from './ArchiveViewHeader';
 import { deletePlaylist, editTitleOfPlaylist } from '@/api';
-import { usePlaylists, PLAYLISTS_QUERY_KEY } from '@/hooks/playlist/usePlaylists';
+import { usePlaylists } from '@/hooks/playlist/usePlaylists';
+import { PLAYLISTS_QUERY_KEY } from '@/query-keys';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
