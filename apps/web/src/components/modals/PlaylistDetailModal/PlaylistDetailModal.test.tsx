@@ -156,7 +156,7 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '새 제목' } });
     fireEvent.click(screen.getByLabelText('Confirm rename'));
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('플레이리스트 이름 변경에 실패했습니다.'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('요청 처리에 실패했습니다.'));
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
 
@@ -196,7 +196,7 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
     const secondItemButtons = within(items[1]!).getAllByRole('button');
     fireEvent.click(secondItemButtons[1]!); // Song2의 ChevronUp
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('변경사항 반영에 실패했습니다.'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('요청 처리에 실패했습니다.'));
     // 롤백이 없다 — Song2가 여전히 맨 앞에 남아있다
     expect(screen.getAllByRole('listitem')[0]).toHaveTextContent('Song2');
   });
@@ -267,7 +267,7 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
 
     fireEvent.click(screen.getByText('곡 추가 트리거'));
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('곡 추가에 실패했습니다.'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('요청 처리에 실패했습니다.'));
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
   });
 
@@ -317,7 +317,7 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
     fireEvent.click(screen.getByLabelText('Delete playlist'));
     fireEvent.click(await screen.findByText('삭제'));
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('플레이리스트 삭제에 실패했습니다.'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('요청 처리에 실패했습니다.'));
     expect(useModalStore.getState().isOpen).toBe(true);
   });
 });

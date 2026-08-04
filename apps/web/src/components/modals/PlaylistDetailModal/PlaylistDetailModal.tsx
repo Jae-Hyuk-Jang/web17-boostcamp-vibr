@@ -86,7 +86,6 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
       bumpPlaylistRefresh();
     },
     onError: (e) => {
-      toast.error('변경사항 반영에 실패했습니다.');
       console.error(e);
     },
   });
@@ -130,7 +129,6 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
       bumpPlaylistRefresh();
     },
     onError: (e) => {
-      toast.error('곡 추가에 실패했습니다.');
       console.error(e);
     },
   });
@@ -162,7 +160,6 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
       bumpPlaylistRefresh();
     },
     onError: (e) => {
-      toast.error('플레이리스트 이름 변경에 실패했습니다.');
       console.error(e);
     },
   });
@@ -201,7 +198,6 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
       closeModal();
     },
     onError: (e) => {
-      toast.error('플레이리스트 삭제에 실패했습니다.');
       console.error(e);
     },
   });

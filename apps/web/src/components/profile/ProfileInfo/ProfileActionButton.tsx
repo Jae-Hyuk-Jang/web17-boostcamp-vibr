@@ -3,7 +3,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { addFollow, removeFollow } from '@/api';
 import { useCallback, useState } from 'react';
-import { toast } from 'react-toastify';
 
 const SmallSpinner = () => <div className="h-5 w-5 mx-2.5 my-0.5 animate-spin rounded-full border-2 border-gray-300 border-t-black" />;
 
@@ -39,9 +38,6 @@ export default function ProfileActionButton({
     mutationFn: () => (isFollowing ? removeFollow(profileUserId) : addFollow(profileUserId)),
     onSuccess: () => {
       onFollowActionComplete();
-    },
-    onError: () => {
-      toast.error(`요청 처리에 실패했습니다.`);
     },
   });
 
