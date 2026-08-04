@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { act } from 'react';
+import { act, Component, type ReactNode } from 'react';
 import { useInView } from 'react-intersection-observer';
 import type { GetUserDto as Profile, PostPreviewDto as PostPreview } from '@repo/dto';
 
@@ -48,6 +48,17 @@ const mockProfile = (overrides: Partial<Profile> = {}): Profile => ({
 
 const renderProfileView = (userId = 'user-1', queryClient = createTestQueryClient()) =>
   render(<ProfileView userId={userId} />, { wrapper: createQueryClientWrapper(queryClient) });
+
+class TestErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) return <div data-testid="error-boundary">{this.state.error.message}</div>;
+    return this.props.children;
+  }
+}
 
 describe('ProfileView — 무한스크롤/쿼리 무효화 특성화(#166)', () => {
   beforeEach(() => {
@@ -109,5 +120,43 @@ describe('ProfileView — 무한스크롤/쿼리 무효화 특성화(#166)', () 
 
     await waitFor(() => expect(screen.getByTestId('profile-info')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText('오류가 발생했습니다.')).toBeInTheDocument());
+  });
+
+  it('getUser 실패 시 에러를 throw해 에러 바운더리로 전파된다', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    getUser.mockRejectedValue(new Error('프로필 조회 실패'));
+    getUserProfilePosts.mockResolvedValue({ items: [], hasNext: false, nextCursor: undefined });
+
+    render(
+      <TestErrorBoundary>
+        <ProfileView userId="user-1" />
+      </TestErrorBoundary>,
+      { wrapper: createQueryClientWrapper() },
+    );
+
+    await waitFor(() => expect(screen.getByTestId('error-boundary')).toHaveTextContent('프로필 조회 실패'));
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('스토어에 다른 유저의 프로필이 남아있으면 새 프로필이 로드되기 전까지 스켈레톤을 유지한다', async () => {
+    useProfileStore.setState({ profile: mockProfile({ id: 'other-user' }) });
+    let resolveGetUser: (p: Profile) => void = () => {};
+    getUser.mockReturnValue(
+      new Promise<Profile>((resolve) => {
+        resolveGetUser = resolve;
+      }),
+    );
+    getUserProfilePosts.mockResolvedValue({ items: [], hasNext: false, nextCursor: undefined });
+
+    renderProfileView('user-1');
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByTestId('profile-info')).not.toBeInTheDocument();
+
+    await act(async () => {
+      resolveGetUser(mockProfile({ id: 'user-1' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('profile-info')).toBeInTheDocument());
   });
 });
