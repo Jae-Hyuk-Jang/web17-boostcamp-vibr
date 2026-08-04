@@ -2,7 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import usePostLikeToggle from './usePostLikeToggle';
-import { postDetailQueryKey } from './usePostDetail';
+import { postDetailQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api/internal', () => ({

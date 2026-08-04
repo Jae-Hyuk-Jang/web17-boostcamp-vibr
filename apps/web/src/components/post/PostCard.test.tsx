@@ -3,7 +3,7 @@ import type { PostResponseDto as Post } from '@repo/dto';
 
 import PostCard from './PostCard';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { postDetailQueryKey } from '@/hooks/post/usePostDetail';
+import { postDetailQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('./index', () => ({

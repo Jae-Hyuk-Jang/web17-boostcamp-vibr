@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import { getPostDetail } from '@/api/internal/post';
-import { postDetailQueryKey, POST_DETAIL_STALE_TIME_MS } from './usePostDetail';
+import { POST_DETAIL_STALE_TIME_MS } from './usePostDetail';
+import { postDetailQueryKey } from '@/query-keys';
 
 type Result = {
   post: Post;

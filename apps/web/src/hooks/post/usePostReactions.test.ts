@@ -2,7 +2,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import usePostReactions, { getEffectivePollMs } from './usePostReactions';
-import { postDetailQueryKey } from './usePostDetail';
+import { postDetailQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('@/api/internal', () => ({

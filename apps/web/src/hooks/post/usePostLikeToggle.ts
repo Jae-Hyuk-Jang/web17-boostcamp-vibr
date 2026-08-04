@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import { addLike, removeLike } from '@/api/internal';
-import { postDetailQueryKey } from './usePostDetail';
+import { postDetailQueryKey } from '@/query-keys';
 
 type Options = {
   postId: string;
