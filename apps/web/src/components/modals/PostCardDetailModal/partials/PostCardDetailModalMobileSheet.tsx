@@ -3,20 +3,15 @@
 import type { RefObject, TouchEvent } from 'react';
 
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
-import type { UsePostDetailModalResult } from '@/hooks/post/usePostDetailModal';
 
 import PostDetailBody from './PostDetailBody';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
-
-type CommentReactions = Pick<UsePostDetailModalResult['reactions'], 'comments' | 'isCommentsLoading'>;
 
 interface PostCardDetailModalMobileSheetProps {
   /** 작성자 닉네임 — Post 전체가 아니라 실제로 쓰는 필드만 받는다 */
   nickname: string;
   content: string;
   profileImg: string;
-  /** PostDetailBody가 쓰는 필드만 남긴다 — 좋아요/댓글 액션은 PostDetailReactionsContext로 직접 구독 */
-  reactions: CommentReactions;
   onClose: () => void;
   sheetRef: RefObject<HTMLElement>;
   onTouchStart: (e: TouchEvent) => void;
@@ -28,7 +23,6 @@ export default function PostCardDetailModalMobileSheet({
   nickname,
   content,
   profileImg,
-  reactions,
   onClose,
   sheetRef,
   onTouchStart,
@@ -56,13 +50,7 @@ export default function PostCardDetailModalMobileSheet({
         </div>
 
         {/* 댓글 목록 */}
-        <PostDetailBody
-          profileImg={profileImg}
-          nickname={nickname}
-          content={content}
-          comments={reactions.comments}
-          commentsLoading={reactions.isCommentsLoading}
-        />
+        <PostDetailBody profileImg={profileImg} nickname={nickname} content={content} />
 
         {/* 댓글 입력 */}
         <PostDetailCommentComposer />

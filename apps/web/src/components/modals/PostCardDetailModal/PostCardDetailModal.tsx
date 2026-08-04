@@ -35,7 +35,6 @@ export const PostCardDetailModal = () => {
           nickname={safePost.author.nickname}
           content={safePost.content}
           profileImg={profileImg}
-          reactions={reactions}
           onClose={handleClose}
           sheetRef={sheetRef}
           onTouchStart={handleTouchStart}
@@ -50,7 +49,6 @@ export const PostCardDetailModal = () => {
           error={error}
           isOwner={isOwner}
           profileImg={profileImg}
-          reactions={reactions}
           editing={editing}
           player={player}
           onClose={handleClose}

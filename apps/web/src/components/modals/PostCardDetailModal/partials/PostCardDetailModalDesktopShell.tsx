@@ -13,8 +13,6 @@ import PostDetailActions from './PostDetailActions';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 import PostDetailEditForm from './PostDetailEditForm';
 
-type PostDetailReactions = Pick<UsePostDetailModalResult['reactions'], 'comments' | 'isCommentsLoading'>;
-
 interface PostCardDetailModalDesktopShellProps {
   post: Post;
   postId: string;
@@ -22,8 +20,6 @@ interface PostCardDetailModalDesktopShellProps {
   error: string | null;
   isOwner: boolean;
   profileImg: string;
-  /** commentCount/refetchComments는 이 화면에서 쓰지 않아 타입에서 제외 */
-  reactions: PostDetailReactions;
   editing: UsePostDetailModalResult['editing'];
   player: UsePostDetailModalResult['player'];
   onClose: () => void;
@@ -39,7 +35,6 @@ export default function PostCardDetailModalDesktopShell({
   error,
   isOwner,
   profileImg,
-  reactions,
   editing,
   player,
   onClose,
@@ -92,13 +87,7 @@ export default function PostCardDetailModalDesktopShell({
               onCancel={() => editing.cancel()}
             />
           ) : (
-            <PostDetailBody
-              profileImg={profileImg}
-              nickname={post.author.nickname}
-              content={post.content}
-              comments={reactions.comments}
-              commentsLoading={reactions.isCommentsLoading}
-            />
+            <PostDetailBody profileImg={profileImg} nickname={post.author.nickname} content={post.content} />
           )}
 
           <PostDetailActions postId={postId} onOpenLikedUsers={onOpenLikedUsers} />
