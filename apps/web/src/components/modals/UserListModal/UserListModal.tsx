@@ -6,12 +6,13 @@ import ModalPanel from '@/components/ui/ModalPanel';
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import { ProfileActionButton } from '@/components/profile';
 import { DEFAULT_IMAGES } from '@/constants';
-import type { GetUserFollowDto, UserWithFollowStatusDto } from '@repo/dto';
-import { useAuthStore, useModalStore, useProfileStore } from '@/stores';
+import type { GetUserDto as Profile, GetUserFollowDto, UserWithFollowStatusDto } from '@repo/dto';
+import { useAuthStore, useModalStore } from '@/stores';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useInfiniteScrollTrigger } from '@/hooks';
+import { profileQueryKey } from '@/hooks/profile/useProfile';
 
 interface UserListModalProps {
   title: string;
@@ -33,9 +34,6 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
   const router = useRouter();
   const loggedInUserId = useAuthStore((s) => s.userId);
   const queryClient = useQueryClient();
-
-  const incrementFollowingCount = useProfileStore((s) => s.incrementFollowingCount);
-  const decrementFollowingCount = useProfileStore((s) => s.decrementFollowingCount);
 
   const queryKey = userListQueryKey(profileUserId, title);
 
@@ -77,10 +75,12 @@ export const UserListModal = ({ title, fetchFn }: UserListModalProps) => {
       };
     });
 
-    // 내가 내 프로필에서 다른 사람을 팔로우/언팔로우 하는 경우, 전역 프로필(내 프로필) 스토어 상태 업데이트
+    // 내가 내 프로필에서 다른 사람을 팔로우/언팔로우 하는 경우, 내 프로필의 팔로잉 수 캐시도 갱신
     if (profileUserId === loggedInUserId) {
-      if (prevIsFollowing) decrementFollowingCount();
-      else incrementFollowingCount();
+      queryClient.setQueryData(profileQueryKey(loggedInUserId), (prev: Profile | undefined) => {
+        if (!prev) return prev;
+        return { ...prev, followingCount: prevIsFollowing ? prev.followingCount - 1 : prev.followingCount + 1 };
+      });
     }
   };
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { addFollow, removeFollow } from '@/api';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -21,8 +22,6 @@ export default function ProfileActionButton({
   renderIn = 'page',
   onFollowActionComplete,
 }: ProfileActionButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
   // ⚠️ 리캡 기능 구현 이후 삭제 예정 - '준비중' 안내 임시 처리
   const [isShowingRecapHint, setIsShowingRecapHint] = useState(false);
   const handleRecapClick = useCallback(() => {
@@ -35,19 +34,21 @@ export default function ProfileActionButton({
 
   const BUTTON_TEXT = isFollowing ? '팔로잉' : '팔로우';
 
-  /** 팔로우 액션 처리 핸들러 (서버 요청 -> 상태 업데이트) */
-  const handleFollowAction = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      if (isFollowing) await removeFollow(profileUserId);
-      else await addFollow(profileUserId);
+  // 현재도 낙관적 업데이트가 아니다 — 성공 이후에만 onFollowActionComplete를 호출한다.
+  const followMutation = useMutation({
+    mutationFn: () => (isFollowing ? removeFollow(profileUserId) : addFollow(profileUserId)),
+    onSuccess: () => {
       onFollowActionComplete();
-    } catch {
+    },
+    onError: () => {
       toast.error(`요청 처리에 실패했습니다.`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [profileUserId, isFollowing, onFollowActionComplete]);
+    },
+  });
+
+  const isLoading = followMutation.isPending;
+  const handleFollowAction = () => {
+    followMutation.mutate();
+  };
 
   // 내 프로필이면 -> 프로필 페이지에서는 리캡 생성 버튼, 모달에서는 버튼 필요 x
   if (isMyProfile) {

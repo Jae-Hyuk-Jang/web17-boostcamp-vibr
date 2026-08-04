@@ -2,18 +2,31 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Check, X } from 'lucide-react';
 import ProfileActionButton from './ProfileActionButton';
 import FollowStats from './FollowStats';
 import { DEFAULT_IMAGES } from '@/constants/defaultImages';
-import { useProfileStore } from '@/stores';
+import { profileQueryKey } from '@/hooks/profile/useProfile';
 import { GetUserDto as Profile } from '@repo/dto';
 import { EditTextarea, EditInput } from './ProfileInputs';
 import { updateProfile } from '@/api';
 
 export default function ProfileInfo({ profile, loggedInUserId }: { profile: Profile; loggedInUserId: string | null }) {
-  const toggleFollow = useProfileStore((s) => s.toggleFollow);
-  const updateProfileInfo = useProfileStore((s) => s.updateProfileInfo);
+  const queryClient = useQueryClient();
+
+  /** 팔로우 토글 완료 시 이 프로필의 캐시(isFollowing/followerCount)를 갱신 */
+  const handleFollowActionComplete = () => {
+    queryClient.setQueryData(profileQueryKey(profile.id), (prev: Profile | undefined) => {
+      if (!prev) return prev;
+      const isFollowingNext = !prev.isFollowing;
+      return {
+        ...prev,
+        isFollowing: isFollowingNext,
+        followerCount: isFollowingNext ? prev.followerCount + 1 : prev.followerCount - 1,
+      };
+    });
+  };
 
   const isOwner = loggedInUserId === profile.id;
   const [isEditing, setIsEditing] = useState(false);
@@ -22,16 +35,20 @@ export default function ProfileInfo({ profile, loggedInUserId }: { profile: Prof
     bio: profile.bio || '',
   });
 
-  const handleSave = async () => {
-    await updateProfile({
-      nickname: editForm.nickname,
-      bio: editForm.bio,
-    });
-    updateProfileInfo({
-      nickname: editForm.nickname,
-      bio: editForm.bio,
-    });
-    setIsEditing(false);
+  // 현재도 낙관적 업데이트가 아니다 — updateProfile 성공 이후에만 캐시를 바꾼다.
+  // PATCH /user 응답이 갱신된 Profile 전체가 아니라 { success: true }뿐이라(실제 API 응답으로 확인한 Fact),
+  // 응답 본문을 신뢰하지 않고 방금 저장을 요청한 값(variables)을 이전 캐시에 병합한다 — 기존 zustand
+  // updateProfileInfo의 부분 병합과 동일한 방식.
+  const updateProfileMutation = useMutation({
+    mutationFn: (updates: { nickname: string; bio: string }) => updateProfile(updates),
+    onSuccess: (_data, updates) => {
+      queryClient.setQueryData(profileQueryKey(profile.id), (prev: Profile | undefined) => (prev ? { ...prev, ...updates } : prev));
+      setIsEditing(false);
+    },
+  });
+
+  const handleSave = () => {
+    updateProfileMutation.mutate({ nickname: editForm.nickname, bio: editForm.bio });
   };
 
   const handleCancel = () => {
@@ -90,7 +107,7 @@ export default function ProfileInfo({ profile, loggedInUserId }: { profile: Prof
               profileUserId={profile.id}
               isFollowing={isFollowing}
               renderIn="page"
-              onFollowActionComplete={toggleFollow}
+              onFollowActionComplete={handleFollowActionComplete}
             />
           </div>
 

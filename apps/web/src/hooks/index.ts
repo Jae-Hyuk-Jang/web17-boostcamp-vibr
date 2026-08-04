@@ -11,6 +11,7 @@ export * from './post/usePostDetail';
 export * from './search';
 export * from './playlist';
 export * from './post';
+export * from './profile';
 export * from './privacy';
 export * from './useSwipeToDismiss';
 export * from './useResizable';

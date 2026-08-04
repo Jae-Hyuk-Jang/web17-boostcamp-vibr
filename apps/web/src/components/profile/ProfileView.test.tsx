@@ -1,10 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { act } from 'react';
+import { act, Component, type ReactNode } from 'react';
 import { useInView } from 'react-intersection-observer';
 import type { GetUserDto as Profile, PostPreviewDto as PostPreview } from '@repo/dto';
 
 import ProfileView, { profileGridQueryKey } from './ProfileView';
-import { useAuthStore, useProfileStore } from '@/stores';
+import { useAuthStore } from '@/stores';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({
@@ -14,8 +14,12 @@ jest.mock('react-intersection-observer', () => ({
 const mockUseInView = useInView as jest.Mock;
 
 jest.mock('@/api', () => ({
-  getUser: jest.fn(),
   getUserProfilePosts: jest.fn(),
+}));
+
+// useProfile(#199)이 getUser를 '@/api/internal'에서 직접 가져오므로 별도로 모킹한다.
+jest.mock('@/api/internal', () => ({
+  getUser: jest.fn(),
 }));
 
 jest.mock('./ProfileInfo', () => ({
@@ -33,7 +37,8 @@ jest.mock('./ProfilePosts', () => ({
   ),
 }));
 
-const { getUser, getUserProfilePosts } = jest.requireMock('@/api') as { getUser: jest.Mock; getUserProfilePosts: jest.Mock };
+const { getUserProfilePosts } = jest.requireMock('@/api') as { getUserProfilePosts: jest.Mock };
+const { getUser } = jest.requireMock('@/api/internal') as { getUser: jest.Mock };
 
 const mockProfile = (overrides: Partial<Profile> = {}): Profile => ({
   id: 'user-1',
@@ -49,12 +54,22 @@ const mockProfile = (overrides: Partial<Profile> = {}): Profile => ({
 const renderProfileView = (userId = 'user-1', queryClient = createTestQueryClient()) =>
   render(<ProfileView userId={userId} />, { wrapper: createQueryClientWrapper(queryClient) });
 
+class TestErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) return <div data-testid="error-boundary">{this.state.error.message}</div>;
+    return this.props.children;
+  }
+}
+
 describe('ProfileView — 무한스크롤/쿼리 무효화 특성화(#166)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
     useAuthStore.setState({ userId: 'user-1', isAuthenticated: true, isLoading: false });
-    useProfileStore.setState({ profile: null });
   });
 
   it('초기 로드 시 프로필 정보와 게시글 목록을 렌더링한다', async () => {
@@ -109,5 +124,56 @@ describe('ProfileView — 무한스크롤/쿼리 무효화 특성화(#166)', () 
 
     await waitFor(() => expect(screen.getByTestId('profile-info')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText('오류가 발생했습니다.')).toBeInTheDocument());
+  });
+
+  it('getUser 실패 시 에러를 throw해 에러 바운더리로 전파된다', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    getUser.mockRejectedValue(new Error('프로필 조회 실패'));
+    getUserProfilePosts.mockResolvedValue({ items: [], hasNext: false, nextCursor: undefined });
+
+    render(
+      <TestErrorBoundary>
+        <ProfileView userId="user-1" />
+      </TestErrorBoundary>,
+      { wrapper: createQueryClientWrapper() },
+    );
+
+    await waitFor(() => expect(screen.getByTestId('error-boundary')).toHaveTextContent('프로필 조회 실패'));
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('프로필 조회가 끝나기 전까지는 스켈레톤을 유지한다', async () => {
+    let resolveGetUser: (p: Profile) => void = () => {};
+    getUser.mockReturnValue(
+      new Promise<Profile>((resolve) => {
+        resolveGetUser = resolve;
+      }),
+    );
+    getUserProfilePosts.mockResolvedValue({ items: [], hasNext: false, nextCursor: undefined });
+
+    renderProfileView('user-1');
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByTestId('profile-info')).not.toBeInTheDocument();
+
+    await act(async () => {
+      resolveGetUser(mockProfile({ id: 'user-1' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('profile-info')).toBeInTheDocument());
+  });
+
+  it('다른 userId로 이동하면 새 캐시 키로 프로필을 다시 조회한다(캐시 격리)', async () => {
+    getUser.mockImplementation((userId: string) => Promise.resolve(mockProfile({ id: userId, nickname: `nick-${userId}` })));
+    getUserProfilePosts.mockResolvedValue({ items: [], hasNext: false, nextCursor: undefined });
+
+    const queryClient = createTestQueryClient();
+    const { rerender } = render(<ProfileView userId="user-1" />, { wrapper: createQueryClientWrapper(queryClient) });
+    await waitFor(() => expect(screen.getByTestId('profile-info')).toBeInTheDocument());
+    expect(getUser).toHaveBeenCalledWith('user-1');
+
+    rerender(<ProfileView userId="user-2" />);
+
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith('user-2'));
   });
 });
