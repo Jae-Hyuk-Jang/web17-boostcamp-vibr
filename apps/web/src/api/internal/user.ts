@@ -15,8 +15,8 @@ export const searchUsers = async (q: string, cursor?: string, limit?: number): P
   return data;
 };
 
-/** [PATCH] 프로필 수정 */
-export const updateProfile = async (profile: UpdateProfileDto): Promise<Profile> => {
-  const { data } = await internalClient.patch<Profile>('/user', profile);
+/** [PATCH] 프로필 수정 — 서버는 갱신된 Profile 전체가 아니라 { success: true }만 반환한다(apps/api UserService.updateUser 확인). */
+export const updateProfile = async (profile: UpdateProfileDto): Promise<{ success: true }> => {
+  const { data } = await internalClient.patch<{ success: true }>('/user', profile);
   return data;
 };

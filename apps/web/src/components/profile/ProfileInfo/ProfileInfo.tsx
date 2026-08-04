@@ -36,10 +36,13 @@ export default function ProfileInfo({ profile, loggedInUserId }: { profile: Prof
   });
 
   // 현재도 낙관적 업데이트가 아니다 — updateProfile 성공 이후에만 캐시를 바꾼다.
+  // PATCH /user 응답이 갱신된 Profile 전체가 아니라 { success: true }뿐이라(실제 API 응답으로 확인한 Fact),
+  // 응답 본문을 신뢰하지 않고 방금 저장을 요청한 값(variables)을 이전 캐시에 병합한다 — 기존 zustand
+  // updateProfileInfo의 부분 병합과 동일한 방식.
   const updateProfileMutation = useMutation({
     mutationFn: (updates: { nickname: string; bio: string }) => updateProfile(updates),
-    onSuccess: (updatedProfile) => {
-      queryClient.setQueryData(profileQueryKey(profile.id), updatedProfile);
+    onSuccess: (_data, updates) => {
+      queryClient.setQueryData(profileQueryKey(profile.id), (prev: Profile | undefined) => (prev ? { ...prev, ...updates } : prev));
       setIsEditing(false);
     },
   });

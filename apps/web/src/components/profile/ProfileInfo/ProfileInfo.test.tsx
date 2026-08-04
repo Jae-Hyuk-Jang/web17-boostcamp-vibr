@@ -56,9 +56,11 @@ describe('ProfileInfo — 특성화 테스트 (profile-info-caching #198)', () =
   });
 
   it('저장하면 updateProfile API를 호출한 뒤 profile 캐시를 갱신하고 편집 모드를 종료한다 (profile-info-caching #202)', async () => {
-    const updatedProfile = mockProfile({ nickname: '새 닉네임' });
-    updateProfile.mockResolvedValue(updatedProfile);
+    // 실제 PATCH /user 응답은 갱신된 Profile 전체가 아니라 { success: true }뿐이다(apps/api UserService.updateUser 확인,
+    // 브라우저 실동작 검증에서 발견) — 응답 본문이 아니라 저장을 요청한 값(variables)이 캐시에 반영돼야 한다.
+    updateProfile.mockResolvedValue({ success: true });
     const queryClient = createTestQueryClient();
+    queryClient.setQueryData(profileQueryKey('user-1'), mockProfile());
 
     renderProfileInfo({}, queryClient);
 
@@ -67,7 +69,7 @@ describe('ProfileInfo — 특성화 테스트 (profile-info-caching #198)', () =
     fireEvent.click(screen.getByLabelText('저장'));
 
     await waitFor(() => expect(updateProfile).toHaveBeenCalledWith({ nickname: '새 닉네임', bio: '소개글' }));
-    await waitFor(() => expect(queryClient.getQueryData(profileQueryKey('user-1'))).toEqual(updatedProfile));
+    await waitFor(() => expect(queryClient.getQueryData(profileQueryKey('user-1'))).toEqual(mockProfile({ nickname: '새 닉네임', bio: '소개글' })));
     expect(screen.queryByLabelText('저장')).not.toBeInTheDocument();
   });
 
