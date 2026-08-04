@@ -17,7 +17,6 @@
     --color-gray-4: #f5f5f7;
     --color-white: #fffffe;
     --color-black: #191414;
-    --color-spotify-green: #1db954;
     --color-error: #ca2a30;
     --sidebar-w: 260px;
   }
@@ -218,13 +217,10 @@
   .login-action-btn:active { transform: scale(0.98); }
   .lab-google { padding: 16px 24px; font-weight: 900; border: 1px solid var(--color-primary); background: white; color: var(--color-primary); }
   .lab-google:hover { background: #fafafa; }
-  .lab-spotify { padding: 16px 24px; font-weight: 900; border: none; background: var(--color-spotify-green); color: black; }
-  .lab-spotify:hover { background: #1ED760; }
   .lab-tmp { padding: 12px 24px; font-weight: 700; font-size: 13.5px; border: 1px dashed var(--color-primary); background: white; color: var(--color-primary); }
   .lab-tmp:hover { background: #fafafa; }
   .icon-circle { width: 22px; height: 22px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; color: white; flex-shrink: 0; }
   .ic-google { background: linear-gradient(135deg,#4285F4,#EA4335,#FBBC05,#34A853); }
-  .ic-spotify { background: black; color: var(--color-spotify-green); }
   .dev-label { font-size: 11px; font-weight: 700; color: var(--color-gray-1); border-top: 1px dashed rgba(0,33,77,0.25); padding-top: 12px; margin-top: 2px; }
 
   .spinner { display: inline-block; border-radius: 999px; border-style: solid; animation: spin 0.8s linear infinite; }
@@ -333,7 +329,6 @@
       <div class="token"><div class="swatch" style="background:#f5f5f7"></div><div class="label"><b>gray-4</b><span>#f5f5f7</span></div></div>
       <div class="token"><div class="swatch" style="background:#fffffe;border-bottom:1px solid #e0e0e0"></div><div class="label"><b>white</b><span>#fffffe</span></div></div>
       <div class="token"><div class="swatch" style="background:#191414"></div><div class="label"><b>black</b><span>#191414</span></div></div>
-      <div class="token"><div class="swatch" style="background:#1db954"></div><div class="label"><b>spotify-green</b><span>#1db954</span></div></div>
       <div class="token"><div class="swatch" style="background:#ca2a30"></div><div class="label"><b>error</b><span>#ca2a30</span></div></div>
     </div>
     <p class="lede" style="margin-top:14px; font-size:13px;">
@@ -414,13 +409,12 @@
   <section id="login-buttons">
     <h2>LoginActionButton <span style="font-weight:400;font-size:15px;color:var(--color-gray-1)">modals/LoginModal/loginButtons/ (신규, 이번 세션)</span></h2>
     <p class="lede">
-      Google/Spotify/DEV 임시 로그인 버튼 3종이 각각 반복하던 쉘 클래스+로딩 스피너를 로컬 래퍼로 추출했습니다. 브랜드 색상(Google 흰색, Spotify <code>#1ED760</code>)은 이 3개 파일 밖에서 재사용되지 않는 1회성 스타일이라 공용 <code>Button</code>의 variant로 승격하지 않고 <code>className</code> 오버라이드로 유지합니다.
+      Google/DEV 임시 로그인 버튼 2종이 각각 반복하던 쉘 클래스+로딩 스피너를 로컬 래퍼로 추출했습니다. 브랜드 색상(Google 흰색)은 이 파일 밖에서 재사용되지 않는 1회성 스타일이라 공용 <code>Button</code>의 variant로 승격하지 않고 <code>className</code> 오버라이드로 유지합니다. (Spotify 로그인 버튼은 spotify-integration(#237~#241)에서 Spotify 연동 전체와 함께 삭제됐습니다.)
     </p>
     <div class="login-demo">
       <div class="head"><h3>로그인</h3><button class="close-x">✕</button></div>
       <div class="body">
         <button class="login-action-btn lab-google"><span class="icon-circle ic-google">G</span>Google로 로그인</button>
-        <button class="login-action-btn lab-spotify"><span class="icon-circle ic-spotify">♫</span>Spotify로 로그인</button>
         <div class="dev-label">DEV 임시 로그인</div>
         <button class="login-action-btn lab-tmp">테스트 사용자 1로 로그인</button>
         <button class="login-action-btn lab-tmp" disabled style="opacity:.7"><span class="spinner spinner-primary"></span>로그인 중…</button>

@@ -12,26 +12,26 @@ VIBR의 시각 언어는 **네오브루탈리즘(neobrutalism)** 계열입니다
 
 `@theme`에 정의된 전체 팔레트와 실제 용도(코드 grep 기준):
 
-| 토큰                    | 값        | 실제 용도                                                                                           |
-| ----------------------- | --------- | --------------------------------------------------------------------------------------------------- |
-| `--color-primary`       | `#00214d` | 기본 텍스트 색, 모든 테두리(`border-primary`), 프라이머리 버튼 배경                                 |
-| `--color-accent-cyan`   | `#00ebc7` | hover 시 하드 섀도 색(`hover:shadow-[2px_2px_0px_0px_#00ebc7]`), 볼륨 슬라이더 thumb, 강조 배지     |
-| `--color-accent-pink`   | `#ff5470` | 강조/CTA 버튼 배경(하트, 좋아요, 헤더 CTA)                                                          |
-| `--color-accent-yellow` | `#fde24f` | 액션 버튼 강조 배경(예: `ProfileActionButton.tsx:66`의 `bg-accent-yellow/90`)                       |
-| `--color-darkblue`      | `#1b2d45` | 오버레이/백드롭 틴트(`bg-darkblue/15`, `VolumeControl.tsx:59`) — `primary`보다 은은한 반투명 배경용 |
-| `--color-gray-1`        | `#828282` | 보조 텍스트                                                                                         |
-| `--color-gray-2`        | `#bdbdbd` | placeholder, 비활성 텍스트                                                                          |
-| `--color-gray-3`        | `#e0e0e0` | 구분선(`border-gray-3`)                                                                             |
-| `--color-gray-4`        | `#f5f5f7` | 서브틀 배경(카드 내부, 비활성 영역)                                                                 |
-| `--color-white`         | `#fffffe` | 기본 배경, 모달/카드 배경                                                                           |
-| `--color-black`         | `#191414` | 극히 드묾 — 대부분 `primary`가 텍스트 검정 역할을 대신함                                            |
-| `--color-spotify-green` | `#1db954` | ⚠️ **정의만 있고 실제 미사용** — Spotify 버튼은 `#1ED760`/`#1DB954`를 직접 하드코딩(§7 참고)        |
-| `--color-error`         | `#ca2a30` | 에러 텍스트/토스트                                                                                  |
+| 토큰                    | 값        | 실제 용도                                                                                              |
+| ----------------------- | --------- | ------------------------------------------------------------------------------------------------------ |
+| `--color-primary`       | `#00214d` | 기본 텍스트 색, 모든 테두리(`border-primary`), 프라이머리 버튼 배경                                    |
+| `--color-accent-cyan`   | `#00ebc7` | hover 시 하드 섀도 색(`hover:shadow-[2px_2px_0px_0px_#00ebc7]`), 볼륨 슬라이더 thumb, 강조 배지        |
+| `--color-accent-pink`   | `#ff5470` | 강조/CTA 버튼 배경(하트, 좋아요, 헤더 CTA)                                                             |
+| `--color-accent-yellow` | `#fde24f` | 액션 버튼 강조 배경(예: `ProfileActionButton.tsx:66`의 `bg-accent-yellow/90`)                          |
+| `--color-darkblue`      | `#1b2d45` | 오버레이/백드롭 틴트(`bg-darkblue/15`, `VolumeControl.tsx:59`) — `primary`보다 은은한 반투명 배경용    |
+| `--color-gray-1`        | `#828282` | 보조 텍스트                                                                                            |
+| `--color-gray-2`        | `#bdbdbd` | placeholder, 비활성 텍스트                                                                             |
+| `--color-gray-3`        | `#e0e0e0` | 구분선(`border-gray-3`)                                                                                |
+| `--color-gray-4`        | `#f5f5f7` | 서브틀 배경(카드 내부, 비활성 영역)                                                                    |
+| `--color-white`         | `#fffffe` | 기본 배경, 모달/카드 배경                                                                              |
+| `--color-black`         | `#191414` | 극히 드묾 — 대부분 `primary`가 텍스트 검정 역할을 대신함                                               |
+| `--color-spotify-green` | `#1db954` | ⚠️ **정의만 있고 완전히 미사용** — 이 토큰을 쓸 예정이었던 Spotify 로그인 버튼 자체가 삭제됨(§11 참고) |
+| `--color-error`         | `#ca2a30` | 에러 텍스트/토스트                                                                                     |
 
 ### 사용 규칙
 
 - **theme 색상 클래스(`text-primary`, `bg-accent-*`, `text-gray-1`~`4`)만 쓰세요.** `text-gray-400`, `bg-gray-50` 같은 Tailwind 기본 회색 팔레트가 21곳 이상에서 혼용되고 있는데(`SongList.tsx:132`, `PostDetailBody.tsx:58,67,68`, `ConfirmToast.tsx:8`, `PlaylistPickerModal.tsx:167`, `AgreeItem.tsx:24` 등), 이는 의도된 패턴이 아니라 일관성이 무너진 부분입니다. 새 코드에서는 반드시 `gray-1`~`gray-4` 중 하나를 쓰세요.
-- **임의 hex 색상(`text-[#...]`, `bg-[#...]`)은 서드파티 브랜드 컬러(Spotify 등)에만 예외적으로 허용**합니다. 그 외의 경우 theme 토큰이 없다고 새 hex를 바로 쓰지 말고, `@theme`에 새 토큰을 추가하는 쪽을 우선 검토하세요.
+- **임의 hex 색상(`text-[#...]`, `bg-[#...]`)은 서드파티 브랜드 컬러에만 예외적으로 허용**합니다. 그 외의 경우 theme 토큰이 없다고 새 hex를 바로 쓰지 말고, `@theme`에 새 토큰을 추가하는 쪽을 우선 검토하세요.
 - 하드 섀도의 색은 `hover:shadow-[2px_2px_0px_0px_#00ebc7]`처럼 여전히 hex로 박혀 있는 경우가 대부분이지만, 일부는 `var(--color-primary)`를 쓰기도 합니다(`ContentWriteModal.tsx:51`, `LoginModal.tsx:25`). 새 코드를 쓸 때는 `var(--color-primary)` 형태를 우선하세요(§6 참고).
 
 ## 3. 타이포그래피
@@ -162,13 +162,13 @@ className = 'w-24 h-24 md:w-40 md:h-40';
 
 아래는 기존 코드에 남아있지만 "관례"가 아니라 정리가 안 된 부분입니다. 새 코드에서는 반대쪽(권장 방향)을 따르세요.
 
-| 이슈                                                                                                | 발견 위치                                                                                                        | 권장 방향                                                                                                                  |
-| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `text-gray-400`, `bg-gray-50` 등 Tailwind 기본 회색 혼용                                            | `SongList.tsx:132`, `PostDetailBody.tsx:58,67,68`, `ConfirmToast.tsx:8` 등 21곳+                                 | `gray-1`~`gray-4` theme 토큰만 사용                                                                                        |
-| `--color-spotify-green` 토큰이 정의만 되고 실제로는 `#1ED760`/`#1DB954`를 하드코딩                  | `modals/LoginModal/loginButtons/SpotifyLoginButton.tsx:28-29`                                                    | 토큰을 실제로 쓰거나, 안 쓸 거면 `globals.css`에서 제거                                                                    |
-| `animate-scale-up` 클래스가 4개 파일에서 쓰이지만 `globals.css` `@theme`/`@keyframes`에 정의가 없음 | `PostCardDetailModal.tsx:301`, `UserListModal.tsx:61`, `PlaylistPickerModal.tsx:159`, `LikedUsersOverlay.tsx:30` | 애니메이션 없이 렌더링되고 있을 가능성이 높은 버그. `globals.css`에 `@keyframes scale-up` + `--animate-scale-up` 추가 필요 |
-| 공용 `Button` 컴포넌트 부재 — 버튼 스타일이 파일마다 인라인 반복                                    | §8 참고                                                                                                          | 신규 기능에서 버튼이 3번째 이상 반복되면 공용 컴포넌트 추출 검토                                                           |
-| 하드 섀도 색이 `#00214D` hex와 `var(--color-primary)`로 혼재                                        | `ContentWriteModal.tsx:51` vs `Sidebar.tsx:232`                                                                  | `var(--color-primary)` 형태로 통일                                                                                         |
+| 이슈                                                                                                              | 발견 위치                                                                                                        | 권장 방향                                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `text-gray-400`, `bg-gray-50` 등 Tailwind 기본 회색 혼용                                                          | `SongList.tsx:132`, `PostDetailBody.tsx:58,67,68`, `ConfirmToast.tsx:8` 등 21곳+                                 | `gray-1`~`gray-4` theme 토큰만 사용                                                                                        |
+| `--color-spotify-green` 토큰이 완전히 미사용(spotify-integration #237~#241에서 Spotify 로그인 버튼 자체가 삭제됨) | `globals.css`(토큰 정의만 남음)                                                                                  | `globals.css`에서 토큰 제거                                                                                                |
+| `animate-scale-up` 클래스가 4개 파일에서 쓰이지만 `globals.css` `@theme`/`@keyframes`에 정의가 없음               | `PostCardDetailModal.tsx:301`, `UserListModal.tsx:61`, `PlaylistPickerModal.tsx:159`, `LikedUsersOverlay.tsx:30` | 애니메이션 없이 렌더링되고 있을 가능성이 높은 버그. `globals.css`에 `@keyframes scale-up` + `--animate-scale-up` 추가 필요 |
+| 공용 `Button` 컴포넌트 부재 — 버튼 스타일이 파일마다 인라인 반복                                                  | §8 참고                                                                                                          | 신규 기능에서 버튼이 3번째 이상 반복되면 공용 컴포넌트 추출 검토                                                           |
+| 하드 섀도 색이 `#00214D` hex와 `var(--color-primary)`로 혼재                                                      | `ContentWriteModal.tsx:51` vs `Sidebar.tsx:232`                                                                  | `var(--color-primary)` 형태로 통일                                                                                         |
 
 ## 12. 새 기능/컴포넌트 추가 시 체크리스트
 

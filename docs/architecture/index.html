@@ -262,8 +262,6 @@ graph LR
     s_player[[usePlayerStore]]
     s_postReaction[[usePostReactionOverridesStore]]
     s_profile[[useProfileStore]]
-    s_spotifyAuth[[useSpotifyAuthStore]]
-    s_spotifyPlayer[[useSpotifyPlayerStore]]
     s_feedRefresh[[useFeedRefreshStore]]
   end
 
@@ -318,15 +316,12 @@ graph LR
   c_modals --> s_profile
   c_profile --> s_profile
 
-  h_auth --> s_spotifyAuth
-  h_auth --> s_spotifyPlayer
-
   c_feed --> s_feedRefresh
   c_layout --> s_feedRefresh
   c_profile --> s_feedRefresh
   h_post --> s_feedRefresh
   </pre>
-  <p class="legend">눈에 띄는 지점: <code>useAuthStore</code>·<code>useModalStore</code>는 도메인 10개 이상이 공유(전역 UI/인증이라 예상된 결과), <code>usePostReactionOverridesStore</code>는 4개 도메인(feed/modals/post/hooks-post)이 공유 — post-reaction-state 리팩터링(#48)이 정확히 이 4개의 접근 방식을 통일하려 한 지점입니다. <code>useSpotifyAuthStore</code>/<code>useSpotifyPlayerStore</code>는 hooks/auth 하나만 써서 상대적으로 격리도가 높습니다. 예전엔 여기 있던 <code>usePlaylistRefreshStore</code>(archive·modals가 소비)는 server-state-caching(#139)에서 TanStack Query로 대체돼 삭제됐습니다 — 아래 "서버 상태 캐싱" 다이어그램 참고.</p>
+  <p class="legend">눈에 띄는 지점: <code>useAuthStore</code>·<code>useModalStore</code>는 도메인 10개 이상이 공유(전역 UI/인증이라 예상된 결과), <code>usePostReactionOverridesStore</code>는 4개 도메인(feed/modals/post/hooks-post)이 공유 — post-reaction-state 리팩터링(#48)이 정확히 이 4개의 접근 방식을 통일하려 한 지점입니다. 예전엔 여기 있던 <code>usePlaylistRefreshStore</code>(archive·modals가 소비)는 server-state-caching(#139)에서 TanStack Query로 대체돼 삭제됐고, <code>useSpotifyAuthStore</code>/<code>useSpotifyPlayerStore</code>도 spotify-integration(#237~#241)에서 Spotify 연동 전체와 함께 삭제됐습니다 — 아래 "서버 상태 캐싱" 다이어그램 참고.</p>
 
   <h2>usePostReactionOverridesStore 상세 흐름 (post-detail-modal-responsibility-decomposition #125~131 이후)</h2>
   <p class="legend">근거: apps/web/src/{stores/usePostReactionOverridesStore.ts, components/post/PostCard.tsx, components/post/partials/PostHeader.tsx, hooks/post/usePostDetailModal.ts, components/feed/FeedView.tsx, hooks/post/usePostLikeToggle.ts, hooks/post/usePostReactions.ts} — 파일 단위. 점선 = "내부적으로 사용/합성", 실선 = store에 대한 실제 read/write. 2026-07-22 기준 재스캔.</p>
