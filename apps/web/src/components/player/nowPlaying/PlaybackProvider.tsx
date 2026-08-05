@@ -1,45 +1,27 @@
 'use client';
 
 import React, { createContext, useContext, useMemo } from 'react';
-import { usePlayback } from '@/hooks';
+import { usePlayerStore } from '@/stores';
+import type { PlaybackEngine } from '@/types';
+import { ENGINE_REGISTRY, DEFAULT_ENGINE_PROVIDER } from './engineRegistry';
 
-type PlaybackKind = 'youtube' | 'itunes';
-
-type PlaybackRefsValue = {
-  kind: PlaybackKind;
-  containerRef: React.RefObject<HTMLDivElement | null> | null;
-  seekToMs: (ms: number) => void;
-};
-
-type PlaybackProgressValue = {
-  positionMs: number;
-  durationMs: number;
-};
+type PlaybackRefsValue = Pick<PlaybackEngine, 'containerRef' | 'seekToMs'>;
+type PlaybackProgressValue = Pick<PlaybackEngine, 'positionMs' | 'durationMs'>;
 
 const PlaybackRefsContext = createContext<PlaybackRefsValue | null>(null);
 const PlaybackProgressContext = createContext<PlaybackProgressValue | null>(null);
 
-export function PlaybackProvider({ children }: { children: React.ReactNode }) {
-  const playback = usePlayback();
-
+function PlaybackContexts({ engine, children }: { engine: PlaybackEngine; children: React.ReactNode }) {
   // 거의 안 변하는 값들만(cover는 이것만 구독)
-  const youtubeContainerRef = playback.kind === 'youtube' ? playback.containerRef : null;
   const refsValue = useMemo<PlaybackRefsValue>(
-    () => ({
-      kind: playback.kind as PlaybackKind,
-      containerRef: youtubeContainerRef,
-      seekToMs: playback.seekToMs,
-    }),
-    [playback.kind, playback.seekToMs, youtubeContainerRef],
+    () => ({ containerRef: engine.containerRef, seekToMs: engine.seekToMs }),
+    [engine.containerRef, engine.seekToMs],
   );
 
   // tick으로 자주 변하는 값들만(progress는 이것만 구독)
   const progressValue = useMemo<PlaybackProgressValue>(
-    () => ({
-      positionMs: playback.positionMs,
-      durationMs: playback.durationMs,
-    }),
-    [playback.positionMs, playback.durationMs],
+    () => ({ positionMs: engine.positionMs, durationMs: engine.durationMs }),
+    [engine.positionMs, engine.durationMs],
   );
 
   return (
@@ -47,6 +29,13 @@ export function PlaybackProvider({ children }: { children: React.ReactNode }) {
       <PlaybackProgressContext.Provider value={progressValue}>{children}</PlaybackProgressContext.Provider>
     </PlaybackRefsContext.Provider>
   );
+}
+
+export function PlaybackProvider({ children }: { children: React.ReactNode }) {
+  const provider = usePlayerStore((s) => s.currentMusic?.provider);
+  const Engine = (provider && ENGINE_REGISTRY[provider]) || ENGINE_REGISTRY[DEFAULT_ENGINE_PROVIDER];
+
+  return <Engine>{(engine) => <PlaybackContexts engine={engine}>{children}</PlaybackContexts>}</Engine>;
 }
 
 export function usePlaybackRefs() {
