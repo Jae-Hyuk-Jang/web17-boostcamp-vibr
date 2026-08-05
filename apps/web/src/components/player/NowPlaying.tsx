@@ -1,9 +1,8 @@
 'use client';
 
-import type { MusicResponseDto as Music } from '@repo/dto';
 import { MusicProvider } from '@repo/dto/values';
 import { useCallback } from 'react';
-import { useMusicActions } from '@/hooks';
+import { useMusicActions, usePlayerNavigation } from '@/hooks';
 import { useAuthMe } from '@/hooks/auth/client';
 import { useModalStore, MODAL_TYPES, usePlayerStore } from '@/stores';
 import { enqueueLog } from '@/utils';
@@ -11,17 +10,9 @@ import { makeArchiveAddMusicLog, makePostAddMusicLog } from '@/api';
 
 import { NowPlayingCoverPlayback, NowPlayingProgressTick, NowPlayingMetaActions, NowPlayingControlsStatic, PlaybackProvider } from './index';
 
-type Props = {
-  currentMusic: Music | null;
-  isPlaying: boolean;
-  canPrev: boolean;
-  canNext: boolean;
-  onTogglePlay: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-};
+export default function NowPlaying() {
+  const { currentMusic, isPlaying, isPrevAvailable, isNextAvailable, onTogglePlay, onPrev, onNext } = usePlayerNavigation();
 
-export default function NowPlaying({ currentMusic, isPlaying, canPrev, canNext, onTogglePlay, onPrev, onNext }: Props) {
   const volume = usePlayerStore((s) => s.volume);
   const setVolume = usePlayerStore((s) => s.setVolume);
   const playError = usePlayerStore((s) => s.playError);
@@ -43,16 +34,16 @@ export default function NowPlaying({ currentMusic, isPlaying, canPrev, canNext, 
   }, [isPlayable, clearPlayError, onTogglePlay]);
 
   const safePrev = useCallback(() => {
-    if (!canPrev) return;
+    if (!isPrevAvailable) return;
     clearPlayError();
     onPrev();
-  }, [canPrev, clearPlayError, onPrev]);
+  }, [isPrevAvailable, clearPlayError, onPrev]);
 
   const safeNext = useCallback(() => {
-    if (!canNext) return;
+    if (!isNextAvailable) return;
     clearPlayError();
     onNext();
-  }, [canNext, clearPlayError, onNext]);
+  }, [isNextAvailable, clearPlayError, onNext]);
 
   const handlePost = useCallback(async () => {
     if (!isAuthenticated) {
@@ -89,8 +80,8 @@ export default function NowPlaying({ currentMusic, isPlaying, canPrev, canNext, 
       <NowPlayingControlsStatic
         enabled={Boolean(currentMusic)}
         isPlaying={isPlaying}
-        canPrev={canPrev}
-        canNext={canNext}
+        canPrev={isPrevAvailable}
+        canNext={isNextAvailable}
         onClearPlayError={clearPlayError}
         onTogglePlay={safeTogglePlay}
         onPrev={safePrev}

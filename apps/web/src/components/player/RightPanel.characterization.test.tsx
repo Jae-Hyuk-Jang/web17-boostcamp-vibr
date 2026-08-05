@@ -7,9 +7,10 @@ import { seedAuthMe } from '@/test-utils/authMeTestUtils';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 /**
- * player-subscription-boundary CP1 — 리팩터링(CP2에서 구독 경계 정리) 착수 전
- * RightPanel이 자식에게 전달하는 정확한 prop 셋을 고정한다. CP2 이후에는 이 props
- * 대부분이 사라지고(자식이 직접 구독) 이 테스트는 새 계약으로 갱신된다.
+ * player-subscription-boundary CP2(#263) — 구독 경계 정리 회귀 테스트.
+ * CP1에서는 이 파일이 "RightPanel이 자식에게 재생 상태 7개/8개를 재분배한다"는
+ * 구 계약을 특성화했다. CP2에서 그 재분배를 없앴으므로, 지금은 반대로
+ * "RightPanel이 더 이상 재생 상태를 자식에게 넘기지 않는다"를 회귀 테스트로 고정한다.
  */
 
 const nowPlayingSpy = jest.fn();
@@ -54,7 +55,7 @@ const mockMusic: Music = {
   durationMs: 200000,
 };
 
-describe('RightPanel — 자식 prop 전달 특성화 테스트 (player-subscription-boundary CP1)', () => {
+describe('RightPanel — 구독 경계 정리 회귀 테스트 (player-subscription-boundary CP2 #263)', () => {
   let queryClient: ReturnType<typeof createTestQueryClient>;
 
   beforeEach(() => {
@@ -64,43 +65,44 @@ describe('RightPanel — 자식 prop 전달 특성화 테스트 (player-subscrip
     usePlayerStore.setState({ queue: [mockMusic], currentMusic: mockMusic, isPlaying: true });
   });
 
-  it('[현재 구조] NowPlaying과 MiniPlayerBar가 동일한 재생 상태 7개 값을 각각 전달받는다', () => {
+  it('NowPlaying은 props 없이 렌더된다(재생 상태를 직접 usePlayerNavigation으로 구독)', () => {
     render(<RightPanel />, { wrapper: createQueryClientWrapper(queryClient) });
 
     const nowPlayingProps = nowPlayingSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    const miniPlayerBarProps = miniPlayerBarSpy.mock.calls[0]?.[0] as Record<string, unknown>;
 
-    const sharedKeys = ['currentMusic', 'isPlaying', 'canPrev', 'canNext'] as const;
-    for (const key of sharedKeys) {
-      expect(nowPlayingProps[key]).toEqual(miniPlayerBarProps[key]);
-    }
-
-    // 콜백도 같은 zustand action을 그대로 전달한다(참조 동일)
-    expect(nowPlayingProps.onPrev).toBe(miniPlayerBarProps.onPrev);
-    expect(nowPlayingProps.onNext).toBe(miniPlayerBarProps.onNext);
+    expect(Object.keys(nowPlayingProps)).toHaveLength(0);
   });
 
-  it('[현재 구조] 재생 상태가 바뀌면 NowPlaying과 MiniPlayerBar 둘 다 다시 렌더된다(리렌더 이중화)', () => {
+  it('QueueList는 props 없이 렌더된다(큐/조작 액션을 직접 usePlayerStore로 구독)', () => {
     render(<RightPanel />, { wrapper: createQueryClientWrapper(queryClient) });
 
-    const nowPlayingCallsBefore = nowPlayingSpy.mock.calls.length;
-    const miniPlayerBarCallsBefore = miniPlayerBarSpy.mock.calls.length;
+    const queueListProps = queueListSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+
+    expect(Object.keys(queueListProps)).toHaveLength(0);
+  });
+
+  it('MiniPlayerBar는 RightPanel 로컬 UI 콜백 2개(onOpenQueue/onOpenFullPlayer)만 전달받는다', () => {
+    render(<RightPanel />, { wrapper: createQueryClientWrapper(queryClient) });
+
+    const miniPlayerBarProps = miniPlayerBarSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+
+    expect(Object.keys(miniPlayerBarProps).sort()).toEqual(['onOpenFullPlayer', 'onOpenQueue'].sort());
+    expect(typeof miniPlayerBarProps.onOpenQueue).toBe('function');
+    expect(typeof miniPlayerBarProps.onOpenFullPlayer).toBe('function');
+  });
+
+  it('재생 상태(zustand)가 바뀌어도 RightPanel이 자식에게 새로 전달하는 재생 관련 prop은 여전히 없다', () => {
+    render(<RightPanel />, { wrapper: createQueryClientWrapper(queryClient) });
 
     act(() => {
       usePlayerStore.setState({ isPlaying: false });
     });
 
-    expect(nowPlayingSpy.mock.calls.length).toBeGreaterThan(nowPlayingCallsBefore);
-    expect(miniPlayerBarSpy.mock.calls.length).toBeGreaterThan(miniPlayerBarCallsBefore);
-  });
-
-  it('[현재 구조] QueueList는 큐 조작 콜백 8개를 RightPanel로부터 전달받는다', () => {
-    render(<RightPanel />, { wrapper: createQueryClientWrapper(queryClient) });
-
-    const queueListProps = queueListSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-
-    expect(Object.keys(queueListProps).sort()).toEqual(
-      ['queue', 'currentMusicId', 'onClear', 'onRemove', 'onMoveUp', 'onMoveDown', 'onMove', 'onSelect'].sort(),
-    );
+    // useGuestQueueSession이 isPlaying을 별도로 구독해 RightPanel 자체는 리렌더될 수 있지만(큐 영속화 목적,
+    // 이번 체크포인트 범위 밖), 그로 인해 NowPlaying/QueueList가 다시 받는 props는 여전히 빈 객체다.
+    const lastNowPlayingProps = nowPlayingSpy.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    const lastQueueListProps = queueListSpy.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(Object.keys(lastNowPlayingProps)).toHaveLength(0);
+    expect(Object.keys(lastQueueListProps)).toHaveLength(0);
   });
 });

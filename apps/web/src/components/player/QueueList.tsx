@@ -1,11 +1,10 @@
 'use client';
 
-import type { MusicResponseDto as Music } from '@repo/dto';
 import Image from 'next/image';
 import { Box, Plus, ListPlus, Trash2, ChevronUp, ChevronDown, XCircle, GripVertical } from 'lucide-react';
 import { useMusicActions } from '@/hooks';
 import { useAuthMe } from '@/hooks/auth/client';
-import { useModalStore, MODAL_TYPES } from '@/stores';
+import { useModalStore, MODAL_TYPES, usePlayerStore } from '@/stores';
 import type { DragEvent } from 'react';
 import { useState } from 'react';
 
@@ -16,20 +15,16 @@ import { makeArchiveAddMusicLog, makePostAddMusicLog } from '@/api/internal/logg
 import TickerText from '@/components/ui/TickerText';
 import Button from '@/components/ui/Button';
 
-interface QueueListProps {
-  queue: Music[];
-  currentMusicId: string | null;
-  onClear: () => void;
-  onRemove: (musicId: string) => void;
-  onMoveUp: (index: number) => void;
-  onMoveDown: (index: number) => void;
-  onMove: (from: number, to: number) => void;
+export default function QueueList() {
+  const queue = usePlayerStore((s) => s.queue);
+  const currentMusicId = usePlayerStore((s) => s.currentMusic?.id ?? null);
+  const onClear = usePlayerStore((s) => s.clearQueue);
+  const onRemove = usePlayerStore((s) => s.removeFromQueue);
+  const onMoveUp = usePlayerStore((s) => s.moveUp);
+  const onMoveDown = usePlayerStore((s) => s.moveDown);
+  const onMove = usePlayerStore((s) => s.moveTo);
+  const onSelect = usePlayerStore((s) => s.selectMusic);
 
-  /** 추가: 큐 아이템 선택(현재 재생 곡 변경) */
-  onSelect: (music: Music) => void;
-}
-
-export default function QueueList({ queue, currentMusicId, onClear, onRemove, onMoveUp, onMoveDown, onMove, onSelect }: QueueListProps) {
   const isEmpty = queue.length === 0;
 
   const { isAuthenticated } = useAuthMe();
