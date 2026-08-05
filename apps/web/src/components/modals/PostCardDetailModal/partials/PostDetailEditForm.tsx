@@ -1,33 +1,34 @@
 'use client';
 
-type Props = {
-  value: string;
-  isSaving: boolean;
-  isNoOpChange: boolean;
-  onChange: (next: string) => void;
-  onSave: () => void;
-  onCancel: () => void;
-};
+import { usePostDetailModalContext } from '../PostDetailModalContext';
 
-export default function PostDetailEditForm({ value, isSaving, isNoOpChange, onChange, onSave, onCancel }: Props) {
+export default function PostDetailEditForm() {
+  const { safePost: post, editing } = usePostDetailModalContext();
+
+  const value = editing.draft ?? '';
+  const isNoOpChange = editing.draft === post.content;
+
   return (
     <div className="flex-1 overflow-y-auto p-4">
       <textarea
         className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-all"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => editing.setDraft(e.target.value)}
         rows={10}
       />
       <div className="flex justify-end gap-2 mt-4">
-        <button onClick={onCancel} className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
+        <button
+          onClick={() => editing.cancel()}
+          className="px-4 py-2 text-sm font-bold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+        >
           취소
         </button>
         <button
-          onClick={onSave}
-          disabled={isSaving || isNoOpChange}
+          onClick={() => editing.commit()}
+          disabled={editing.isSaving || isNoOpChange}
           className="px-4 py-2 text-sm font-bold text-white bg-accent-cyan rounded-lg hover:bg-cyan-500 transition-colors disabled:opacity-50"
         >
-          {isSaving ? '저장 중...' : '저장'}
+          {editing.isSaving ? '저장 중...' : '저장'}
         </button>
       </div>
     </div>
