@@ -5,17 +5,19 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc, formatRelativeTime } from '@/utils';
 
+import { usePostDetailModalContext } from '../PostDetailModalContext';
 import { usePostDetailReactionsContext } from '../PostDetailReactionsContext';
 
 type Props = {
-  profileImg: string;
-  nickname: string;
-  content: string;
   hideAuthorRow?: boolean;
 };
 
-export default function PostDetailBody({ profileImg, nickname, content, hideAuthorRow }: Props) {
+export default function PostDetailBody({ hideAuthorRow }: Props) {
+  const { safePost: post, profileImg } = usePostDetailModalContext();
   const { comments, isCommentsLoading } = usePostDetailReactionsContext();
+
+  const nickname = post.author.nickname;
+  const content = post.content;
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">

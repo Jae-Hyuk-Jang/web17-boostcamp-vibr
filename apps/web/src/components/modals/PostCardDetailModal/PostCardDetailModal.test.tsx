@@ -80,29 +80,23 @@ jest.mock('./partials/PostDetailCommentComposer', () => ({
 
 jest.mock('./partials/PostDetailEditForm', () => ({
   __esModule: true,
-  default: ({
-    value,
-    isSaving,
-    onChange,
-    onSave,
-    onCancel,
-  }: {
-    value: string;
-    isSaving: boolean;
-    onChange: (next: string) => void;
-    onSave: () => void;
-    onCancel: () => void;
-  }) => (
-    <div>
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} />
-      <button type="button" onClick={onCancel}>
-        취소
-      </button>
-      <button type="button" onClick={onSave} disabled={isSaving}>
-        {isSaving ? '저장 중...' : '저장'}
-      </button>
-    </div>
-  ),
+  default: function MockPostDetailEditForm() {
+    const { safePost: post, editing } = usePostDetailModalContext();
+    const value = editing.draft ?? '';
+    const isNoOpChange = editing.draft === post.content;
+
+    return (
+      <div>
+        <textarea value={value} onChange={(e) => editing.setDraft(e.target.value)} />
+        <button type="button" onClick={() => editing.cancel()}>
+          취소
+        </button>
+        <button type="button" onClick={() => editing.commit()} disabled={editing.isSaving || isNoOpChange}>
+          {editing.isSaving ? '저장 중...' : '저장'}
+        </button>
+      </div>
+    );
+  },
 }));
 
 jest.mock('./partials/LikedUsersOverlay', () => ({

@@ -8,9 +8,7 @@ import PostDetailBody from './PostDetailBody';
 import PostDetailCommentComposer from './PostDetailCommentComposer';
 
 export default function PostCardDetailModalMobileSheet() {
-  const { safePost, profileImg, handleClose: onClose } = usePostDetailModalContext();
-  const nickname = safePost.author.nickname;
-  const content = safePost.content;
+  const { handleClose: onClose } = usePostDetailModalContext();
 
   // 스와이프다운 닫기 — 이 시트에서만 쓰이는 제스처라 여기서 직접 소유한다(부모가 대신 구독해 props로
   // 내려줄 이유가 없음, PlaybackProvider와 달리 여러 컴포넌트가 공유하는 값이 아니다).
@@ -37,7 +35,7 @@ export default function PostCardDetailModalMobileSheet() {
         </div>
 
         {/* 댓글 목록 */}
-        <PostDetailBody profileImg={profileImg} nickname={nickname} content={content} />
+        <PostDetailBody />
 
         {/* 댓글 입력 */}
         <PostDetailCommentComposer />

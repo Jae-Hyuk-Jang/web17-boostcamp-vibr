@@ -18,7 +18,6 @@ export default function PostCardDetailModalDesktopShell() {
     isLoading,
     error,
     isOwner,
-    profileImg,
     editing,
     player,
     likedUsers,
@@ -65,18 +64,7 @@ export default function PostCardDetailModalDesktopShell() {
             />
           </div>
 
-          {editing.isEditing ? (
-            <PostDetailEditForm
-              value={editing.draft ?? ''}
-              isSaving={editing.isSaving}
-              isNoOpChange={editing.draft === post.content}
-              onChange={(next) => editing.setDraft(next)}
-              onSave={() => editing.commit()}
-              onCancel={() => editing.cancel()}
-            />
-          ) : (
-            <PostDetailBody profileImg={profileImg} nickname={post.author.nickname} content={post.content} />
-          )}
+          {editing.isEditing ? <PostDetailEditForm /> : <PostDetailBody />}
 
           <PostDetailActions postId={postId} onOpenLikedUsers={onOpenLikedUsers} />
           <PostDetailCommentComposer />
