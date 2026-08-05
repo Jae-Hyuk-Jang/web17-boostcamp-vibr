@@ -1,10 +1,9 @@
 'use client';
 
-import type { MusicResponseDto as Music } from '@repo/dto';
 import Image from 'next/image';
 import { Box, Pause, Play, Plus, SkipBack, SkipForward, ListPlus } from 'lucide-react';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import { useMusicActions } from '@/hooks';
+import { useMusicActions, usePlayerNavigation } from '@/hooks';
 import { enqueueLog } from '@/utils';
 import { makeArchiveAddMusicLog, makePostAddMusicLog } from '@/api';
 import { useAuthMe } from '@/hooks/auth/client';
@@ -12,31 +11,13 @@ import { useAuthMe } from '@/hooks/auth/client';
 import TickerText from '@/components/ui/TickerText';
 
 interface MiniPlayerBarProps {
-  currentMusic: Music | null;
-  isPlaying: boolean;
-
-  canPrev: boolean;
-  canNext: boolean;
-
-  onTogglePlay: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-
   onOpenQueue: () => void;
   onOpenFullPlayer: () => void;
 }
 
-export default function MiniPlayerBar({
-  currentMusic,
-  isPlaying,
-  canPrev,
-  canNext,
-  onTogglePlay,
-  onPrev,
-  onNext,
-  onOpenQueue,
-  onOpenFullPlayer,
-}: MiniPlayerBarProps) {
+export default function MiniPlayerBar({ onOpenQueue, onOpenFullPlayer }: MiniPlayerBarProps) {
+  const { currentMusic, isPlaying, isPrevAvailable, isNextAvailable, onTogglePlay, onPrev, onNext } = usePlayerNavigation();
+
   const isPlayable = Boolean(currentMusic);
 
   /**
@@ -59,14 +40,14 @@ export default function MiniPlayerBar({
   };
 
   const handlePrevClick = () => {
-    if (!canPrev) {
+    if (!isPrevAvailable) {
       return;
     }
     onPrev();
   };
 
   const handleNextClick = () => {
-    if (!canNext) {
+    if (!isNextAvailable) {
       return;
     }
     onNext();
@@ -129,8 +110,8 @@ export default function MiniPlayerBar({
         <button
           type="button"
           onClick={handlePrevClick}
-          disabled={!canPrev}
-          title={canPrev ? '이전 곡' : '이전 곡 없음'}
+          disabled={!isPrevAvailable}
+          title={isPrevAvailable ? '이전 곡' : '이전 곡 없음'}
           className="p-2 text-primary rounded-full transition-colors hover:bg-gray-4 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <SkipBack className="w-5 h-5" />
@@ -149,8 +130,8 @@ export default function MiniPlayerBar({
         <button
           type="button"
           onClick={handleNextClick}
-          disabled={!canNext}
-          title={canNext ? '다음 곡' : '다음 곡 없음'}
+          disabled={!isNextAvailable}
+          title={isNextAvailable ? '다음 곡' : '다음 곡 없음'}
           className="p-2 text-primary rounded-full transition-colors hover:bg-gray-4 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <SkipForward className="w-5 h-5" />

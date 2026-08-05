@@ -1,17 +1,11 @@
 'use client';
 
-import { useRef, useMemo, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 import { QueueList, MiniPlayerBar, NowPlaying } from './index';
 import { useQueueSync, useGuestQueueSession } from '@/hooks';
 import { useAuthMe } from '@/hooks/auth/client';
-import { usePlayerStore } from '@/stores';
-
-const findCurrentIndex = (currentMusicId: string | null, queueIds: string[]): number => {
-  if (!currentMusicId) return -1;
-  return queueIds.indexOf(currentMusicId);
-};
 
 export default function RightPanel() {
   const { isAuthenticated, isLoading } = useAuthMe();
@@ -20,31 +14,6 @@ export default function RightPanel() {
 
   useQueueSync({ enabled: isServerSyncEnabled });
   useGuestQueueSession(isGuestSessionEnabled);
-
-  const currentMusic = usePlayerStore((s) => s.currentMusic);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const queue = usePlayerStore((s) => s.queue);
-
-  const selectMusic = usePlayerStore((s) => s.selectMusic);
-  const togglePlay = usePlayerStore((s) => s.togglePlay);
-  const clearQueue = usePlayerStore((s) => s.clearQueue);
-  const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
-  const moveUp = usePlayerStore((s) => s.moveUp);
-  const moveDown = usePlayerStore((s) => s.moveDown);
-  const moveTo = usePlayerStore((s) => s.moveTo);
-  const playPrev = usePlayerStore((s) => s.playPrev);
-  const playNext = usePlayerStore((s) => s.playNext);
-
-  const queueIds = useMemo(() => queue.map((m) => m.id), [queue]);
-  const currentIndex = useMemo(() => findCurrentIndex(currentMusic?.id ?? null, queueIds), [currentMusic?.id, queueIds]);
-
-  const isPrevAvailable = currentIndex > 0;
-  const isNextAvailable = currentIndex >= 0 && currentIndex < queue.length - 1;
-
-  const handleTogglePlay = useCallback(() => {
-    if (!currentMusic) return;
-    togglePlay();
-  }, [currentMusic, togglePlay]);
 
   const [isFullPlayerOpen, setIsFullPlayerOpen] = useState(false);
   const isFullPlayerOpenRef = useRef(isFullPlayerOpen);
@@ -138,27 +107,10 @@ export default function RightPanel() {
       )}
 
       <div className="flex-1 overflow-y-auto min-h-0">
-        <NowPlaying
-          currentMusic={currentMusic}
-          isPlaying={isPlaying}
-          canPrev={isPrevAvailable}
-          canNext={isNextAvailable}
-          onTogglePlay={handleTogglePlay}
-          onPrev={playPrev}
-          onNext={playNext}
-        />
+        <NowPlaying />
 
         <div ref={queueSectionRef}>
-          <QueueList
-            queue={queue}
-            currentMusicId={currentMusic?.id ?? null}
-            onClear={clearQueue}
-            onRemove={removeFromQueue}
-            onMoveUp={moveUp}
-            onMoveDown={moveDown}
-            onMove={moveTo}
-            onSelect={selectMusic}
-          />
+          <QueueList />
         </div>
       </div>
     </section>
@@ -166,17 +118,7 @@ export default function RightPanel() {
 
   return (
     <>
-      <MiniPlayerBar
-        currentMusic={currentMusic}
-        isPlaying={isPlaying}
-        canPrev={isPrevAvailable}
-        canNext={isNextAvailable}
-        onTogglePlay={handleTogglePlay}
-        onPrev={playPrev}
-        onNext={playNext}
-        onOpenQueue={handleOpenQueue}
-        onOpenFullPlayer={handleOpenFullPlayer}
-      />
+      <MiniPlayerBar onOpenQueue={handleOpenQueue} onOpenFullPlayer={handleOpenFullPlayer} />
 
       {section}
     </>

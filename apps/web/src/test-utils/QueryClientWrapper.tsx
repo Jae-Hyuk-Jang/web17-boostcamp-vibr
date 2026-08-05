@@ -8,7 +8,8 @@ export const createTestQueryClient = () =>
       queries: { retry: false, gcTime: Infinity },
     },
     mutationCache: new MutationCache({
-      onError: () => {
+      onError: (_error, _variables, _context, mutation) => {
+        if (mutation.options.meta?.silent) return;
         toast.error('요청 처리에 실패했습니다.');
       },
     }),
