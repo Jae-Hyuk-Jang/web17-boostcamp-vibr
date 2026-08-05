@@ -3935,7 +3935,7 @@ globalThis["mermaid"] = globalThis.__esbuild_esm_mermaid_nm["mermaid"].default;
               <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div></td>
               <td><span class="sev crit">심각</span></td>
               <td>selector fan-out + 재생 엔진 두 개가 provider 무관하게 항상 동시 마운트</td>
-              <td><b>#251</b> 진행 대상</td>
+              <td><b>#251</b> <span style="color:var(--good)">일부 해소</span></td>
             </tr>
             <tr>
               <td><a href="#dom-playlist"><b>05 플레이리스트</b></a></td>
@@ -4482,7 +4482,7 @@ const PlaybackProgressContext = createContext&lt;{ positionMs; durationMs }&gt;(
       <h3 class="block-title"><span class="tag">findings</span>발견된 문제</h3>
       <ol class="findings">
         <li class="finding mod">
-          <div class="finding-head"><span class="sev mod">중간</span><span class="loc">RightPanel.tsx</span></div>
+          <div class="finding-head"><span class="sev mod">중간</span><span class="loc">RightPanel.tsx</span> <span style="color:var(--good)">✓ 해소됨(CP2, #263)</span></div>
           <p><b>selector 팬아웃 → 자식 이중 전달.</b> 11개 필드를 개별 구독한 뒤 <code class="inline">currentMusic/isPlaying/canPrev/canNext/onTogglePlay/onPrev/onNext</code> 7개를 MiniPlayerBar·NowPlaying에 완전히 동일하게 전달한다. 두 자식 모두 <code class="inline">memo</code>가 아니라서 11개 필드 중 하나만 바뀌어도 둘 다 리렌더 대상이 된다.</p>
         </li>
         <li class="finding mod">
@@ -4490,7 +4490,7 @@ const PlaybackProgressContext = createContext&lt;{ positionMs; durationMs }&gt;(
           <p>같은 서브트리에서 "부모가 구독해 내려주기"(RightPanel→currentMusic/isPlaying)와 "자식이 직접 구독하기"(NowPlaying→volume/playError)가 기준 없이 공존한다.</p>
         </li>
         <li class="finding crit">
-          <div class="finding-head"><span class="sev crit">심각</span><span class="loc">hooks/player/usePlayback.ts:10-11</span></div>
+          <div class="finding-head"><span class="sev crit">심각</span><span class="loc">hooks/player/usePlayback.ts:10-11</span> <span style="color:var(--good)">✓ 해소됨(CP3, #264)</span></div>
           <p><code class="inline">useItunesHook()</code>과 <code class="inline">useYouTubeHook()</code>이 provider 값과 무관하게 항상 둘 다 호출된다. <code class="inline">&lt;audio&gt;</code> 엘리먼트와 YT.Player 인스턴스가 어떤 곡을 재생하든 동시에 생성·유지되고, <code class="inline">volume/isPlaying/setPlayError</code> 등 같은 스토어 필드를 두 훅이 병렬로 쓴다.</p>
         </li>
         <li class="finding minor">
@@ -4502,7 +4502,7 @@ const PlaybackProgressContext = createContext&lt;{ positionMs; durationMs }&gt;(
           <p>Context 분리 기준(자주 안 바뀌는 ref / 자주 바뀌는 progress)이 <code class="inline">nowPlaying/</code> 서브트리 밖으로 확장되지 않는다. MiniPlayerBar·QueueList·RightPanel은 여전히 zustand를 직접 구독하거나 props로 뿌린다.</p>
         </li>
         <li class="finding crit">
-          <div class="finding-head"><span class="sev crit">심각</span><span class="loc">hooks/queue/useQueueSync.ts:10-52</span></div>
+          <div class="finding-head"><span class="sev crit">심각</span><span class="loc">hooks/queue/useQueueSync.ts:10-52</span> <span style="color:var(--good)">✓ 해소됨(CP4, #265)</span></div>
           <p>now-playlist 서버 동기화가 TanStack Query가 아닌 <code class="inline">useState+useEffect+setTimeout(1500ms)</code> 수동 구현이다. 캐시·재시도·로딩 노출이 없고, <b>실패 시 <code class="inline">isSyncEnabled=false</code>로 영구 중단</b>되어 재시도 경로 자체가 없다. <code class="inline">useGuestQueueSession</code>도 같은 "큐 영속화" 책임을 sessionStorage로 별도 재구현한다.</p>
         </li>
         <li class="finding mod">
@@ -4870,9 +4870,9 @@ flowchart TD
         <table>
           <thead><tr><th>발견</th><th>심각도</th><th>제안</th></tr></thead>
           <tbody>
-            <tr><td><a href="#dom-player"><code class="inline">usePlayback</code> 동시 엔진 마운트</a></td><td><span class="sev crit">심각</span></td><td>#251 체크포인트로 편입</td></tr>
-            <tr><td><a href="#dom-player"><code class="inline">useQueueSync</code> 재시도 경로 부재</a></td><td><span class="sev crit">심각</span></td><td>#251 체크포인트로 편입</td></tr>
-            <tr><td><a href="#dom-player">RightPanel selector fan-out</a></td><td><span class="sev mod">중간</span></td><td>#251 체크포인트로 편입</td></tr>
+            <tr><td><a href="#dom-player"><code class="inline">usePlayback</code> 동시 엔진 마운트</a></td><td><span class="sev crit">심각</span></td><td>#251 체크포인트로 편입 · <span style="color:var(--good)">✓ 해소됨(CP3, #264)</span></td></tr>
+            <tr><td><a href="#dom-player"><code class="inline">useQueueSync</code> 재시도 경로 부재</a></td><td><span class="sev crit">심각</span></td><td>#251 체크포인트로 편입 · <span style="color:var(--good)">✓ 해소됨(CP4, #265)</span></td></tr>
+            <tr><td><a href="#dom-player">RightPanel selector fan-out</a></td><td><span class="sev mod">중간</span></td><td>#251 체크포인트로 편입 · <span style="color:var(--good)">✓ 해소됨(CP2, #263)</span></td></tr>
             <tr><td><a href="#dom-playlist">PlaylistDetailModal 로컬state·캐시 이중소스</a></td><td><span class="sev crit">심각</span></td><td>#253 체크포인트로 편입</td></tr>
             <tr><td><a href="#dom-playlist">PlaylistPickerModal 캐시 미갱신</a></td><td><span class="sev crit">심각</span></td><td>#253 체크포인트로 편입</td></tr>
             <tr><td><a href="#dom-shell">앱 셸 전역 상태 구독 방식 불일치</a></td><td><span class="sev mod">중간</span></td><td>신규 부모 이슈 제안</td></tr>
