@@ -6,6 +6,7 @@ import type { DragEvent } from 'react';
 import { useState } from 'react';
 
 import TickerText from '@/components/ui/TickerText';
+import { usePlaylistDetailModalContext } from '../PlaylistDetailModalContext';
 
 function SongItem({
   song,
@@ -80,19 +81,11 @@ function SongItem({
   );
 }
 
-export function SongList({
-  songs,
-  selectedSongIds,
-  toggleSelectSong,
-  moveSong,
-  moveSongTo,
-}: {
-  songs: MusicResponseDto[];
-  selectedSongIds: Set<string>;
-  toggleSelectSong: (musicId: string) => void;
-  moveSong: (index: number, direction: 'up' | 'down') => void;
-  moveSongTo: (from: number, to: number) => void;
-}) {
+export function SongList() {
+  const { songs, selection, moveSong, moveSongTo } = usePlaylistDetailModalContext();
+  const selectedSongIds = selection.selectedIds;
+  const toggleSelectSong = selection.toggle;
+
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
