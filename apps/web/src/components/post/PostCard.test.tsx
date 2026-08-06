@@ -47,10 +47,9 @@ const renderPostCard = (
   loggedIn: { userId: string | null; isAuthenticated: boolean } = { userId: 'me', isAuthenticated: true },
 ) => {
   seedAuthMe(queryClient, loggedIn);
-  return render(
-    <PostCard post={post} currentMusicId={null} isPlayingGlobal={false} onPlay={jest.fn()} onUserClick={jest.fn()} onOpenDetail={jest.fn()} />,
-    { wrapper: createQueryClientWrapper(queryClient) },
-  );
+  return render(<PostCard post={post} onPlay={jest.fn()} onUserClick={jest.fn()} onOpenDetail={jest.fn()} />, {
+    wrapper: createQueryClientWrapper(queryClient),
+  });
 };
 
 describe('PostCard — 게시글 반응 상태 특성화 테스트', () => {

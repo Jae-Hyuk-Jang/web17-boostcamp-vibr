@@ -4,14 +4,16 @@ import { useCallback, useMemo, useState } from 'react';
 import type { MusicResponseDto as Music, PostResponseDto as Post } from '@repo/dto';
 import { coalesceImageSrc } from '@/utils';
 import { DEFAULT_IMAGES } from '@/constants';
+import { usePlayerStore } from '@/stores';
 
 type Args = {
   post: Post;
-  currentMusicId: string | null;
-  isPlayingGlobal: boolean;
 };
 
-export function usePostMedia({ post, currentMusicId, isPlayingGlobal }: Args) {
+export function usePostMedia({ post }: Args) {
+  const currentMusicId = usePlayerStore((s) => s.currentMusic?.id ?? null);
+  const isPlayingGlobal = usePlayerStore((s) => s.isPlaying);
+
   const [activeIndex, setActiveIndex] = useState(0);
 
   const totalLength = post.musics.length + 1;

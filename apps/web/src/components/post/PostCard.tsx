@@ -12,16 +12,13 @@ import { useModalStore, MODAL_TYPES } from '@/stores';
 interface PostCardProps {
   post: Post;
 
-  currentMusicId: string | null;
-  isPlayingGlobal: boolean;
-
   onPlay: (music: Music) => void;
   onPlayAll?: () => void;
   onUserClick: (userId: string) => void;
   onOpenDetail: (post: Post) => void;
 }
 
-export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay, onPlayAll, onUserClick, onOpenDetail }: PostCardProps) {
+export default function PostCard({ post, onPlay, onPlayAll, onUserClick, onOpenDetail }: PostCardProps) {
   const { userId, isAuthenticated } = useAuthMe();
   const { openModal } = useModalStore();
 
@@ -69,15 +66,7 @@ export default function PostCard({ post, currentMusicId, isPlayingGlobal, onPlay
       </div>
 
       <div className="xs:px-4 sm:px-6">
-        <PostMedia
-          post={post}
-          variant="card"
-          currentMusicId={currentMusicId}
-          isPlayingGlobal={isPlayingGlobal}
-          onPlay={onPlay}
-          onPlayAll={onPlayAll}
-          onClickContainer={handleOpenDetail}
-        />
+        <PostMedia post={post} variant="card" onPlay={onPlay} onPlayAll={onPlayAll} onClickContainer={handleOpenDetail} />
       </div>
 
       <div className="px-4 sm:px-6">

@@ -32,8 +32,6 @@ export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
   const playMusic = usePlayerStore((s) => s.playMusic);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const selectMusic = usePlayerStore((s) => s.selectMusic);
-  const currentMusicId = usePlayerStore((s) => s.currentMusic?.id ?? null);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
 
   const isMobile = useIsMobile();
   const isMobileInitializedRef = useRef(false);
@@ -193,8 +191,6 @@ export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
                   onPlayAll={() => handlePlayAll(post)}
                   onUserClick={handleUserClick}
                   onOpenDetail={handleOpenDetail}
-                  currentMusicId={currentMusicId}
-                  isPlayingGlobal={isPlaying}
                 />
               </div>
             ))}

@@ -13,9 +13,6 @@ type Props = {
   post: Post;
   variant: Variant;
 
-  currentMusicId: string | null;
-  isPlayingGlobal: boolean;
-
   onPlay: (music: Music) => void;
   /** 커버 페이지 재생 버튼: 게시글 전체 음악 재생 */
   onPlayAll?: () => void;
@@ -47,12 +44,8 @@ const stylesByVariant: Record<Variant, { container: string; playBtn: string; inf
   },
 };
 
-export default function PostMedia({ post, variant, currentMusicId, isPlayingGlobal, onPlay, onPlayAll, onClickContainer }: Props) {
-  const { isMulti, activeMusic, coverUrl, isActivePlaying, prev, next, activeIndex, totalLength } = usePostMedia({
-    post,
-    currentMusicId,
-    isPlayingGlobal,
-  });
+export default function PostMedia({ post, variant, onPlay, onPlayAll, onClickContainer }: Props) {
+  const { isMulti, activeMusic, coverUrl, isActivePlaying, prev, next, activeIndex, totalLength } = usePostMedia({ post });
 
   const styles = stylesByVariant[variant];
 

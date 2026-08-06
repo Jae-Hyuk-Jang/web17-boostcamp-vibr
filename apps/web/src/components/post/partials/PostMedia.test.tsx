@@ -29,10 +29,11 @@ const mockPost = (overrides: Partial<Post> = {}): Post => ({
   ...overrides,
 });
 
-// PostMedia는 착수 전(#277) 전용 테스트가 0개였다 — 이 파일은 구독 전환(#278) 전
-// 현재 prop 기반 구현의 동작을 고정하는 characterization test다(feed-search-domain ADR).
+// #277에서 prop 기반으로 고정한 특성화 테스트를, #278의 usePlayerStore 직접구독 전환에 맞춰
+// "prop 대신 store를 직접 세팅해도 동일한 결과가 나온다"는 contract 테스트로 갱신했다
+// (feed-search-domain ADR — CP2 요구사항).
 describe.each<{ variant: 'card' | 'modal' }>([{ variant: 'card' }, { variant: 'modal' }])(
-  'PostMedia — 재생 상태/컨트롤 특성화 (variant=$variant, feed-search-domain #277)',
+  'PostMedia — 재생 상태/컨트롤 (variant=$variant, feed-search-domain #278)',
   ({ variant }) => {
     beforeEach(() => {
       usePlayerStore.setState({ currentMusic: null, isPlaying: false });
@@ -40,9 +41,7 @@ describe.each<{ variant: 'card' | 'modal' }>([{ variant: 'card' }, { variant: 'm
 
     it('커버 페이지에서 전체재생 버튼을 누르면 onPlayAll이 호출된다', () => {
       const onPlayAll = jest.fn();
-      render(
-        <PostMedia post={mockPost()} variant={variant} currentMusicId={null} isPlayingGlobal={false} onPlay={jest.fn()} onPlayAll={onPlayAll} />,
-      );
+      render(<PostMedia post={mockPost()} variant={variant} onPlay={jest.fn()} onPlayAll={onPlayAll} />);
 
       fireEvent.click(screen.getByTitle('전체 재생'));
 
@@ -52,16 +51,7 @@ describe.each<{ variant: 'card' | 'modal' }>([{ variant: 'card' }, { variant: 'm
     it('트랙 페이지에서 재생 버튼을 누르면 onPlay가 활성 트랙과 함께 호출된다', () => {
       const music = mockMusic();
       const onPlay = jest.fn();
-      render(
-        <PostMedia
-          post={mockPost({ musics: [music] })}
-          variant={variant}
-          currentMusicId={null}
-          isPlayingGlobal={false}
-          onPlay={onPlay}
-          onPlayAll={jest.fn()}
-        />,
-      );
+      render(<PostMedia post={mockPost({ musics: [music] })} variant={variant} onPlay={onPlay} onPlayAll={jest.fn()} />);
 
       // 커버(0) -> 첫 트랙(1)으로 이동
       fireEvent.click(screen.getByTitle('다음'));
@@ -70,54 +60,33 @@ describe.each<{ variant: 'card' | 'modal' }>([{ variant: 'card' }, { variant: 'm
       expect(onPlay).toHaveBeenCalledWith(music);
     });
 
-    it('활성 트랙이 전역 재생 중이면 일시정지 버튼으로 표시된다', () => {
+    it('스토어의 현재 트랙이 활성 트랙과 같고 재생 중이면 일시정지 버튼으로 표시된다', () => {
       const music = mockMusic();
-      render(
-        <PostMedia
-          post={mockPost({ musics: [music] })}
-          variant={variant}
-          currentMusicId={music.id}
-          isPlayingGlobal={true}
-          onPlay={jest.fn()}
-          onPlayAll={jest.fn()}
-        />,
-      );
+      usePlayerStore.setState({ currentMusic: music, isPlaying: true });
+
+      render(<PostMedia post={mockPost({ musics: [music] })} variant={variant} onPlay={jest.fn()} onPlayAll={jest.fn()} />);
 
       fireEvent.click(screen.getByTitle('다음'));
 
       expect(screen.getByTitle('일시정지')).toBeInTheDocument();
     });
 
-    it('currentMusicId가 활성 트랙과 다르면 전역 재생 중이어도 재생 버튼으로 표시된다', () => {
+    it('스토어의 현재 트랙이 활성 트랙과 다르면 재생 중이어도 재생 버튼으로 표시된다', () => {
       const music = mockMusic();
-      render(
-        <PostMedia
-          post={mockPost({ musics: [music] })}
-          variant={variant}
-          currentMusicId="other-music-id"
-          isPlayingGlobal={true}
-          onPlay={jest.fn()}
-          onPlayAll={jest.fn()}
-        />,
-      );
+      usePlayerStore.setState({ currentMusic: mockMusic({ id: 'other-music-id' }), isPlaying: true });
+
+      render(<PostMedia post={mockPost({ musics: [music] })} variant={variant} onPlay={jest.fn()} onPlayAll={jest.fn()} />);
 
       fireEvent.click(screen.getByTitle('다음'));
 
       expect(screen.getByTitle('재생')).toBeInTheDocument();
     });
 
-    it('isPlayingGlobal이 false면 currentMusicId가 일치해도 재생 버튼으로 표시된다', () => {
+    it('스토어의 isPlaying이 false면 현재 트랙이 일치해도 재생 버튼으로 표시된다', () => {
       const music = mockMusic();
-      render(
-        <PostMedia
-          post={mockPost({ musics: [music] })}
-          variant={variant}
-          currentMusicId={music.id}
-          isPlayingGlobal={false}
-          onPlay={jest.fn()}
-          onPlayAll={jest.fn()}
-        />,
-      );
+      usePlayerStore.setState({ currentMusic: music, isPlaying: false });
+
+      render(<PostMedia post={mockPost({ musics: [music] })} variant={variant} onPlay={jest.fn()} onPlayAll={jest.fn()} />);
 
       fireEvent.click(screen.getByTitle('다음'));
 
