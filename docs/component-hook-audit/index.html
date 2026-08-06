@@ -4229,7 +4229,8 @@ flowchart LR
       <ol class="findings">
         <li class="finding mod">
           <div class="finding-head"><span class="sev mod">중간</span><span class="loc">FeedList.tsx → PostCard.tsx → PostMedia.tsx</span></div>
-          <p><code class="inline">currentMusicId,isPlayingGlobal,onPlay,onPlayAll</code> 4개 값이 FeedList에서 생성돼 PostCard를 그대로 통과한 뒤 PostMedia에서만 소비된다. PostCard는 이 값들에 대해 아무 것도 하지 않는 순수 중계자다.</p>
+          <p style="text-decoration: line-through; opacity: 0.6;"><code class="inline">currentMusicId,isPlayingGlobal,onPlay,onPlayAll</code> 4개 값이 FeedList에서 생성돼 PostCard를 그대로 통과한 뒤 PostMedia에서만 소비된다. PostCard는 이 값들에 대해 아무 것도 하지 않는 순수 중계자다.</p>
+          <p style="color: var(--color-accent-cyan); font-weight: 700;">해소됨(부분) — <code class="inline">feed-search-domain</code> 사이클(#260, #277~279)에서 <code class="inline">currentMusicId</code>·<code class="inline">isPlayingGlobal</code>은 PostMedia가 <code class="inline">usePlayerStore</code>를 직접 구독하도록 바꿔 제거했다(PostCard 7개 prop → 5개). <code class="inline">onPlay</code>·<code class="inline">onPlayAll</code>은 caller별 부수효과(모달 경로의 UX 로깅)가 달라 의도적으로 prop 유지 — 자세한 내용은 <code class="inline">docs/refactors/feed-search-domain/result.md</code> 참고.</p>
         </li>
         <li class="finding minor">
           <div class="finding-head"><span class="sev minor">경미</span><span class="loc">PostCard.tsx</span></div>
@@ -4254,7 +4255,7 @@ flowchart LR
         <div class="rec">
           <div class="rec-icon"></div>
           <div>
-            <h4>PostMedia가 재생 상태를 직접 구독하게 하기 (<a href="#rules">규칙 4</a>)</h4>
+            <h4>PostMedia가 재생 상태를 직접 구독하게 하기 (<a href="#rules">규칙 4</a>) — <span style="color: var(--color-accent-cyan);">적용됨</span></h4>
             <p><code class="inline">currentMusicId</code>·<code class="inline">isPlayingGlobal</code>은 결국 <code class="inline">usePlayerStore</code> 값이다. FeedList가 구독해서 두 홉 내려보내는 대신 PostMedia가 <code class="inline">usePlayerStore((s) =&gt; s.currentMusic?.id)</code>를 직접 구독하면 PostCard의 통과용 props 4개가 통째로 사라진다.</p>
           </div>
         </div>

@@ -16,8 +16,6 @@ export default function FeedList({ posts }: FeedListProps) {
   const playMusic = usePlayerStore((s) => s.playMusic);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const selectMusic = usePlayerStore((s) => s.selectMusic);
-  const currentMusicId = usePlayerStore((s) => s.currentMusic?.id ?? null);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
 
   const openModal = useModalStore((s) => s.openModal);
 
@@ -54,8 +52,6 @@ export default function FeedList({ posts }: FeedListProps) {
               onPlayAll={() => handlePlayAll(post)}
               onUserClick={handleUserClick}
               onOpenDetail={handleOpenDetail}
-              currentMusicId={currentMusicId}
-              isPlayingGlobal={isPlaying}
             />
           ))}
         </div>

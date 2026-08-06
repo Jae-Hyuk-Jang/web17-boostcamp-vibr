@@ -43,14 +43,7 @@ export default function PostCardDetailModalDesktopShell() {
             <div className="text-sm font-bold text-gray-500">{error}</div>
           </div>
         ) : (
-          <PostMedia
-            post={post}
-            variant="modal"
-            currentMusicId={player.currentMusicId}
-            isPlayingGlobal={player.isPlaying}
-            onPlay={player.handlePlayFromPost}
-            onPlayAll={player.handlePlayAll}
-          />
+          <PostMedia post={post} variant="modal" onPlay={player.handlePlayFromPost} onPlayAll={player.handlePlayAll} />
         )}
 
         <div className="w-full md:w-105 flex flex-col bg-white border-l-2 border-primary flex-1 min-h-0">
