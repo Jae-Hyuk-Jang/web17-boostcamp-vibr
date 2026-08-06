@@ -35,8 +35,6 @@ export interface UsePostDetailModalResult {
   editing: ReturnType<typeof useInlineEditField<string>>;
 
   player: {
-    currentMusicId: string | null;
-    isPlaying: boolean;
     handlePlayFromPost: (m: Music) => void;
     handlePlayAll: () => void;
   };
@@ -213,8 +211,6 @@ export function usePostDetailModal(): UsePostDetailModalResult {
     editing,
 
     player: {
-      currentMusicId,
-      isPlaying,
       handlePlayFromPost,
       handlePlayAll,
     },
