@@ -1,12 +1,10 @@
 import { useRef } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 
-interface CoverImgUploaderProps {
-  currentCover: string;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
+import { useContentWriteContext } from '../ContentWriteContext';
 
-export const CoverImgUploader = ({ currentCover, onFileChange }: CoverImgUploaderProps) => {
+export const CoverImgUploader = () => {
+  const { activeCover: currentCover, onFileChange } = useContentWriteContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (

@@ -9,19 +9,11 @@ import { CoverImgUploader } from './partials/CoverImgUploader';
 import { MusicSearch } from './partials/MusicSearch';
 import { SelectedMusicList } from './partials/SelectedMusicList';
 
-import type { MusicResponseDto as Music } from '@repo/dto';
-import { useContentWrite } from '@/hooks';
 import { toast } from 'react-toastify';
 
-type Props = {
-  /** legacy: 단일 곡 */
-  initialMusic?: Music;
+import { ContentWriteProvider, useContentWriteContext } from './ContentWriteContext';
 
-  /** 신규: 다곡 */
-  initialMusics?: Music[];
-};
-
-export const ContentWriteModal = ({ initialMusic, initialMusics }: Props) => {
+export const ContentWriteModal = () => {
   const { closeModal } = useModalStore();
 
   const handleWriteSuccess = () => {
@@ -29,27 +21,16 @@ export const ContentWriteModal = ({ initialMusic, initialMusics }: Props) => {
     closeModal();
   };
 
-  const {
-    selectedMusics,
-    content,
-    setContent,
-    searchQuery,
-    setSearchQuery,
-    isSearchOpen,
-    setIsSearchOpen,
-    activeCover,
-    isSubmitDisabled,
-    onFileChange,
-    onAddMusic,
-    onAddPlaylist,
-    onRemoveMusic,
-    onMoveMusic,
-    onSubmit,
-  } = useContentWrite({
-    initialMusic,
-    initialMusics,
-    onSuccess: handleWriteSuccess,
-  });
+  return (
+    <ContentWriteProvider onSuccess={handleWriteSuccess}>
+      <ContentWriteModalPanel />
+    </ContentWriteProvider>
+  );
+};
+
+function ContentWriteModalPanel() {
+  const { closeModal } = useModalStore();
+  const { content, setContent, isSubmitDisabled, onSubmit } = useContentWriteContext();
 
   return (
     <ModalShell
@@ -66,18 +47,11 @@ export const ContentWriteModal = ({ initialMusic, initialMusics }: Props) => {
 
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col">
           <div className="flex flex-col md:flex-row gap-6 mb-8">
-            <CoverImgUploader currentCover={activeCover} onFileChange={onFileChange} />
-            <SelectedMusicList musics={selectedMusics} onRemove={onRemoveMusic} onMove={onMoveMusic} />
+            <CoverImgUploader />
+            <SelectedMusicList />
           </div>
 
-          <MusicSearch
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            isSearchOpen={isSearchOpen}
-            setIsSearchOpen={setIsSearchOpen}
-            onAddMusic={onAddMusic}
-            onAddPlaylist={onAddPlaylist}
-          />
+          <MusicSearch />
 
           <div className="mb-2">
             <label htmlFor="postContent" className="text-sm font-bold text-gray-1 mb-2 block">
@@ -105,4 +79,4 @@ export const ContentWriteModal = ({ initialMusic, initialMusics }: Props) => {
       </ModalPanel>
     </ModalShell>
   );
-};
+}

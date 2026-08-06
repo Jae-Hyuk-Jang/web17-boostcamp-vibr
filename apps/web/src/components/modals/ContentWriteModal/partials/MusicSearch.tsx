@@ -1,27 +1,17 @@
 'use client';
 
 import { useMemo, useRef, useEffect } from 'react';
-import { Search, Sparkles, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
-import { usePlaylistRecommendations, type PlaylistDetail } from '@/hooks';
+import { usePlaylistRecommendations } from '@/hooks';
 
-import type { MusicResponseDto as Music } from '@repo/dto';
-import { BriefItemList, EmptyPlaylist, LoadingMessage } from './PlaylistSectionInner';
+import { PlaylistRecommendationSection } from './PlaylistSectionInner';
+import { useContentWriteContext } from '../ContentWriteContext';
 
 import MusicPickerSearch from '@/components/search/picker/MusicPickerSearch';
 
-interface MusicSearchProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-
-  isSearchOpen: boolean;
-  setIsSearchOpen: (isOpen: boolean) => void;
-
-  onAddMusic: (music: Music) => void;
-  onAddPlaylist: (playlist: PlaylistDetail) => void;
-}
-
-export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSearchOpen, onAddMusic, onAddPlaylist }: MusicSearchProps) => {
+export const MusicSearch = () => {
+  const { searchQuery, setSearchQuery, isSearchOpen, setIsSearchOpen, onAddMusic, onAddPlaylist } = useContentWriteContext();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,29 +53,6 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
     onAddPlaylist(detail);
   };
 
-  const renderPlaylistSection = () => {
-    let playlistContent;
-
-    if (playlistStatus === 'loading') {
-      playlistContent = <LoadingMessage />;
-    } else if (briefs.length === 0) {
-      playlistContent = <EmptyPlaylist onClick={refetch} />;
-    } else {
-      playlistContent = <BriefItemList briefs={briefs} selectedPlaylistId={selectedPlaylistId} onSelect={handleSelectPlaylist} />;
-    }
-
-    return (
-      <>
-        <div className="px-4 py-2 flex items-center text-xs font-bold text-accent-cyan uppercase tracking-wider bg-gray-4/50 border-b border-gray-3 mb-1">
-          <Sparkles className="w-3 h-3 mr-1" />
-          추천 (내 플레이리스트)
-        </div>
-        {playlistContent}
-        {playlistError ? <div className="px-4 py-2 text-[11px] text-gray-2">{playlistError}</div> : null}
-      </>
-    );
-  };
-
   return (
     <div ref={containerRef} className="relative mb-6">
       <label htmlFor="musicQuery" className="text-sm font-bold text-gray-1 mb-2 block">
@@ -124,7 +91,14 @@ export const MusicSearch = ({ searchQuery, setSearchQuery, isSearchOpen, setIsSe
           {hasQuery ? (
             <MusicPickerSearch showInput={false} query={searchQuery} onQueryChange={setSearchQuery} onSelect={onAddMusic} />
           ) : (
-            renderPlaylistSection()
+            <PlaylistRecommendationSection
+              status={playlistStatus}
+              briefs={briefs}
+              selectedPlaylistId={selectedPlaylistId}
+              errorMessage={playlistError}
+              onSelect={handleSelectPlaylist}
+              onRetry={refetch}
+            />
           )}
         </div>
       ) : null}

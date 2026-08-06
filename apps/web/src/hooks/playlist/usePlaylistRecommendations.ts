@@ -13,7 +13,7 @@ import { playlistDetailQueryKey } from '@/query-keys';
 export type PlaylistBrief = GetAllPlaylistsResDto['playlists'][number];
 export type PlaylistDetail = Pick<GetPlaylistDetailResDto, 'id' | 'title' | 'musics'>;
 
-type ListStatus = 'idle' | 'loading' | 'success';
+export type ListStatus = 'idle' | 'loading' | 'success';
 
 type Options = {
   /**
