@@ -169,8 +169,11 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
     const secondItemButtons = within(items[1]!).getAllByRole('button');
     fireEvent.click(secondItemButtons[1]!); // Song2의 ChevronUp
 
-    // 낙관적 업데이트: API 응답 전에 이미 순서가 바뀐다
-    expect(screen.getAllByRole('listitem')[0]).toHaveTextContent('Song2');
+    // 낙관적 업데이트: API 응답 전에 이미 순서가 바뀐다. onMutate가 queryClient.setQueryData로 캐시를
+    // 동기적으로 갱신하지만(playlist-detail-state-consolidation #272), useQuery 구독을 통한 리렌더는
+    // 로컬 useState만큼 완전히 동기적이지 않으므로 waitFor로 확인한다 — API 응답 전 반영이라는 사실 자체는
+    // 아래 changeMusicOrderOfPlaylist 호출 검증과 함께 여전히 낙관적 업데이트임을 보장한다.
+    await waitFor(() => expect(screen.getAllByRole('listitem')[0]).toHaveTextContent('Song2'));
     await waitFor(() => expect(changeMusicOrderOfPlaylist).toHaveBeenCalledWith('pl-1', ['s2', 's1', 's3']));
   });
 
