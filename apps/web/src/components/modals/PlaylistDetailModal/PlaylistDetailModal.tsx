@@ -8,7 +8,7 @@ import { useModalStore, usePlayerStore } from '@/stores';
 import { usePlaylistDetail } from '@/hooks/playlist/usePlaylistDetail';
 import { PLAYLISTS_QUERY_KEY, playlistDetailQueryKey } from '@/query-keys';
 import type { MusicRequestDto as UnsavedMusic, MusicResponseDto as SavedMusic, GetPlaylistDetailResDto } from '@repo/dto';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DEFAULT_IMAGES, MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
 import { Header, SongList, Toolbar } from './components';
 import { addMusicsToPlaylist, changeMusicOrderOfPlaylist, deletePlaylist, editTitleOfPlaylist } from '@/api';
@@ -23,14 +23,11 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   const selectMusic = usePlayerStore((s) => s.selectMusic);
   const bumpPlaylistRefresh = () => queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
 
-  // usePlaylistRecommendations(#194)와 캐시를 공유하는 조회 경로. 변경 액션은 순차 전환 중(useMutation으로
-  // 옮긴 액션은 onSuccess에서 이 캐시에도 씀) — 로컬 state(playlist/songs)가 여전히 렌더링의 소스이므로,
-  // 최초 로드 이후 캐시가 갱신돼도(다른 액션의 쓰기로) 로컬 state를 덮어쓰지 않도록 최초 1회만 시딩한다.
-  const { data: fetchedPlaylist, isError: isPlaylistDetailError } = usePlaylistDetail(playlistId);
-  const hasSeededRef = useRef(false);
+  // usePlaylistRecommendations(#194)와 캐시를 공유하는 조회 경로. usePostDetail과 동일하게 캐시(data)가
+  // 렌더링의 유일한 소스다 — 로컬 state로 별도 보관하지 않는다(playlist-detail-state-consolidation #272).
+  const { data: playlist, isError: isPlaylistDetailError } = usePlaylistDetail(playlistId);
+  const songs = playlist?.musics ?? [];
 
-  const [playlist, setPlaylist] = useState<GetPlaylistDetailResDto | null>(null);
-  const [songs, setSongs] = useState<SavedMusic[]>([]);
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
@@ -38,14 +35,6 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
 
   const [isInvalidTitle, setIsInvalidTitle] = useState(false);
   const [musicQuery, setMusicQuery] = useState('');
-
-  useEffect(() => {
-    if (fetchedPlaylist && !hasSeededRef.current) {
-      hasSeededRef.current = true;
-      setPlaylist(fetchedPlaylist);
-      setSongs(fetchedPlaylist.musics);
-    }
-  }, [fetchedPlaylist]);
 
   useEffect(() => {
     if (isPlaylistDetailError) {
@@ -77,7 +66,6 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
         nextSongs.map((s) => s.id),
       ),
     onMutate: (nextSongs) => {
-      setSongs(nextSongs);
       queryClient.setQueryData(playlistDetailQueryKey(playlistId), (prev: GetPlaylistDetailResDto | undefined) =>
         prev ? { ...prev, musics: nextSongs } : prev,
       );
@@ -122,7 +110,6 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   const addSongMutation = useMutation({
     mutationFn: (song: UnsavedMusic) => addMusicsToPlaylist(playlistId, [song]),
     onSuccess: ({ addedMusics }) => {
-      setSongs((prev) => [...prev, ...addedMusics]);
       queryClient.setQueryData(playlistDetailQueryKey(playlistId), (prev: GetPlaylistDetailResDto | undefined) =>
         prev ? { ...prev, musics: [...prev.musics, ...addedMusics] } : prev,
       );
@@ -152,7 +139,6 @@ export default function PlaylistDetailModal({ playlistId }: { playlistId: string
   const renameMutation = useMutation({
     mutationFn: (nextTitle: string) => editTitleOfPlaylist(playlistId, nextTitle),
     onSuccess: (_data, nextTitle) => {
-      setPlaylist((prev) => (prev ? { ...prev, title: nextTitle } : prev));
       setIsEditingTitle(false);
       queryClient.setQueryData(playlistDetailQueryKey(playlistId), (prev: GetPlaylistDetailResDto | undefined) =>
         prev ? { ...prev, title: nextTitle } : prev,

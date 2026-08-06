@@ -169,8 +169,11 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
     const secondItemButtons = within(items[1]!).getAllByRole('button');
     fireEvent.click(secondItemButtons[1]!); // Song2의 ChevronUp
 
-    // 낙관적 업데이트: API 응답 전에 이미 순서가 바뀐다
-    expect(screen.getAllByRole('listitem')[0]).toHaveTextContent('Song2');
+    // 낙관적 업데이트: API 응답 전에 이미 순서가 바뀐다. onMutate가 queryClient.setQueryData로 캐시를
+    // 동기적으로 갱신하지만(playlist-detail-state-consolidation #272), useQuery 구독을 통한 리렌더는
+    // 로컬 useState만큼 완전히 동기적이지 않으므로 waitFor로 확인한다 — API 응답 전 반영이라는 사실 자체는
+    // 아래 changeMusicOrderOfPlaylist 호출 검증과 함께 여전히 낙관적 업데이트임을 보장한다.
+    await waitFor(() => expect(screen.getAllByRole('listitem')[0]).toHaveTextContent('Song2'));
     await waitFor(() => expect(changeMusicOrderOfPlaylist).toHaveBeenCalledWith('pl-1', ['s2', 's1', 's3']));
   });
 
@@ -319,5 +322,31 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('요청 처리에 실패했습니다.'));
     expect(useModalStore.getState().isOpen).toBe(true);
+  });
+
+  it('연속된 mutation(제목 수정 → 순서 변경)이 누적 반영되고 getPlaylistDetail은 추가 호출되지 않는다 (playlist-detail-state-consolidation #271)', async () => {
+    editTitleOfPlaylist.mockResolvedValue(undefined);
+    changeMusicOrderOfPlaylist.mockResolvedValue(undefined);
+    const queryClient = createTestQueryClient();
+    render(<PlaylistDetailModal playlistId="pl-1" />, { wrapper: createQueryClientWrapper(queryClient) });
+    await screen.findByText('내 플레이리스트');
+
+    fireEvent.click(screen.getByLabelText('Edit title'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '새 제목' } });
+    fireEvent.click(screen.getByLabelText('Confirm rename'));
+    await waitFor(() => expect(editTitleOfPlaylist).toHaveBeenCalled());
+
+    const items = screen.getAllByRole('listitem');
+    const secondItemButtons = within(items[1]!).getAllByRole('button');
+    fireEvent.click(secondItemButtons[1]!); // Song2의 ChevronUp
+    await waitFor(() => expect(changeMusicOrderOfPlaylist).toHaveBeenCalled());
+
+    // 두 변경이 모두 누적 반영된다 — 하나가 다른 하나를 덮어쓰지 않는다
+    const cached = queryClient.getQueryData<GetPlaylistDetailResDto>(playlistDetailQueryKey('pl-1'));
+    expect(cached?.title).toBe('새 제목');
+    expect(cached?.musics.map((m) => m.id)).toEqual(['s2', 's1', 's3']);
+
+    // 로컬 state를 캐시에서 재시딩하는 경로가 없으므로, 두 mutation 모두 추가 네트워크 요청을 유발하지 않는다
+    expect(getPlaylistDetail).toHaveBeenCalledTimes(1);
   });
 });

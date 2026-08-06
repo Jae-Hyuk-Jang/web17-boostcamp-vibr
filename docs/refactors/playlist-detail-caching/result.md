@@ -67,7 +67,7 @@ adr.md에서 선택한 안 3(`useMutation` 완전 전환)의 예상과 실제 �
 ## Remaining Debt
 
 - 목록(`['playlists']`)-상세 즉시 동기화는 이번에도 다루지 않았다(PRD Out of Scope) — 제목을 변경하면 상세와 캐시는 즉시 반영되지만, 목록 화면(`ArchiveView`)은 `invalidateQueries` 재조회 시점에 반영된다. 사용자 불만이나 재현된 버그가 없어 우선순위가 낮다고 판단해 별도 백로그로 등록하지 않는다.
-- `PlaylistDetailModal`의 로컬 `songs`/`playlist` state는 여전히 렌더링의 소스이고, 쿼리 캐시는 "다른 소비처와의 공유"라는 부차적 역할만 한다 — `usePostDetail`처럼 쿼리 데이터를 렌더링의 직접 소스로 완전히 통합하는 것은 이번 사이클 범위를 넘어서는 더 큰 리팩터링이라 다루지 않았다. 지금 구조로도 Success Criteria(캐시 공유)는 충족되지만, 훗날 4개 액션을 더 다듬으려면 이 이중 구조(로컬 state + 캐시)가 유지보수 포인트가 될 수 있다.
+- ~~`PlaylistDetailModal`의 로컬 `songs`/`playlist` state는 여전히 렌더링의 소스이고, 쿼리 캐시는 "다른 소비처와의 공유"라는 부차적 역할만 한다 — `usePostDetail`처럼 쿼리 데이터를 렌더링의 직접 소스로 완전히 통합하는 것은 이번 사이클 범위를 넘어서는 더 큰 리팩터링이라 다루지 않았다. 지금 구조로도 Success Criteria(캐시 공유)는 충족되지만, 훗날 4개 액션을 더 다듬으려면 이 이중 구조(로컬 state + 캐시)가 유지보수 포인트가 될 수 있다.~~ **해소됨** — `playlist-detail-state-consolidation` 사이클(#253, #271~273)에서 로컬 state를 완전히 제거하고 `usePlaylistDetail().data`를 렌더링의 유일한 소스로 통합했다. 자세한 내용은 `docs/refactors/playlist-detail-state-consolidation/result.md` 참고.
 - `requestChangeOrder`(순서변경·삭제)는 여전히 실패해도 롤백하지 않는다(현재 동작 보존, 사용자 확인). UX 개선이 필요하면 별도 이슈로 검토.
 
 ## Follow-ups
