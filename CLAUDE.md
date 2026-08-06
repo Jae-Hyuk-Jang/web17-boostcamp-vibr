@@ -74,12 +74,13 @@ src
 │   ├── archive/ feed/ layout/ noti/ player/(nowPlaying) playlist/
 │   ├── modals/       # ContentWriteModal, LoginModal, PlaylistDetailModal, PlaylistPickerModal,
 │   │                 # PostCardDetailModal, PrivacyConsentModal, UserListModal, ModalContainer
-│   ├── post/ profile/(ProfileInfo) search/ setting/ sidebar/ skeleton/
+│   ├── post/ profile/(ProfileInfo) providers/(QueryProvider) search/ setting/ sidebar/ skeleton/
 ├── constants          # auth, player, playlist, search, sidebar, terms, mock/
 ├── hooks
 │   ├── auth/{client,config,server}   # 클라이언트/서버 인증 훅 분리
 │   ├── noti/ player/(youtube) playlist/ post/ privacy/ queue/ search/
 ├── mappers            # itunes/youtube 트랙 → 내부 Music 타입 정규화
+├── query-keys         # TanStack Query 쿼리 키 도메인별 중앙화 (auth/feed/noti/nowPlaylist/playlist/post/profile/search)
 ├── stores             # Zustand: player, modal, notiOverlay
 ├── types / utils
 ```
@@ -151,7 +152,7 @@ NestJS, `src/modules/*` 아래 도메인별 모듈 구조 (auth, user, post, com
 
 Next.js App Router 구조로, `app/`에는 라우트/레이아웃만 두고 나머지(`components`, `hooks`, `stores`, `api`, `mappers`, `constants`, `types`, `utils`)는 모두 `src/`에 둡니다. import alias `@/*` → `src/*`.
 
-- **상태 관리**: `src/stores`의 Zustand 스토어(player, modal, notiOverlay). 전역 데이터 페칭/캐시 라이브러리는 없고, 서버 상태는 API 레이어를 통해 직접 조회한 뒤 컴포넌트/훅 상태나 이 스토어들에 보관합니다.
+- **상태 관리**: 전역 UI 상태(재생/모달/알림 오버레이)는 `src/stores`의 Zustand 스토어(player, modal, notiOverlay)에 두고, 서버 상태는 TanStack Query(`src/query-keys`에 도메인별 쿼리 키 중앙화)로 관리합니다. 자세한 도입 범위는 아래 "서버 상태 관리(TanStack Query)" 절 참고.
 - **API 레이어** (`src/api`):
   - `internal/client.ts` — `apps/api` 호출용 공용 axios 인스턴스(`baseURL: /api`). `sessionStorage`의 bearer 토큰을 주입하며, `/user/me` 요청에서 401이 발생했을 때만(다른 요청의 401은 무시) 인증 관련 스토어를 정리하고 로그인 모달을 다시 엽니다 — 모든 요청 실패마다 전역 로그아웃되는 것을 막기 위한 의도된 좁은 범위입니다.
   - `internal/*.ts` — 백엔드 도메인당 하나씩, `@repo/dto` 타입을 사용하는 `internalClient`의 얇은 래퍼.
@@ -174,7 +175,14 @@ Next.js App Router 구조로, `app/`에는 라우트/레이아웃만 두고 나�
 - 파일당 스토어 1개, `stores/use{Domain}Store.ts` 네이밍. `State`/`Actions` 인터페이스를 분리 정의한 뒤 교집합 타입(`type XxxStore = XxxState & XxxActions`)으로 합쳐 `create<XxxStore>((set, get) => ({...}))`를 호출하는 형태를 따르세요 (`stores/usePlayerStore.ts` 참고).
 - `persist`/`devtools` 등 zustand 미들웨어는 사용하지 않습니다 — 새 스토어를 추가할 때도 미들웨어 없이 순수 `create()`만 쓰세요.
 - zustand는 **전역 UI 상태(모달/드로어/재생), 인증 상태, 여러 컴포넌트에 걸쳐 동기화가 필요하지만 TanStack Query 캐시로 정규화하기엔 성격이 다른 이벤트성 신호**(예: `usePostDeletionSignalStore`로 게시글 삭제를 목록 컴포넌트에 알림)에만 사용합니다. 좋아요/댓글수/본문처럼 "같은 서버 데이터의 값 동기화"가 필요한 경우는 `postDetailQueryKey` 쿼리 캐시(`queryClient.setQueryData`)로 정규화하세요(`usePostCacheSync`, `usePostLikeToggle`이 이 패턴의 예시) — zustand 오버라이드 맵으로 중복 구현하지 않습니다. 폼 입력값 등 컴포넌트 로컬 상태는 `useState`로 유지하고, 저장 시점에만 스토어에 반영하세요(`components/profile/ProfileInfo`가 이 패턴의 예시).
-- 서버 상태 캐싱/재검증 라이브러리(React Query 등)는 현재 도입되어 있지 않습니다 — 지금까지는 데이터 페칭을 커스텀 훅 안에서 `useState` + `useEffect`/`useCallback`으로 직접 구현해왔습니다. 이 항목은 프로젝트 초기 파악 시점에 기록해둔 현재 상태 설명이지 금지 규칙이 아닙니다 — 도입 여부는 실제 문제와 비교 근거가 쌓였을 때 `/refactoring-planner`의 라이브러리 도입 심사 기준(해결 책임-핵심 추상화 일치, 버전 호환성, 제거 비용 등)으로 그때그때 판단하세요.
+
+### 서버 상태 관리 (TanStack Query)
+
+- `@tanstack/react-query`가 도입되어 있습니다. `QueryClientProvider`(`src/components/providers/QueryProvider.tsx`)가 `app/layout.tsx`에서 앱 전체에 단 하나만 마운트되며, `defaultOptions.queries.staleTime`과 공용 `MutationCache`(mutation 실패 시 토스트 표시) 정책이 여기 있습니다.
+- 쿼리 키는 도메인별로 `src/query-keys/{domain}.ts`에 중앙화하고 `src/query-keys/index.ts`로 배럴 export합니다 — 문자열 배열을 훅 안에 직접 하드코딩하지 마세요.
+- auth/noti/playlist/post/profile/feed/queue 도메인은 이미 `useQuery`/`useMutation`/`useInfiniteQuery` 기반입니다(`hooks/post/usePostDetail.ts`, `hooks/playlist/usePlaylists.ts`, `hooks/noti/useNotifications.ts` 등 참고). 새 백엔드(`apps/api`) 엔드포인트를 연동하는 데이터 페칭 훅을 추가할 때는 이 패턴을 기본으로 따르세요 — `useState`+`useEffect` 수동 페칭을 새로 추가하지 마세요.
+- 아직 마이그레이션되지 않고 수동 패턴(`useState`+`useEffect`로 직접 페칭)이 남아있는 곳: `hooks/search/useItunesSearch.ts`/`useYoutubeSearch.ts`(서드파티 검색 API, `useYoutubeSearch`는 컴포넌트 로컬 `Map` 캐시도 별도로 구현), `hooks/post/useLikedUsers.ts`, `components/setting/PrivacyConsentView.tsx`. 이 파일들을 다른 작업 중에 건드리게 되면 React Query 전환 여부를 먼저 판단하세요(자동 전환 대상은 아님 — 관련 이슈 #260/#261).
+- `PlaylistDetailModal.tsx`처럼 쿼리 캐시(`usePlaylistDetail`)와 로컬 `useState`가 렌더링의 이중 소스로 공존하는 곳도 있습니다(관련 이슈 #253) — 신규 코드에서 이 이중 구조를 따라 하지 말고, 가능하면 쿼리 캐시를 렌더링의 단일 소스로 쓰세요(`usePostDetail`이 그 예시).
 
 ### API 호출 패턴
 
@@ -190,6 +198,7 @@ Next.js App Router 구조로, `app/`에는 라우트/레이아웃만 두고 나�
 - **컴포넌트 분리 방식**: 같은 저장소 안에서 `partials/` 하위 폴더에 보조 컴포넌트를 모으는 방식(`components/post/partials/`)과, 폴더명을 그대로 쓰고 그 안에 개별 파일을 나열하는 방식(`components/profile/ProfileInfo/`)이 둘 다 쓰입니다. 어느 도메인이 어떤 방식을 쓸지에 대한 명시적 기준은 없습니다.
 - **API 호출 경로**: "데이터 페칭은 훅을 통해서" 원칙이 있지만 실제로는 18개 이상의 컴포넌트가 `api/internal/*` 함수를 훅 없이 직접 import해서 호출합니다(`components/post/PostCard.tsx` 등). 훅 경유 여부가 로딩/에러 상태 관리 필요성과 항상 일치하지는 않습니다.
 - **타입 정의 위치**: 전역 `src/types/{domain}.ts`와 컴포넌트 옆 로컬 `{domain}.types.ts`가 공존하며, "여러 곳에서 공유되면 전역, 아니면 로컬"이라는 경향만 있을 뿐 두 위치 사이를 가르는 강제된 기준은 없습니다.
+- **서버 상태 페칭 전략**: 대부분 도메인은 TanStack Query로 마이그레이션됐지만 일부(서드파티 검색, `useLikedUsers`, `PrivacyConsentView`)는 아직 `useState`+`useEffect` 수동 패턴입니다. 자세한 목록은 위 "서버 상태 관리(TanStack Query)" 절 참고.
 
 ## 컨벤션
 
