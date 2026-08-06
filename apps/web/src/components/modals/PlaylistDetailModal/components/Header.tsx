@@ -1,37 +1,26 @@
-import { MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
+import { MAX_PLAYLIST_TITLE_LENGTH, DEFAULT_IMAGES } from '@/constants';
 import { Check, Pencil, Play, Trash2, X } from 'lucide-react';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
+import { usePlaylistDetailModalContext } from '../PlaylistDetailModalContext';
 
-type Props = {
-  title: string;
-  tracksCount: number;
-  coverImgUrl: string;
-  onPlayTotalSongs: () => void;
-  isEditingTitle: boolean;
-  draftTitle: string;
-  isInvalidTitle: boolean;
-  onStartRename: () => void;
-  onChangeTitle: (value: string) => void;
-  onCommitRename: () => void;
-  onCancelRename: () => void;
-  onDelete: () => void;
-};
+export function Header() {
+  const { playlist, songs, onPlayTotalSongs, titleEditing, confirmDelete } = usePlaylistDetailModalContext();
 
-export function Header({
-  title,
-  tracksCount,
-  coverImgUrl,
-  onPlayTotalSongs,
-  isEditingTitle,
-  draftTitle,
-  isInvalidTitle,
-  onStartRename,
-  onChangeTitle,
-  onCommitRename,
-  onCancelRename,
-  onDelete,
-}: Props) {
+  const title = playlist?.title ?? '';
+  const tracksCount = songs.length;
+  const coverImgUrl = songs[0]?.albumCoverUrl || DEFAULT_IMAGES.ALBUM;
+  const {
+    isEditing: isEditingTitle,
+    draftTitle,
+    isInvalid: isInvalidTitle,
+    handleStartRename: onStartRename,
+    handleChangeTitle: onChangeTitle,
+    handleCommitRename: onCommitRename,
+    handleCancelRename: onCancelRename,
+  } = titleEditing;
+  const onDelete = confirmDelete.handleRequestDelete;
+
   return (
     <div className="relative bg-grayish border-b-2 border-primary p-6">
       <div className="flex items-center space-x-6">
