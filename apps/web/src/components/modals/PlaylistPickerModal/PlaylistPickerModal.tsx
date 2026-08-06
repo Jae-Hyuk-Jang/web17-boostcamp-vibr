@@ -4,14 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useModalStore } from '@/stores/useModalStore';
 import { addMusicsToPlaylist, createNewPlaylist } from '@/api';
 import { usePlaylists } from '@/hooks/playlist/usePlaylists';
 import { DEFAULT_IMAGES } from '@/constants';
 import { coalesceImageSrc } from '@/utils';
+import { PLAYLISTS_QUERY_KEY, playlistDetailQueryKey } from '@/query-keys';
 
-import type { MusicRequestDto, MusicResponseDto as Music } from '@repo/dto';
+import type { MusicRequestDto, MusicResponseDto as Music, GetPlaylistDetailResDto, AddMusicsToPlaylistResDto } from '@repo/dto';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ModalShell from '@/components/ui/ModalShell';
 import ModalPanel from '@/components/ui/ModalPanel';
@@ -42,6 +44,7 @@ const dedupeById = (musics: Music[]): Music[] => {
 export default function PlaylistPickerModal() {
   const { isOpen, modalType, modalProps, closeModal } = useModalStore();
   const isEnabled = isOpen && modalType === 'PLAYLIST_PICKER';
+  const queryClient = useQueryClient();
 
   const musics = isEnabled ? (modalProps?.musics as Music[] | undefined) : undefined;
   const hasMusics = Boolean(musics && musics.length > 0);
@@ -65,13 +68,25 @@ export default function PlaylistPickerModal() {
     else toast.success('보관함에 저장했어요.');
   };
 
+  // usePlaylistDetailModal.ts의 addSongMutation과 동일한 캐시 쓰기 패턴(playlist-picker-cache-sync #289) —
+  // 곡 저장 성공 시 이미 열려 있는 PlaylistDetailModal의 상세 캐시와 목록 캐시를 함께 갱신한다.
+  const saveMutation = useMutation({
+    mutationFn: ({ playlistId, req }: { playlistId: string; req: MusicRequestDto[] }) => addMusicsToPlaylist(playlistId, req),
+    onSuccess: (res: AddMusicsToPlaylistResDto, { playlistId }) => {
+      queryClient.setQueryData(playlistDetailQueryKey(playlistId), (prev: GetPlaylistDetailResDto | undefined) =>
+        prev ? { ...prev, musics: [...prev.musics, ...res.addedMusics] } : prev,
+      );
+      queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
+    },
+  });
+
   const saveToPlaylist = async (playlistId: string) => {
     if (!musics || musics.length === 0) return;
 
     const unique = dedupeById(musics);
     const req = unique.map(toMusicRequestDto);
 
-    const res = await addMusicsToPlaylist(playlistId, req);
+    const res = await saveMutation.mutateAsync({ playlistId, req });
 
     const addedCount = Array.isArray(res.addedMusics) ? res.addedMusics.length : 0;
     handleSaveResultToast(addedCount);

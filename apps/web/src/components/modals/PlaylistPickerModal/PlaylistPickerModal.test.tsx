@@ -168,21 +168,27 @@ describe('PlaylistPickerModal — 저장/생성 경로 특성화 (playlist-picke
     fireEvent.click(button);
     fireEvent.click(button);
 
-    expect(addMusicsToPlaylist).toHaveBeenCalledTimes(1);
+    // useMutation의 mutationFn 호출은 mutate 직후 동기적으로 일어나지 않으므로(react-query 내부
+    // 디스패치를 거침) waitFor로 확인한다 — 두 번째 클릭이 무시된다는 사실 자체는 최종 호출 횟수가
+    // 1회로 유지되는 것으로 여전히 보장된다.
+    await waitFor(() => expect(addMusicsToPlaylist).toHaveBeenCalledTimes(1));
 
-    await waitFor(() => resolveAdd({ addedMusics: [mockMusic] }));
+    resolveAdd({ addedMusics: [mockMusic] });
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
   });
 
-  it('[현재 버그, playlist-picker-cache-sync #284] 저장에 성공해도 playlistDetail/playlists 캐시가 갱신되지 않는다', async () => {
+  it('저장 성공 시 playlistDetail 캐시에 반영되고 playlists 캐시가 무효화된다 (playlist-picker-cache-sync #289, #284 버그 수정 확인)', async () => {
     addMusicsToPlaylist.mockResolvedValue({ addedMusics: [mockMusic] });
     const queryClient = createTestQueryClient();
+    // 이미 열려 있는 PlaylistDetailModal이 이 캐시를 구독 중인 상황을 시뮬레이션한다.
+    queryClient.setQueryData(playlistDetailQueryKey('pl-1'), { id: 'pl-1', title: '내 플레이리스트', musics: [] });
     render(<PlaylistPickerModal />, { wrapper: createQueryClientWrapper(queryClient) });
     await screen.findByRole('button', { name: /내 플레이리스트/ });
 
     fireEvent.click(screen.getByRole('button', { name: /내 플레이리스트/ }));
     await waitFor(() => expect(toast.success).toHaveBeenCalled());
 
-    expect(queryClient.getQueryData(playlistDetailQueryKey('pl-1'))).toBeUndefined();
-    expect(getAllPlaylists).toHaveBeenCalledTimes(1); // invalidate가 없어 재조회도 없음
+    expect(queryClient.getQueryData(playlistDetailQueryKey('pl-1'))).toMatchObject({ musics: [mockMusic] });
+    await waitFor(() => expect(getAllPlaylists).toHaveBeenCalledTimes(2)); // invalidate로 재조회됨
   });
 });
