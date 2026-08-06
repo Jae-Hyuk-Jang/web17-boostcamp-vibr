@@ -1,16 +1,12 @@
 import React from 'react';
 import Image from 'next/image';
 import { ChevronUp, ChevronDown, Trash2, Music as MusicIcon } from 'lucide-react';
-import type { MusicResponseDto as Music } from '@repo/dto';
 import TickerText from '@/components/ui/TickerText';
 
-interface SelectedMusicListProps {
-  musics: Music[];
-  onRemove: (id: string) => void;
-  onMove: (index: number, direction: 'up' | 'down') => void;
-}
+import { useContentWriteContext } from '../ContentWriteContext';
 
-export const SelectedMusicList = ({ musics, onRemove, onMove }: SelectedMusicListProps) => {
+export const SelectedMusicList = () => {
+  const { selectedMusics: musics, onRemoveMusic: onRemove, onMoveMusic: onMove } = useContentWriteContext();
   return (
     <div className="flex-1 min-w-0 flex flex-col">
       <label className="text-sm font-bold text-gray-1 mb-2 block">

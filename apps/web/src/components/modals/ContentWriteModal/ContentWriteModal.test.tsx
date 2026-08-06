@@ -6,12 +6,6 @@ import { createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-toastify', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 
-jest.mock('./index', () => ({
-  CoverImgUploader: () => <div data-testid="cover-uploader" />,
-  MusicSearch: () => <div data-testid="music-search" />,
-  SelectedMusicList: () => <div data-testid="selected-music-list" />,
-}));
-
 jest.mock('@/hooks', () => {
   const actual = jest.requireActual('@/hooks');
   return {

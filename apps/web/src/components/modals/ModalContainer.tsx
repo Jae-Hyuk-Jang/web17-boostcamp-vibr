@@ -10,7 +10,6 @@ import { PlaylistDetailModal } from './PlaylistDetailModal';
 import { PlaylistPickerModal } from './PlaylistPickerModal';
 import { PrivacyConsentModal } from './PrivacyConsentModal';
 import { getFollowerUsers, getFollowingUsers } from '@/api';
-import type { MusicResponseDto as Music } from '@repo/dto';
 
 export default function ModalContainer() {
   const { isOpen, modalType, modalProps, closeModal } = useModalStore();
@@ -45,12 +44,7 @@ export default function ModalContainer() {
   return (
     <>
       {/* 1. 컨텐츠 작성 모달 */}
-      {modalType === MODAL_TYPES.WRITE && (
-        <ContentWriteModal
-          initialMusic={modalProps.initialMusic as Music | undefined}
-          initialMusics={modalProps.initialMusics as Music[] | undefined}
-        />
-      )}
+      {modalType === MODAL_TYPES.WRITE && <ContentWriteModal />}
 
       {/* 2. 로그인 모달 */}
       {modalType === MODAL_TYPES.LOGIN && <LoginModal />}

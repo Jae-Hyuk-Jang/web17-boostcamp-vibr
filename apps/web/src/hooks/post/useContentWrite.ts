@@ -12,18 +12,13 @@ import { useAuthMe } from '@/hooks/auth/client';
 import { feedQueryKey, profileGridQueryKey } from '@/query-keys';
 
 type Options = {
-  /**
-   * 기존 호출부 유지
-   */
-  initialMusic?: Music;
-
-  /** 다곡 초기값 */
+  /** 초기 선택 곡 */
   initialMusics?: Music[];
 
   onSuccess: () => void;
 };
 
-type Return = {
+export type UseContentWriteResult = {
   selectedMusics: Music[];
   content: string;
   setContent: (v: string) => void;
@@ -58,11 +53,9 @@ const uniqById = (items: Music[]): Music[] => {
   return out;
 };
 
-const toInitialSelected = (initialMusics?: Music[], initialMusic?: Music): Music[] => {
-  if (Array.isArray(initialMusics) && initialMusics.length > 0) {
-    return uniqById(initialMusics);
-  }
-  return initialMusic ? [initialMusic] : [];
+const toInitialSelected = (initialMusics?: Music[]): Music[] => {
+  if (!Array.isArray(initialMusics)) return [];
+  return uniqById(initialMusics);
 };
 
 const toMusicPayload = (m: Music) => ({
@@ -76,12 +69,12 @@ const toMusicPayload = (m: Music) => ({
   durationMs: m.durationMs,
 });
 
-export const useContentWrite = ({ initialMusic, initialMusics, onSuccess }: Options): Return => {
+export const useContentWrite = ({ initialMusics, onSuccess }: Options): UseContentWriteResult => {
   const { ensureMusicInDb } = useMusicActions();
   const queryClient = useQueryClient();
   const { userId } = useAuthMe();
 
-  const [selectedMusics, setSelectedMusics] = useState<Music[]>(() => toInitialSelected(initialMusics, initialMusic));
+  const [selectedMusics, setSelectedMusics] = useState<Music[]>(() => toInitialSelected(initialMusics));
   const [content, setContent] = useState('');
 
   const [customCoverPreview, setCustomCoverPreview] = useState<string | null>(null);
@@ -92,14 +85,14 @@ export const useContentWrite = ({ initialMusic, initialMusics, onSuccess }: Opti
 
   // 모달이 "다른 initialMusics"로 다시 열릴 수 있으므로, props 변화에 맞춰 초기화
   useEffect(() => {
-    setSelectedMusics(toInitialSelected(initialMusics, initialMusic));
+    setSelectedMusics(toInitialSelected(initialMusics));
     setContent('');
     setSearchQuery('');
     setIsSearchOpen(false);
 
     setCustomCoverFile(null);
     setCustomCoverPreview(null);
-  }, [initialMusic, initialMusics]);
+  }, [initialMusics]);
 
   const activeCover = useMemo(
     () => customCoverPreview || selectedMusics[0]?.albumCoverUrl || DEFAULT_IMAGES.ALBUM,
