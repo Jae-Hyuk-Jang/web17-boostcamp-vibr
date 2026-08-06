@@ -4663,7 +4663,8 @@ await createNewPlaylist(title);                     // 마찬가지</pre>
         </li>
         <li class="finding crit">
           <div class="finding-head"><span class="sev crit">심각</span><span class="loc">PlaylistPickerModal.tsx:74,105</span></div>
-          <p><code class="inline">addMusicsToPlaylist</code>/<code class="inline">createNewPlaylist</code>를 <code class="inline">useMutation</code> 없이 직접 호출하고, 파일 전체에 <code class="inline">setQueryData</code>/<code class="inline">invalidateQueries</code> 호출이 0건이다. 성공해도 목록·상세 캐시가 조용히 stale해진다.</p>
+          <p style="text-decoration: line-through; opacity: 0.6;"><code class="inline">addMusicsToPlaylist</code>/<code class="inline">createNewPlaylist</code>를 <code class="inline">useMutation</code> 없이 직접 호출하고, 파일 전체에 <code class="inline">setQueryData</code>/<code class="inline">invalidateQueries</code> 호출이 0건이다. 성공해도 목록·상세 캐시가 조용히 stale해진다.</p>
+          <p style="color: var(--color-accent-cyan); font-weight: 700;">해소됨 — <code class="inline">playlist-picker-cache-sync</code> 사이클(#284, #288~290)에서 <code class="inline">saveToPlaylist</code>를 <code class="inline">useMutation</code>으로 전환하고, <code class="inline">usePlaylistDetailModal.ts</code>의 <code class="inline">addSongMutation</code>과 동일한 패턴(<code class="inline">setQueryData(playlistDetailQueryKey)</code> + <code class="inline">invalidateQueries(PLAYLISTS_QUERY_KEY)</code>)으로 캐시를 갱신하도록 고쳤다. 자세한 내용은 <code class="inline">docs/refactors/playlist-picker-cache-sync/result.md</code> 참고.</p>
         </li>
         <li class="finding minor">
           <div class="finding-head"><span class="sev minor">경미</span><span class="loc">PlaylistPickerModal.tsx:166-197</span></div>
