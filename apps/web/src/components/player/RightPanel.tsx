@@ -4,7 +4,7 @@ import { useRef, useCallback, useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 import { QueueList, MiniPlayerBar, NowPlaying } from './index';
-import { useQueueSync, useGuestQueueSession } from '@/hooks';
+import { useQueueSync, useGuestQueueSession, useYouTubeVisiblePlayback } from '@/hooks';
 import { useAuthMe } from '@/hooks/auth/client';
 
 export default function RightPanel() {
@@ -38,6 +38,18 @@ export default function RightPanel() {
     setIsFullPlayerOpen(true);
   }, []);
 
+  // 모바일에서 YouTube 곡은 풀 플레이어가 열려 있을 때만 재생한다 (YouTube 정책: 보이지 않는 플레이어로 재생 금지)
+  const { pauseIfHiddenYouTube } = useYouTubeVisiblePlayback({
+    isFullPlayerOpenRef,
+    openFullPlayer: handleOpenFullPlayer,
+  });
+
+  // 사용자가 직접 닫는 경로(X, ESC, 뒤로가기, 스와이프). 데스크탑 크기로 커져서 닫힐 때는 패널이 보이므로 거치지 않는다.
+  const handleCloseFullPlayer = useCallback(() => {
+    setIsFullPlayerOpen(false);
+    pauseIfHiddenYouTube();
+  }, [pauseIfHiddenYouTube]);
+
   // 데스크탑 크기로 커지면 풀 플레이어 닫기
   useEffect(() => {
     const onResize = () => {
@@ -54,19 +66,19 @@ export default function RightPanel() {
 
   useEffect(() => {
     const onPopState = () => {
-      if (isFullPlayerOpenRef.current) setIsFullPlayerOpen(false);
+      if (isFullPlayerOpenRef.current) handleCloseFullPlayer();
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+  }, [handleCloseFullPlayer]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullPlayerOpenRef.current) setIsFullPlayerOpen(false);
+      if (e.key === 'Escape' && isFullPlayerOpenRef.current) handleCloseFullPlayer();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [handleCloseFullPlayer]);
 
   // 스와이프 다운으로 닫기
   const touchStartY = useRef(0);
@@ -75,7 +87,7 @@ export default function RightPanel() {
   };
   const handleTouchMove = (e: React.TouchEvent) => {
     if ((e.touches[0]?.clientY ?? 0) - touchStartY.current > 80) {
-      setIsFullPlayerOpen(false);
+      handleCloseFullPlayer();
     }
   };
 
@@ -96,7 +108,7 @@ export default function RightPanel() {
           <div className="flex-1 flex justify-end">
             <button
               type="button"
-              onClick={() => setIsFullPlayerOpen(false)}
+              onClick={handleCloseFullPlayer}
               className="p-2 rounded-full hover:bg-gray-4 text-primary transition-colors"
               title="닫기"
             >

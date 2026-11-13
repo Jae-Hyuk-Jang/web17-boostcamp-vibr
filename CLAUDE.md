@@ -155,7 +155,7 @@ Next.js App Router 구조로, `app/`에는 라우트/레이아웃만 두고 나�
   - `internal/*.ts` — 백엔드 도메인당 하나씩, `@repo/dto` 타입을 사용하는 `internalClient`의 얇은 래퍼.
   - `itunes/`, `youtube/` — 서드파티 음악 검색 API를 직접 호출하고, `src/mappers/*ToMusic.ts`로 앱 내부 `Music` 형태로 정규화합니다.
   - `app/api/youtube-search/route.ts`, `app/auth/google/**/route.ts` — 서버 사이드 프록시/콜백 역할을 하는 Next.js route handler(프로바이더 시크릿과 `INTERNAL_API_URL` 기반 SSR 호출을 클라이언트에 노출하지 않기 위함).
-- **플레이어**: YouTube iframe API, iTunes 미리듣기를 아우르는 멀티 프로바이더 재생을 `hooks/player/*`와 `stores/usePlayerStore.ts` 뒤로 통합하고, `mappers/*`가 각 프로바이더의 트랙 형태를 플레이어/큐에 도달하기 전에 하나의 `Music` 타입으로 정규화합니다.
+- **플레이어**: YouTube iframe API, iTunes 미리듣기를 아우르는 멀티 프로바이더 재생을 `hooks/player/*`와 `stores/usePlayerStore.ts` 뒤로 통합하고, `mappers/*`가 각 프로바이더의 트랙 형태를 플레이어/큐에 도달하기 전에 하나의 `Music` 타입으로 정규화합니다. YouTube 정책(보이지 않는 플레이어로 재생 금지) 때문에 모바일(lg 미만)에서는 YouTube 곡을 풀 플레이어가 열린 상태에서만 재생합니다. 재생이 시작되면 풀 플레이어를 열고, 사용자가 닫으면 일시정지합니다(`hooks/player/useYouTubeVisiblePlayback.ts`). 플레이어 UI를 바꿀 때 iframe이 숨겨진 채 재생되는 경로가 생기지 않게 하세요.
 - **Auth 분리**: `hooks/auth/client` vs `hooks/auth/server` — 이 경계를 지켜야 합니다. 서버 사이드 훅은 RSC/route handler에서 실행되며 `INTERNAL_API_URL`을 사용하고, 클라이언트 사이드 훅은 브라우저에서 실행되며 `API_BASE_URL` / axios client를 사용합니다.
 
 ## 프론트엔드 구현 패턴 (`apps/web`)
