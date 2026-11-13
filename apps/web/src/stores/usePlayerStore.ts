@@ -20,6 +20,7 @@ interface PlayerState {
 /**
  * 전역 플레이어 액션(Action)
  * - playMusic: 곡 선택(같은 곡이면 토글, 다른 곡이면 교체 + 큐에 없으면 맨 앞 삽입)
+ * - pause: 재생 중일 때만 일시정지(토글과 달리 멱등)
  * - add/remove/reorder/clear: 큐 편집
  * - set volume/playError : 볼륨 조절  및 에러 정보
  */
@@ -27,6 +28,7 @@ interface PlayerActions {
   playMusic: (music: Music) => void;
   selectMusic: (music: Music) => void;
   togglePlay: () => void;
+  pause: () => void;
 
   playPrev: () => void;
   playNext: () => void;
@@ -176,6 +178,12 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   /** 재생/일시정지 UI 상태만 토글 (실제 재생 프로바이더 호출은 비범위) */
   togglePlay: () => {
     set((state) => ({ isPlaying: !state.isPlaying }));
+  },
+
+  /** 재생 중일 때만 일시정지 (이미 멈춰 있으면 그대로 둔다) */
+  pause: () => {
+    if (!get().isPlaying) return;
+    set({ isPlaying: false });
   },
 
   playPrev: () => {

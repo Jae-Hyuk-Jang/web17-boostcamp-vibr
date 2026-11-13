@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * apps/api·MySQL·Neo4j·Redis 없이도 확인 가능한 클라이언트 전용 흐름(모달 오픈/애니메이션 등)만 검증한다.
+ * apps/api·MySQL·Redis 없이도 확인 가능한 클라이언트 전용 흐름(모달 오픈/애니메이션 등)만 검증한다.
  * 백엔드 의존 흐름(피드 데이터, 로그인 이후 화면)은 이슈 #27 범위 밖 — CI 통합 여부와 함께 별도 논의 대상이다.
  */
 export default defineConfig({

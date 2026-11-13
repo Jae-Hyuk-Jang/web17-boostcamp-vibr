@@ -42,6 +42,8 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+# Windows에서 WSL로 파일을 복사할 때 생기는 '인터넷에서 받은 파일' 표시(NTFS Zone.Identifier) 부산물
+*:Zone.Identifier
 
 # Claude Code (개인 로컬 설정만 무시 — .claude/settings.json 등 팀 공용 설정은 커밋)
 .claude/settings.local.json

@@ -34,9 +34,11 @@ export class AuthOptionalGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
 
       req.user = payload;
-      return true;
     } catch {
-      throw new UnauthorizedException('유효하지 않은 토큰입니다.');
+      // 만료·위조 등으로 검증에 실패한 토큰은 비로그인 요청으로 처리한다.
+      // 선택적 인증 엔드포인트가 만료된 토큰 때문에 401로 실패하지 않도록 하기 위함이다.
     }
+
+    return true;
   }
 }

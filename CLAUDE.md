@@ -31,7 +31,6 @@ src
 ├── infra
 │   └── redis/                                # redis-keys, redis-stream 유틸/타입 (Streams 이벤트 버스)
 └── modules
-    ├── algorithm/     # Neo4j 그래프 기록·조회 (algorithm-stream.consumer.ts)
     ├── auth/           # Google OAuth, JWT 발급 (dto/, types.ts)
     ├── comment/        # controller/service/repository + entities/
     ├── feed/           # 홈 피드 조합 (policy/, sources/, spec/)
@@ -102,7 +101,7 @@ packages
 
 ```bash
 corepack enable && pnpm install   # 초기 설정
-docker compose up -d              # mysql, neo4j, redis (로컬 인프라)
+docker compose up -d              # mysql, redis (로컬 인프라)
 pnpm dto                          # packages/dto 빌드 — DTO 변경 후 dev/build 전에 필수
 pnpm dev                          # apps/web + apps/api 동시 실행 (turbo --filter=api --filter=web)
 pnpm lint                         # 전체 패키지 대상 turbo run lint
@@ -132,21 +131,19 @@ pnpm test:e2e                     # jest --config ./test/jest-e2e.json
 
 ## 백엔드 아키텍처 (`apps/api`)
 
-NestJS, `src/modules/*` 아래 도메인별 모듈 구조 (auth, user, post, comment, follow, like, music, playlist, now-playlist, noti, upload, privacy, log, seed, feed, trending, algorithm). 각 도메인 모듈은 대체로 `*.controller.ts` → `*.service.ts` → `*.repository.ts` (TypeORM `Repository<Entity>` 래퍼) → `entities/*.entity.ts` 순서를 따릅니다.
+NestJS, `src/modules/*` 아래 도메인별 모듈 구조 (auth, user, post, comment, follow, like, music, playlist, now-playlist, noti, upload, privacy, log, seed, feed, trending). 각 도메인 모듈은 대체로 `*.controller.ts` → `*.service.ts` → `*.repository.ts` (TypeORM `Repository<Entity>` 래퍼) → `entities/*.entity.ts` 순서를 따릅니다.
 
-역할이 뚜렷이 구분되는 세 가지 데이터스토어를 사용합니다:
+역할이 뚜렷이 구분되는 두 가지 데이터스토어를 사용합니다:
 
 - **MySQL (TypeORM)** — 사용자, 게시글, 플레이리스트 등 핵심 관계형 데이터. 엔티티는 `app.module.ts`의 glob으로 자동 탐색되며, `synchronize`는 production 외 환경에서 켜져 있습니다.
-- **Redis (`ioredis` / `@nestjs-modules/ioredis`)** — 캐시이자 **Redis Streams 이벤트 버스**로 사용됩니다. 도메인 이벤트를 `infra/redis/redis-stream.util.ts` / `redis-keys.ts`를 통해 push하면, 스트림 컨슈머(`modules/trending/stream/trending-steam.consumer.ts`, `modules/algorithm/algorithm-stream.consumer.ts` 등)가 이를 소비해 트렌딩 점수와 추천 그래프를 요청 경로와 분리된 비동기 흐름으로 갱신합니다.
-- **Neo4j (`neo4j-driver`, `'NEO4J_DRIVER'`로 주입)** — 사람 관계 그래프(`User`/`Content` 노드, 가중치가 감쇠하는 `INTERACTED` 엣지)로, `modules/algorithm`의 "알고리즘이 아닌 사람 기반" 추천 모델을 뒷받침합니다.
+- **Redis (`ioredis` / `@nestjs-modules/ioredis`)** — 캐시이자 **Redis Streams 이벤트 버스**로 사용됩니다. 도메인 이벤트를 `infra/redis/redis-stream.util.ts` / `redis-keys.ts`를 통해 push하면, 스트림 컨슈머(`modules/trending/stream/trending-steam.consumer.ts`)가 이를 소비해 트렌딩 점수를 요청 경로와 분리된 비동기 흐름으로 갱신합니다.
 
 주목할 만한 모듈:
 
 - `modules/feed` — 여러 소스(`sources/{following,recent,trending}.source.ts`, 모두 `feed-source.interface.ts` 구현)를 `policy/source-allocation.policy.ts`, `policy/feed-composition.policy.ts`로 조합해 홈 피드를 구성합니다. 새 피드 입력을 추가할 때는 서비스에 분기를 추가하지 말고 source 인터페이스를 구현한 뒤 allocation policy를 갱신하는 방식을 따르세요.
 - `modules/trending` — Redis 스트림 기반 랭킹(`stream/`, `rank/trending-rank.store.ts`)과 `@nestjs/schedule`을 이용한 스케줄 감쇠(`jobs/trending-decay.job.ts`)로 구성됩니다.
-- `modules/algorithm` — 상호작용 이벤트를 배치로 Neo4j 그래프에 기록하고, 그래프 기반 추천의 조회 경로 역할도 합니다.
 
-인증: 커스텀 JWT(`@nestjs/jwt`, 30분 만료)를 `AuthGuard`(`common/guards/auth.guard.ts`, `Authorization: Bearer <token>` 헤더 필요)로 검증하며, 인증이 선택적인 엔드포인트는 `auth.optional-guard.ts`를 사용합니다. 유저 id는 `common/decorators/userId.decorator.ts`로 추출합니다. OAuth는 Google(`modules/auth`)이며 토큰 교환은 서버 사이드에서 이뤄집니다. 업로드는 `modules/upload`를 거쳐 NCP(네이버 클라우드) 오브젝트 스토리지로 전송됩니다(`@aws-sdk/client-s3`, S3 호환 엔드포인트). 전역 예외 응답 형식은 `common/filter/all-exception.filter.ts`에서 정의합니다.
+인증: 커스텀 JWT(`@nestjs/jwt`, 30분 만료)를 `AuthGuard`(`common/guards/auth.guard.ts`, `Authorization: Bearer <token>` 헤더 필요)로 검증하며, 인증이 선택적인 엔드포인트는 `auth.optional-guard.ts`를 사용합니다(헤더가 없거나 토큰이 만료·위조돼 검증에 실패하면 401 대신 비로그인 요청으로 통과하고, `Bearer` 형식이 아닌 헤더만 401로 거부). 유저 id는 `common/decorators/userId.decorator.ts`로 추출합니다. OAuth는 Google(`modules/auth`)이며 토큰 교환은 서버 사이드에서 이뤄집니다. 업로드는 `modules/upload`를 거쳐 NCP(네이버 클라우드) 오브젝트 스토리지로 전송됩니다(`@aws-sdk/client-s3`, S3 호환 엔드포인트). 전역 예외 응답 형식은 `common/filter/all-exception.filter.ts`에서 정의합니다.
 
 ## 프론트엔드 아키텍처 (`apps/web`)
 
@@ -158,7 +155,7 @@ Next.js App Router 구조로, `app/`에는 라우트/레이아웃만 두고 나�
   - `internal/*.ts` — 백엔드 도메인당 하나씩, `@repo/dto` 타입을 사용하는 `internalClient`의 얇은 래퍼.
   - `itunes/`, `youtube/` — 서드파티 음악 검색 API를 직접 호출하고, `src/mappers/*ToMusic.ts`로 앱 내부 `Music` 형태로 정규화합니다.
   - `app/api/youtube-search/route.ts`, `app/auth/google/**/route.ts` — 서버 사이드 프록시/콜백 역할을 하는 Next.js route handler(프로바이더 시크릿과 `INTERNAL_API_URL` 기반 SSR 호출을 클라이언트에 노출하지 않기 위함).
-- **플레이어**: YouTube iframe API, iTunes 미리듣기를 아우르는 멀티 프로바이더 재생을 `hooks/player/*`와 `stores/usePlayerStore.ts` 뒤로 통합하고, `mappers/*`가 각 프로바이더의 트랙 형태를 플레이어/큐에 도달하기 전에 하나의 `Music` 타입으로 정규화합니다.
+- **플레이어**: YouTube iframe API, iTunes 미리듣기를 아우르는 멀티 프로바이더 재생을 `hooks/player/*`와 `stores/usePlayerStore.ts` 뒤로 통합하고, `mappers/*`가 각 프로바이더의 트랙 형태를 플레이어/큐에 도달하기 전에 하나의 `Music` 타입으로 정규화합니다. YouTube 정책(보이지 않는 플레이어로 재생 금지) 때문에 모바일(lg 미만)에서는 YouTube 곡을 풀 플레이어가 열린 상태에서만 재생합니다. 재생이 시작되면 풀 플레이어를 열고, 사용자가 닫으면 일시정지합니다(`hooks/player/useYouTubeVisiblePlayback.ts`). 플레이어 UI를 바꿀 때 iframe이 숨겨진 채 재생되는 경로가 생기지 않게 하세요.
 - **Auth 분리**: `hooks/auth/client` vs `hooks/auth/server` — 이 경계를 지켜야 합니다. 서버 사이드 훅은 RSC/route handler에서 실행되며 `INTERNAL_API_URL`을 사용하고, 클라이언트 사이드 훅은 브라우저에서 실행되며 `API_BASE_URL` / axios client를 사용합니다.
 
 ## 프론트엔드 구현 패턴 (`apps/web`)
