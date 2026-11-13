@@ -73,8 +73,8 @@ description: 프로젝트 구조를 분석하여 Mermaid 다이어그램 HTML을
 
 - 사용자가 지정한 액션(예: "좋아요 토글")의 트리거 지점(보통 `handleXxx` 이벤트 핸들러)을 컴포넌트에서 찾습니다.
 - 거기서 호출하는 `api/internal/*` 함수 → 이 함수가 부르는 백엔드 경로를 확인하고, `apps/api/src/modules/*/*.controller.ts`에서 같은 경로/메서드의 컨트롤러 핸들러를 grep으로 찾습니다.
-- 컨트롤러 → 서비스 → 레포지토리(또는 Redis/Neo4j) 흐름과, 응답이 돌아온 뒤 프론트에서 어느 zustand 스토어/상태가 갱신되는지까지 추적합니다.
-- `sequenceDiagram`으로 표현합니다. participant는 상황에 맞게 고르되, 보통 `Component`, `API(axios)`, `Controller`, `Service`, `DB/Redis/Neo4j` 정도면 충분합니다:
+- 컨트롤러 → 서비스 → 레포지토리(또는 Redis) 흐름과, 응답이 돌아온 뒤 프론트에서 어느 zustand 스토어/상태가 갱신되는지까지 추적합니다.
+- `sequenceDiagram`으로 표현합니다. participant는 상황에 맞게 고르되, 보통 `Component`, `API(axios)`, `Controller`, `Service`, `DB/Redis` 정도면 충분합니다:
   ```
   sequenceDiagram
     participant C as PostCard

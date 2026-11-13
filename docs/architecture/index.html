@@ -21,7 +21,7 @@
 </head>
 <body>
   <h1>VIBR 아키텍처 다이어그램</h1>
-  <p class="sub">apps/api/src/modules/*, apps/web/src/{components,hooks,stores,api,mappers,...} 폴더 단위 의존성 스캔 결과 (mermaid-diagram 스킬 자동 생성) · 마지막 갱신: 2026-08-04 (architecture-diagram-drift #245~247 — query-key-centralization #211~215·auth-state-ownership #232~236·spotify-integration #237~241 이후 누적된 9개 다이어그램의 drift를 전수 재검증해 반영. apps/api 모듈 import 관계는 이번에도 변경 없음, now-playlist 모듈 노드 누락만 보완)</p>
+  <p class="sub">apps/api/src/modules/*, apps/web/src/{components,hooks,stores,api,mappers,...} 폴더 단위 의존성 스캔 결과 (mermaid-diagram 스킬 자동 생성) · 마지막 갱신: 2026-11-13 (algorithm 모듈·Neo4j 제거 반영, 수동 수정) · 이전 갱신: 2026-08-04 (architecture-diagram-drift #245~247 — query-key-centralization #211~215·auth-state-ownership #232~236·spotify-integration #237~241 이후 누적된 9개 다이어그램의 drift를 전수 재검증해 반영. apps/api 모듈 import 관계는 이번에도 변경 없음, now-playlist 모듈 노드 누락만 보완)</p>
 
   <h2>백엔드 (apps/api) — 도메인 모듈 &amp; 데이터스토어</h2>
   <p class="legend">실선 = 모듈 간 직접 import · 점선 = Redis Streams 이벤트 버스를 통한 비동기 연결</p>
@@ -48,14 +48,12 @@ graph TD
     feed[feed]
     trending[trending]
     playlist[playlist]
-    algorithm[algorithm]
     seed[seed]
   end
 
   now_playlist["now-playlist<br/>(다른 모듈과 cross-import 없음)"]
 
   redis_streams[["Redis Streams<br/>이벤트 버스"]]
-  neo4j[("Neo4j<br/>관계 그래프")]
 
   auth --> user
   user --> auth
@@ -90,8 +88,6 @@ graph TD
   follow -.->|event| redis_streams
   like -.->|event| redis_streams
   redis_streams -.-> trending
-  redis_streams -.-> algorithm
-  algorithm --> neo4j
   </pre>
 
   <h2>프론트엔드 (apps/web/src) — 최상위 폴더 의존성</h2>

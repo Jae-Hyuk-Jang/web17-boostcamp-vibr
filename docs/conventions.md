@@ -118,8 +118,7 @@
 ### 4.4 데이터스토어 역할 분리
 
 - **MySQL(TypeORM)** — 핵심 관계형 데이터. 엔티티는 `app.module.ts`의 glob으로 자동 탐색.
-- **Redis** — 캐시 + Streams 이벤트 버스. 도메인 이벤트는 `infra/redis/redis-stream.util.ts`/`redis-keys.ts`를 통해 push하고, 스트림 컨슈머(`modules/trending/stream/`, `modules/algorithm/algorithm-stream.consumer.ts`)가 비동기로 소비합니다.
-- **Neo4j** — 사람 관계 그래프 기반 추천(`modules/algorithm`).
+- **Redis** — 캐시 + Streams 이벤트 버스. 도메인 이벤트는 `infra/redis/redis-stream.util.ts`/`redis-keys.ts`를 통해 push하고, 스트림 컨슈머(`modules/trending/stream/`)가 비동기로 소비합니다.
 
 ## 5. DTO (`packages/dto`)
 
