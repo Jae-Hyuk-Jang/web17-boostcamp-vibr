@@ -143,7 +143,7 @@ NestJS, `src/modules/*` 아래 도메인별 모듈 구조 (auth, user, post, com
 - `modules/feed` — 여러 소스(`sources/{following,recent,trending}.source.ts`, 모두 `feed-source.interface.ts` 구현)를 `policy/source-allocation.policy.ts`, `policy/feed-composition.policy.ts`로 조합해 홈 피드를 구성합니다. 새 피드 입력을 추가할 때는 서비스에 분기를 추가하지 말고 source 인터페이스를 구현한 뒤 allocation policy를 갱신하는 방식을 따르세요.
 - `modules/trending` — Redis 스트림 기반 랭킹(`stream/`, `rank/trending-rank.store.ts`)과 `@nestjs/schedule`을 이용한 스케줄 감쇠(`jobs/trending-decay.job.ts`)로 구성됩니다.
 
-인증: 커스텀 JWT(`@nestjs/jwt`, 30분 만료)를 `AuthGuard`(`common/guards/auth.guard.ts`, `Authorization: Bearer <token>` 헤더 필요)로 검증하며, 인증이 선택적인 엔드포인트는 `auth.optional-guard.ts`를 사용합니다. 유저 id는 `common/decorators/userId.decorator.ts`로 추출합니다. OAuth는 Google(`modules/auth`)이며 토큰 교환은 서버 사이드에서 이뤄집니다. 업로드는 `modules/upload`를 거쳐 NCP(네이버 클라우드) 오브젝트 스토리지로 전송됩니다(`@aws-sdk/client-s3`, S3 호환 엔드포인트). 전역 예외 응답 형식은 `common/filter/all-exception.filter.ts`에서 정의합니다.
+인증: 커스텀 JWT(`@nestjs/jwt`, 30분 만료)를 `AuthGuard`(`common/guards/auth.guard.ts`, `Authorization: Bearer <token>` 헤더 필요)로 검증하며, 인증이 선택적인 엔드포인트는 `auth.optional-guard.ts`를 사용합니다(헤더가 없거나 토큰이 만료·위조돼 검증에 실패하면 401 대신 비로그인 요청으로 통과하고, `Bearer` 형식이 아닌 헤더만 401로 거부). 유저 id는 `common/decorators/userId.decorator.ts`로 추출합니다. OAuth는 Google(`modules/auth`)이며 토큰 교환은 서버 사이드에서 이뤄집니다. 업로드는 `modules/upload`를 거쳐 NCP(네이버 클라우드) 오브젝트 스토리지로 전송됩니다(`@aws-sdk/client-s3`, S3 호환 엔드포인트). 전역 예외 응답 형식은 `common/filter/all-exception.filter.ts`에서 정의합니다.
 
 ## 프론트엔드 아키텍처 (`apps/web`)
 
