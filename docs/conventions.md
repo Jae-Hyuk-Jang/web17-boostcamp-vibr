@@ -134,8 +134,10 @@
   - `scope`를 쓸 경우 소문자(`scope-case: lower-case`).
   - 예: `feat(post): 좋아요 낙관적 업데이트 추가`
   - 커밋 subject 맨 앞에 대문자로 시작하는 라틴 약어(PR, STAR, JWT, PascalCase 컴포넌트명 등)를 두면 `subject-case` 규칙에 false-positive로 걸릴 수 있으니, 소문자로 바꾸거나 문장 뒤쪽으로 옮기세요.
-- PR 본문은 `.github/pull_request_template.md`의 STAR 포맷(Situation/Task/Action/Result + 관련 이슈)을 따릅니다. 관련 이슈는 `- Closes #번호` 형식으로 씁니다.
-- 이슈 본문은 `.github/ISSUE_TEMPLATE/issue.md` 포맷(이슈 개요/요구사항/TODO/Remarks)을 따릅니다. `gh issue create`/`gh pr create`를 실행하기 전에 이 두 템플릿 파일을 실제로 열어서 섹션 제목·순서를 그대로 맞추세요 — CLAUDE.md의 요약 문장만 보고 자체 포맷(예: Summary/Test plan)으로 대체하지 않습니다.
+- AI 도구가 커밋 작업을 도왔다면 `Assisted-by: 도구:모델` 트레일러를 도구마다 한 줄씩 붙입니다(예: `Assisted-by: Claude Code:claude-opus-5-5`). 모델은 실제로 쓴 모델의 공식 식별자를 적습니다. `Co-Authored-By`는 사람 공동 저자용이므로 AI에는 쓰지 않습니다.
+- 이슈·PR 본문은 결과(diff) 요약이 아니라 **배경과 이유부터** 씁니다. "무엇을 바꿨나"보다 "왜 필요했나"와 "어떻게 확인했나"가 나중에 다시 볼 때 더 중요합니다.
+- PR 본문은 `.github/pull_request_template.md`(배경/변경 내용/확인 방법/관련 이슈/AI 사용)를 따릅니다. 관련 이슈는 `- Closes #번호` 형식으로 쓰고, AI 도구를 썼다면 도구와 사용 범위를 "AI 사용" 섹션에 적습니다.
+- 이슈는 성격에 따라 템플릿을 고릅니다. 버그는 `.github/ISSUE_TEMPLATE/bug.md`(현상/재현 절차/기대 동작/실제 동작/환경/참고), 그 밖의 기능·개선·리팩터링·문서 작업은 `.github/ISSUE_TEMPLATE/task.md`(배경/하려는 것/완료 조건/참고)를 씁니다. `gh issue create`/`gh pr create`를 실행하기 전에 해당 템플릿 파일을 실제로 열어서 섹션 제목·순서를 그대로 맞추세요 — CLAUDE.md의 요약 문장만 보고 자체 포맷(예: Summary/Test plan)으로 대체하지 않습니다.
 - **PR을 열기 전에 GitHub 이슈부터 만듭니다.** 작업을 시작하기 전에 `gh issue create`로 무엇을, 왜 하는지 먼저 기록한 뒤 브랜치를 파고 PR을 여세요. 이슈가 먼저 있어야 PR의 "Closes #번호"가 실제로 의미를 가지고, 나중에 "왜 이 변경을 했더라"를 되짚을 근거가 남습니다. 작업 도중 우연히 발견한 별개의 버그처럼 시작 전엔 몰랐던 것도, 그 순간 바로 이슈부터 만들고 나서 브랜치를 파세요.
 - 하나의 커밋은 하나의 관심사만 다룹니다(one-concern-per-commit). 서로 무관한 변경(예: 사전 존재하던 lint 버그 수정과 새 기능 변경)은 별도 커밋으로 분리합니다.
 

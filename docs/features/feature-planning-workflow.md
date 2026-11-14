@@ -191,7 +191,7 @@ PRD를 실행 가능한 작업 단위(GitHub Issues)로 변환한다. 각 이슈
 
 **GitHub 등록:**
 
-이슈 본문의 `💬 Remarks` 섹션 첫 줄에 항상 아래 형식의 마커를 남긴다. `/test-scenarios`가 이슈 번호만으로 `docs/features/{name}/`을 찾아야 하므로, 이 마커가 없으면 이후 단계가 이슈 본문에서 feature 이름을 기계적으로 알아낼 수 없다.
+이슈 본문(`.github/ISSUE_TEMPLATE/task.md` 형식)의 `참고` 섹션 첫 줄에 항상 아래 형식의 마커를 남긴다. `/test-scenarios`가 이슈 번호만으로 `docs/features/{name}/`을 찾아야 하므로, 이 마커가 없으면 이후 단계가 이슈 본문에서 feature 이름을 기계적으로 알아낼 수 없다.
 
 ```
 📄 관련 기획 문서: docs/features/{name}/prd.md

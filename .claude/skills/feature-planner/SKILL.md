@@ -153,7 +153,7 @@ issue-{N}.md → TDD 구현
 
 ### GitHub 등록
 
-게이트를 통과하면 실제 이슈를 만드세요. 이슈 본문의 `💬 Remarks` 섹션 첫 줄에 항상 아래 마커를 남기세요 — 이후 `/test-scenarios`가 이슈 번호만으로 `docs/features/{name}/`을 찾아야 하므로, 이 마커가 없으면 기계적으로 feature 이름을 알아낼 방법이 없습니다:
+게이트를 통과하면 실제 이슈를 만드세요. 이슈 본문(`.github/ISSUE_TEMPLATE/task.md` 형식)의 `참고` 섹션 첫 줄에 항상 아래 마커를 남기세요 — 이후 `/test-scenarios`가 이슈 번호만으로 `docs/features/{name}/`을 찾아야 하므로, 이 마커가 없으면 기계적으로 feature 이름을 알아낼 방법이 없습니다:
 
 ```
 📄 관련 기획 문서: docs/features/{name}/prd.md

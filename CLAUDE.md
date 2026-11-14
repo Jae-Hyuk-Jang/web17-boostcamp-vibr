@@ -127,7 +127,9 @@ pnpm test:e2e                     # jest --config ./test/jest-e2e.json
 
 커밋 시 Husky + lint-staged가 staged 파일에 prettier/eslint를 실행하고, commitlint(`commitlint.config.js`)가 커밋 메시지에 Conventional Commits 규칙을 강제합니다. `type`은 `feat|fix|docs|style|refactor|test|chore|revert|perf|ci|design` 중 하나여야 하고(표준 세트에 UI/디자인 전용 `design` 추가), `scope`를 쓸 경우 소문자여야 합니다(`scope-case: lower-case`). 예: `feat(post): 좋아요 낙관적 업데이트 추가`.
 
-`gh issue create`/`gh pr create`를 실행하기 전에는 반드시 `.github/ISSUE_TEMPLATE/issue.md`, `.github/pull_request_template.md`를 실제로 열어서 그 포맷을 따르세요 — 이 요약 문장만 보고 자체 포맷으로 대체하지 않습니다. 상세 규칙은 `docs/conventions.md` §6(커밋·PR)을 참고하세요.
+AI 도구가 도운 커밋에는 `Co-Authored-By` 대신 `Assisted-by: 도구:모델` 트레일러를 붙입니다(예: `Assisted-by: Claude Code:claude-opus-5-5`). `Co-Authored-By`는 사람 공동 저자용입니다. PR을 만들 때는 본문의 "AI 사용" 섹션에 도구와 사용 범위를 적습니다.
+
+`gh issue create`/`gh pr create`를 실행하기 전에는 반드시 해당 템플릿(`.github/ISSUE_TEMPLATE/bug.md` 또는 `task.md`, `.github/pull_request_template.md`)을 실제로 열어서 그 포맷을 따르세요 — 이 요약 문장만 보고 자체 포맷으로 대체하지 않습니다. 이슈·PR 본문은 결과 요약이 아니라 배경과 이유부터 씁니다. 상세 규칙은 `docs/conventions.md` §6(커밋·PR)을 참고하세요.
 
 ## 백엔드 아키텍처 (`apps/api`)
 
