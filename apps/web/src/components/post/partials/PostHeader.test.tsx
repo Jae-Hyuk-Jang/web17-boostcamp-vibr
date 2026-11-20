@@ -23,6 +23,7 @@ const { deletePost } = jest.requireMock('@/api') as { deletePost: jest.Mock };
 const mockPost = (overrides: Partial<Post> = {}): Post => ({
   id: 'post-1',
   author: { id: 'author-1', nickname: 'author', profileImgUrl: null },
+  playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
   coverImgUrl: '',
   musics: [],
   content: 'content',

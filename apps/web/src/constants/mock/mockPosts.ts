@@ -87,6 +87,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-1',
     author: USER_1,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[0]!.albumCoverUrl,
     content: '요즘 밤에 듣기 딱 좋은 곡. 분위기 미쳤음.',
     likeCount: 124,
@@ -99,6 +100,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-2',
     author: USER_2,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[1]!.albumCoverUrl,
     content: '드라이브할 때 꼭 듣는 곡들 모아봤어.',
     likeCount: 89,
@@ -111,6 +113,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-3',
     author: USER_3,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[2]!.albumCoverUrl,
     content: '작업할 때 듣기 좋은 노동요 추천.',
     likeCount: 245,
@@ -123,6 +126,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-4',
     author: USER_1,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[3]!.albumCoverUrl,
     content: '카페에서 듣기 좋은 재즈 감성.',
     likeCount: 56,
@@ -135,6 +139,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-5',
     author: USER_2,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[4]!.albumCoverUrl,
     content: '비 오는 날 감성 플리에서 한 곡 픽!',
     likeCount: 210,
@@ -147,6 +152,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-6',
     author: USER_2,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[4]!.albumCoverUrl,
     content: '비 오는 날 감성 플리에서 한 곡 픽!',
     likeCount: 210,
@@ -159,6 +165,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-7',
     author: USER_2,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[4]!.albumCoverUrl,
     content: '비 오는 날 감성 플리에서 한 곡 픽!',
     likeCount: 210,
@@ -171,6 +178,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-8',
     author: USER_2,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[4]!.albumCoverUrl,
     content: '비 오는 날 감성 플리에서 한 곡 픽!',
     likeCount: 210,
@@ -183,6 +191,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-9',
     author: USER_2,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[4]!.albumCoverUrl,
     content: '비 오는 날 감성 플리에서 한 곡 픽!',
     likeCount: 210,
@@ -195,6 +204,7 @@ export const MOCK_POSTS: Post[] = [
   {
     id: 'p-10',
     author: USER_2,
+    playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
     coverImgUrl: MOCK_MUSICS[4]!.albumCoverUrl,
     content: '비 오는 날 감성 플리에서 한 곡 픽!',
     likeCount: 210,

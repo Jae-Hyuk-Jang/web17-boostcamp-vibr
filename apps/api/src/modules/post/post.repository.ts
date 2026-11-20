@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, FindOptionsWhere, Repository, LessThan } from 'typeorm';
+import { PlaylistVisibility } from '@repo/dto/values';
 import { Post } from './entities/post.entity';
 
 @Injectable()
@@ -56,16 +57,15 @@ export class PostRepository {
     await repo.decrement({ id: postId }, 'commentCount', 1);
   }
 
-  // 유저 모든 글 조회
-  async getPostsByUser(
+  /** 사용자의 공개 플레이리스트에 연결된 반응 기록(최신순). 커버 계산을 위해 곡까지 불러온다 */
+  async getPublicPostsByUser(
     userId: string,
     take: number,
     cursorDate: Date | null,
   ): Promise<Post[]> {
     const whereOption: FindOptionsWhere<Post> = {
-      author: {
-        id: userId,
-      },
+      author: { id: userId },
+      playlist: { visibility: PlaylistVisibility.PUBLIC },
     };
     if (cursorDate) {
       whereOption.createdAt = LessThan(cursorDate);
@@ -73,23 +73,9 @@ export class PostRepository {
 
     return await this.repository.find({
       where: whereOption,
-      relations: {
-        postMusics: true,
-      },
-      select: {
-        id: true,
-        coverImgUrl: true,
-        likeCount: true,
-        commentCount: true,
-        createdAt: true,
-        postMusics: {
-          id: true,
-        },
-      },
-      order: {
-        createdAt: 'DESC',
-      },
-      take: take,
+      relations: { playlist: { playlistMusics: { music: true } } },
+      order: { createdAt: 'DESC' },
+      take,
     });
   }
 }

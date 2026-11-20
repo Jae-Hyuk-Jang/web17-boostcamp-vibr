@@ -4,7 +4,6 @@ import { User } from '../user/entities/user.entity';
 import { DevSeedService } from './dev-seed.service';
 import { Music } from '../music/entities/music.entity';
 import { Post } from '../post/entities/post.entity';
-import { PostMusic } from '../post/entities/post-music.entity';
 import { Like } from '../like/entities/like.entity';
 import { Noti } from '../noti/entities/noti.entity';
 import { Playlist } from '../playlist/entities/playlist.entity';
@@ -16,7 +15,6 @@ import { PlaylistMusic } from '../playlist/entities/playlist-music.entity';
       User,
       Music,
       Post,
-      PostMusic,
       Like,
       Noti,
       Playlist,

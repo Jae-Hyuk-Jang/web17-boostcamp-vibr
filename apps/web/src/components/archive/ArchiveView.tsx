@@ -58,6 +58,8 @@ export default function ArchiveView() {
             title={p.title}
             tracksCount={p.tracksCount}
             firstAlbumCoverUrl={p.firstAlbumCoverUrl}
+            coverImageUrls={p.coverImageUrls}
+            visibility={p.visibility}
             openMenuId={openMenuId}
             setOpenMenuId={setOpenMenuId}
             onRename={handleRename}

@@ -7,14 +7,14 @@ import {
   SEED_LIKES,
   SEED_MUSICS,
   SEED_NOTIS,
-  SEED_POST_MUSICS,
+  SEED_POST_PLAYLISTS,
+  SEED_POST_PLAYLIST_MUSICS,
   SEED_POSTS,
   SEED_USERS,
   SEED_PLAYLISTS,
   SEED_PLAYLIST_MUSICS,
 } from './seed';
 import { Post } from '../post/entities/post.entity';
-import { PostMusic } from '../post/entities/post-music.entity';
 import { User } from '../user/entities/user.entity';
 import { Like } from '../like/entities/like.entity';
 import { Playlist } from '../playlist/entities/playlist.entity';
@@ -35,9 +35,6 @@ export class DevSeedService implements OnApplicationBootstrap {
     @InjectRepository(Post)
     private readonly postRepo: Repository<Post>,
 
-    @InjectRepository(PostMusic)
-    private readonly postMusicRepo: Repository<PostMusic>,
-
     @InjectRepository(Like)
     private readonly likeRepo: Repository<Like>,
 
@@ -52,7 +49,6 @@ export class DevSeedService implements OnApplicationBootstrap {
     if (process.env.NODE_ENV === 'production') return;
 
     // Delete child rows first to satisfy FK constraints.
-    await this.postMusicRepo.deleteAll();
     await this.pmRepo.deleteAll();
     await this.likeRepo.deleteAll();
     await this.notiRepo.deleteAll();
@@ -63,11 +59,14 @@ export class DevSeedService implements OnApplicationBootstrap {
 
     await this.userRepo.save(SEED_USERS);
     await this.musicRepo.save(SEED_MUSICS);
+    // 반응 기록(post)이 플레이리스트를 가리키므로 플레이리스트를 먼저 만든다
+    await this.playlistRepo.save([...SEED_PLAYLISTS, ...SEED_POST_PLAYLISTS]);
+    await this.pmRepo.save([
+      ...SEED_PLAYLIST_MUSICS,
+      ...SEED_POST_PLAYLIST_MUSICS,
+    ]);
     await this.postRepo.save(SEED_POSTS);
-    await this.postMusicRepo.save(SEED_POST_MUSICS);
     await this.likeRepo.save(SEED_LIKES);
     await this.notiRepo.save(SEED_NOTIS);
-    await this.playlistRepo.save(SEED_PLAYLISTS);
-    await this.pmRepo.save(SEED_PLAYLIST_MUSICS);
   }
 }

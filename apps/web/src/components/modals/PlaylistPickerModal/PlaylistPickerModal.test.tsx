@@ -1,3 +1,4 @@
+import { PlaylistVisibility } from '@repo/dto/values';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import PlaylistPickerModal from './PlaylistPickerModal';
@@ -39,6 +40,8 @@ const mockMusic: Music = {
 const mockPlaylist = (overrides: Partial<PlaylistBriefResDto> = {}): PlaylistBriefResDto => ({
   id: 'pl-1',
   title: '내 플레이리스트',
+  coverImageUrls: [],
+  visibility: PlaylistVisibility.PRIVATE,
   tracksCount: 3,
   firstAlbumCoverUrl: 'https://example.com/cover.jpg',
   ...overrides,

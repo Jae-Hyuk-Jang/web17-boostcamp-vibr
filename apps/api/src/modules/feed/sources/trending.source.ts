@@ -4,6 +4,7 @@ import { Post } from 'src/modules/post/entities/post.entity';
 import { TrendingService } from 'src/modules/trending/trending.service';
 import { Repository } from 'typeorm';
 import { FeedSource } from './feed-source.interface';
+import { joinPublicPlaylistWithMusics } from './public-playlist.query';
 
 @Injectable()
 export class TrendingSource implements FeedSource {
@@ -53,11 +54,9 @@ export class TrendingSource implements FeedSource {
     postIds: string[],
     limit: number,
   ): Promise<Post[]> {
-    const query = this.postRepository
-      .createQueryBuilder('post')
-      .leftJoinAndSelect('post.author', 'author')
-      .leftJoinAndSelect('post.postMusics', 'postMusic')
-      .leftJoinAndSelect('postMusic.music', 'music');
+    const query = joinPublicPlaylistWithMusics(
+      this.postRepository.createQueryBuilder('post'),
+    ).leftJoinAndSelect('post.author', 'author');
 
     // isLiked 확인용 조인
     if (requestUserId) {

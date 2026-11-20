@@ -5,19 +5,25 @@ import {
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { PostRepository } from './post.repository';
-import { Post } from './entities/post.entity';
-import { PostMusic } from './entities/post-music.entity';
 import {
   MusicRequestDto,
-  MusicResponseDto,
   MusicProvider,
   PostResponseDto,
   FindByUserDto,
 } from '@repo/dto';
-import { PostMusicRepository } from './post-music.repository';
+import { PlaylistVisibility } from '@repo/dto/values';
+import { PostRepository } from './post.repository';
+import { Post } from './entities/post.entity';
 import { MusicService } from '../music/music.service';
 import { Like } from '../like/entities/like.entity';
+import { Playlist } from '../playlist/entities/playlist.entity';
+import { PlaylistMusic } from '../playlist/entities/playlist-music.entity';
+import { toAutoPlaylistTitle } from '../playlist/playlist.rules';
+import {
+  toCoverImageUrlsOf,
+  toOrderedMusicResponses,
+} from '../playlist/playlist.mapper';
+import { toPostResponseDto } from './post.mapper';
 
 @Injectable()
 export class PostService {
@@ -33,24 +39,28 @@ export class PostService {
     @InjectRepository(Like)
     private readonly likeRepo: Repository<Like>,
 
-    private readonly postMusicRepo: PostMusicRepository,
+    @InjectRepository(Playlist)
+    private readonly playlistRepo: Repository<Playlist>,
 
     private readonly musicService: MusicService,
   ) {}
 
+  /**
+   * 기존 글쓰기(곡 목록·본문·커버 전송)를 "공개 플레이리스트 만들기"로 처리한다.
+   * 플레이리스트를 만들어 곡과 소개 글·커버를 저장하고, 반응 기록을 연결한다.
+   */
   async create(
     userId: string,
     musics: MusicRequestDto[],
     content?: string,
-    thumbnailImgUrl?: string,
+    customCoverUrl?: string,
   ): Promise<void> {
     if (musics.length === 0)
       throw new BadRequestException(
-        '게시글에는 최소 1곡의 음악이 있어야 합니다.',
+        '플레이리스트에는 최소 1곡의 음악이 있어야 합니다.',
       );
 
     musics.forEach((m) => (m.provider ??= MusicProvider.ITUNES));
-    // const ensuredMusics = this.musicService.ensureMusics(musics);
     const musicIds = await Promise.all(
       musics.map(async (m) => {
         if (m.id) return m.id;
@@ -59,127 +69,109 @@ export class PostService {
       }),
     );
 
-    thumbnailImgUrl ??= musics[0]!.albumCoverUrl;
-
-    await this.ds.transaction(async (transactionalEntityManager) => {
-      const postRepo = transactionalEntityManager.getRepository(Post);
-      const postMusicRepo = transactionalEntityManager.getRepository(PostMusic);
-
-      const post = postRepo.create({
-        author: { id: userId },
-        coverImgUrl: thumbnailImgUrl,
-        content,
-        likeCount: 0,
-        commentCount: 0,
-      });
-      const savedPost = await postRepo.save(post);
-
-      const postMusics = musicIds.map((musicId, i) =>
-        postMusicRepo.create({
-          post: { id: savedPost.id },
-          music: { id: musicId },
-          orderIndex: i,
+    await this.ds.transaction(async (manager) => {
+      const playlistRepo = manager.getRepository(Playlist);
+      const playlist = await playlistRepo.save(
+        playlistRepo.create({
+          owner: { id: userId },
+          title: toAutoPlaylistTitle(musics.map((m) => m.title)),
+          description: content?.trim() ? content : null,
+          customCoverUrl: customCoverUrl ?? null,
+          visibility: PlaylistVisibility.PUBLIC,
+          publishedAt: new Date(),
         }),
       );
 
-      await postMusicRepo.save(postMusics);
+      const playlistMusicRepo = manager.getRepository(PlaylistMusic);
+      await playlistMusicRepo.save(
+        musicIds.map((musicId, orderIndex) =>
+          playlistMusicRepo.create({
+            playlist: { id: playlist.id },
+            music: { id: musicId },
+            orderIndex,
+          }),
+        ),
+      );
+
+      const postRepo = manager.getRepository(Post);
+      await postRepo.save(
+        postRepo.create({
+          author: { id: userId },
+          playlist: { id: playlist.id },
+          likeCount: 0,
+          commentCount: 0,
+        }),
+      );
     });
   }
 
-  async getPostDetail(postId: string, viewerId: string | null) {
+  /** 비공개 플레이리스트의 반응 기록은 소유자만 볼 수 있다 */
+  async getPostDetail(
+    postId: string,
+    viewerId: string | null,
+  ): Promise<PostResponseDto> {
     const post = await this.postRepo.findOne({
       where: { id: postId },
-      relations: { author: true },
+      relations: {
+        author: true,
+        playlist: { owner: true, playlistMusics: { music: true } },
+      },
     });
 
-    if (!post) throw new NotFoundException('게시글을 찾을 수 없습니다.');
-
-    const musicsOfPost = await this.postMusicRepo.findMusicsByPostId(postId);
+    const isOwner = !!post && post.playlist.owner.id === viewerId;
+    if (
+      !post ||
+      (post.playlist.visibility !== PlaylistVisibility.PUBLIC && !isOwner)
+    ) {
+      throw new NotFoundException('게시글을 찾을 수 없습니다.');
+    }
 
     const isLiked = viewerId
-      ? await this.likeRepo.exists({
-          where: {
-            userId: viewerId,
-            postId,
-          },
-        })
+      ? await this.likeRepo.exists({ where: { userId: viewerId, postId } })
       : false;
 
-    return this.toGetPostDetailResponseDto({
-      post,
-      musics: musicsOfPost,
-      isLiked,
-    });
+    return toPostResponseDto(post, isLiked);
   }
 
+  /** 본문 수정은 연결된 플레이리스트의 소개 글을 고친다 */
   async update(
     requestUserId: string,
     postId: string,
     content: string,
   ): Promise<void> {
-    const result = await this.postRepo.update(
-      {
-        id: postId,
-        author: { id: requestUserId },
-      },
-      { content },
-    );
-
-    if (!result.affected)
+    const playlistId = await this.findOwnedPlaylistId(requestUserId, postId);
+    if (!playlistId)
       throw new NotFoundException('수정하려는 게시글을 찾을 수 없습니다.');
+
+    await this.playlistRepo.update(playlistId, { description: content });
   }
 
+  /**
+   * 기존 화면의 게시글 삭제는 플레이리스트를 비공개로 바꾸는 것으로 처리한다.
+   * 플레이리스트와 좋아요·댓글은 남고, 다시 공개하면 돌아온다.
+   */
   async delete(requestUserId: string, postId: string): Promise<void> {
-    const result = await this.postRepo.softDelete({
-      id: postId,
-      author: { id: requestUserId },
-    });
-
-    if (!result.affected)
+    const playlistId = await this.findOwnedPlaylistId(requestUserId, postId);
+    if (!playlistId)
       throw new NotFoundException('삭제하려는 게시글을 찾을 수 없습니다.');
+
+    await this.playlistRepo.update(playlistId, {
+      visibility: PlaylistVisibility.PRIVATE,
+    });
   }
 
-  private toGetPostDetailResponseDto({
-    post,
-    musics,
-    isLiked,
-  }: {
-    post: Post;
-    musics: MusicResponseDto[];
-    isLiked: boolean;
-  }): PostResponseDto {
-    const author = {
-      id: post.author.id,
-      nickname: post.author.nickname,
-      profileImgUrl: post.author.profileImgUrl,
-    };
-    const {
-      id,
-      coverImgUrl,
-      content,
-      likeCount,
-      commentCount,
-      createdAt,
-      updatedAt,
-    } = post;
-
-    // 차이가 1초 이상이면 수정된 것으로 판단
-    const isEdited = updatedAt.getTime() - createdAt.getTime() >= 1000;
-
-    return {
-      id,
-      author,
-      coverImgUrl,
-      musics,
-      content,
-      likeCount,
-      commentCount,
-      createdAt: createdAt.toISOString(),
-      isEdited,
-      isLiked,
-    };
+  private async findOwnedPlaylistId(
+    userId: string,
+    postId: string,
+  ): Promise<string | null> {
+    const post = await this.postRepo.findOne({
+      where: { id: postId, author: { id: userId } },
+      relations: { playlist: true },
+    });
+    return post?.playlist.id ?? null;
   }
 
+  /** 사용자의 공개 플레이리스트(반응 기록) 목록 */
   async getByUserId(
     userId: string,
     limit: number,
@@ -187,7 +179,7 @@ export class PostService {
   ): Promise<FindByUserDto> {
     const { date: cursorDate } = this.decodeCursor(cursor);
 
-    const posts = await this.postRepository.getPostsByUser(
+    const posts = await this.postRepository.getPublicPostsByUser(
       userId,
       limit + 1,
       cursorDate,
@@ -204,13 +196,16 @@ export class PostService {
     }
 
     return {
-      posts: targetPosts.map((post) => ({
-        postId: post.id,
-        coverImgUrl: post.coverImgUrl,
-        likeCount: post.likeCount,
-        commentCount: post.commentCount,
-        isMoreThanOneMusic: (post.postMusics?.length ?? 0) > 1,
-      })),
+      posts: targetPosts.map((post) => {
+        const musics = toOrderedMusicResponses(post.playlist);
+        return {
+          postId: post.id,
+          coverImgUrl: toCoverImageUrlsOf(post.playlist, musics)[0] ?? '',
+          likeCount: post.likeCount,
+          commentCount: post.commentCount,
+          isMoreThanOneMusic: musics.length > 1,
+        };
+      }),
       hasNext,
       nextCursor,
     };

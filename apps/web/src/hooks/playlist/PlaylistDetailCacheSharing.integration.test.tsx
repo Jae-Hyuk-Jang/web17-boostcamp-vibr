@@ -1,3 +1,4 @@
+import { PlaylistVisibility } from '@repo/dto/values';
 import { render, screen } from '@testing-library/react';
 import { act } from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
@@ -34,6 +35,9 @@ const { getAllPlaylists, getPlaylistDetail } = jest.requireMock('@/api/internal'
 const detail: GetPlaylistDetailResDto = {
   id: 'pl-1',
   title: '내 플레이리스트',
+  description: null,
+  coverImageUrls: [],
+  visibility: PlaylistVisibility.PRIVATE,
   musics: [] as MusicResponseDto[],
 };
 

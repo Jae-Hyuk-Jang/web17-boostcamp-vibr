@@ -1,6 +1,6 @@
 import { User } from 'src/modules/user/entities/user.entity';
 import { Like } from 'src/modules/like/entities/like.entity';
-import { PostMusic } from './post-music.entity';
+import { Playlist } from 'src/modules/playlist/entities/playlist.entity';
 
 import {
   BeforeInsert,
@@ -11,12 +11,17 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { v7 as uuidV7 } from 'uuid';
 
+/**
+ * 플레이리스트의 반응 기록(사용자에게는 보이지 않음).
+ * 좋아요·댓글·알림·인기 점수가 이 ID를 가리킨다. 곡 목록·소개 글·커버는 플레이리스트에 있다.
+ */
 @Entity()
 export class Post {
   @PrimaryColumn('char', { name: 'post_id', length: 36 })
@@ -31,17 +36,13 @@ export class Post {
   @JoinColumn({ name: 'author_id' })
   author: User;
 
-  @OneToMany(() => PostMusic, (postMusic) => postMusic.post)
-  postMusics: PostMusic[];
+  /** 연결된 플레이리스트(1:1). 플레이리스트를 지우면 반응 기록과 좋아요·댓글도 함께 지워진다 */
+  @OneToOne(() => Playlist, { nullable: false, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'playlist_id' })
+  playlist: Playlist;
 
   @OneToMany(() => Like, (like) => like.post)
   likes: Like[];
-
-  @Column('varchar', { name: 'cover_img_url', length: 2083, nullable: false })
-  coverImgUrl: string;
-
-  @Column('varchar', { length: 2300, nullable: true })
-  content: string;
 
   @Column('int', { name: 'like_count', nullable: false })
   likeCount: number;

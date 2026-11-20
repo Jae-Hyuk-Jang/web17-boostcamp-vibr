@@ -1,3 +1,5 @@
+import { MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
+import { PlaylistVisibility } from '@repo/dto/values';
 import { render, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import PlaylistDetailModal from './PlaylistDetailModal';
@@ -65,6 +67,9 @@ const song = (id: string, title: string): MusicResponseDto => ({
 const basePlaylist: GetPlaylistDetailResDto = {
   id: 'pl-1',
   title: '내 플레이리스트',
+  description: null,
+  coverImageUrls: [],
+  visibility: PlaylistVisibility.PRIVATE,
   musics: [song('s1', 'Song1'), song('s2', 'Song2'), song('s3', 'Song3')],
 };
 
@@ -140,9 +145,9 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
 
     fireEvent.click(screen.getByLabelText('Edit title'));
     const input = screen.getByRole('textbox');
-    fireEvent.change(input, { target: { value: 'a'.repeat(21) } });
+    fireEvent.change(input, { target: { value: 'a'.repeat(MAX_PLAYLIST_TITLE_LENGTH + 1) } });
 
-    expect(await screen.findByText(/최대 20자까지 허용합니다/)).toBeInTheDocument();
+    expect(await screen.findByText(`제목은 최대 ${MAX_PLAYLIST_TITLE_LENGTH}자까지 허용합니다.`)).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Confirm rename'));
     expect(editTitleOfPlaylist).not.toHaveBeenCalled();
   });

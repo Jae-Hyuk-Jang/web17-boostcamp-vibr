@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from 'src/modules/post/entities/post.entity';
 import { Repository } from 'typeorm';
 import { FeedSource } from './feed-source.interface';
+import { joinPublicPlaylistWithMusics } from './public-playlist.query';
 
 @Injectable()
 export class FollowingSource implements FeedSource {
@@ -42,11 +43,10 @@ export class FollowingSource implements FeedSource {
   ) {
     if (!myId) return [];
 
-    const query = this.postRepository
-      .createQueryBuilder('post')
+    const query = joinPublicPlaylistWithMusics(
+      this.postRepository.createQueryBuilder('post'),
+    )
       .leftJoinAndSelect('post.author', 'author')
-      .leftJoinAndSelect('post.postMusics', 'postMusic')
-      .leftJoinAndSelect('postMusic.music', 'music')
       .orderBy('post.id', 'DESC')
       .where('author.id = :myId', { myId });
 
@@ -68,11 +68,10 @@ export class FollowingSource implements FeedSource {
   ) {
     if (!userId) return [];
 
-    const query = this.postRepository
-      .createQueryBuilder('post')
+    const query = joinPublicPlaylistWithMusics(
+      this.postRepository.createQueryBuilder('post'),
+    )
       .leftJoinAndSelect('post.author', 'author')
-      .leftJoinAndSelect('post.postMusics', 'postMusic')
-      .leftJoinAndSelect('postMusic.music', 'music')
       .orderBy('post.id', 'DESC');
 
     //  좋아요 여부 확인

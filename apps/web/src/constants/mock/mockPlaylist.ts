@@ -1,3 +1,4 @@
+import { PlaylistVisibility } from '@repo/dto/values';
 import type { GetAllPlaylistsResDto, GetPlaylistDetailResDto, MusicResponseDto as Music } from '@repo/dto';
 import { MusicProvider } from '@repo/dto/values';
 
@@ -65,11 +66,17 @@ export const MOCK_PLAYLIST_DETAILS: Record<PlaylistId, PlaylistDetail> = {
   [PLAYLIST_IDS.RAINY]: {
     id: PLAYLIST_IDS.RAINY,
     title: PLAYLIST_TITLES[PLAYLIST_IDS.RAINY],
+    description: null,
+    coverImageUrls: [],
+    visibility: PlaylistVisibility.PRIVATE,
     musics: [pick(0), pick(1)],
   },
   [PLAYLIST_IDS.WORK]: {
     id: PLAYLIST_IDS.WORK,
     title: PLAYLIST_TITLES[PLAYLIST_IDS.WORK],
+    description: null,
+    coverImageUrls: [],
+    visibility: PlaylistVisibility.PRIVATE,
     musics: [pick(2)],
   },
 };
@@ -77,6 +84,8 @@ export const MOCK_PLAYLIST_DETAILS: Record<PlaylistId, PlaylistDetail> = {
 const toBrief = (detail: PlaylistDetail): PlaylistBrief => ({
   id: detail.id,
   title: detail.title,
+  coverImageUrls: [],
+  visibility: PlaylistVisibility.PRIVATE,
   tracksCount: detail.musics.length,
   firstAlbumCoverUrl: detail.musics[0]?.albumCoverUrl ?? '',
 });

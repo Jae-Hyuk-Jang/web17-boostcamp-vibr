@@ -4,13 +4,6 @@ import { Playlist } from './entities/playlist.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { PlaylistMusic } from './entities/playlist-music.entity';
 
-export interface PlaylistBriefRow {
-  id: string;
-  title: string;
-  tracksCount: string;
-  firstAlbumCoverUrl: string | null;
-}
-
 @Injectable()
 export class PlaylistRepository {
   constructor(
@@ -21,30 +14,15 @@ export class PlaylistRepository {
     private readonly pmRepo: Repository<PlaylistMusic>,
   ) {}
 
+  /** 내 플레이리스트 전체(생성 순). 커버 계산을 위해 곡까지 불러온다 */
   async getAllPlaylists(userId: string, manager?: EntityManager) {
     const repo = this.getPlaylistRepo(manager);
 
-    return await repo
-      .createQueryBuilder('p')
-      .select('p.playlist_id', 'id')
-      .addSelect('p.title', 'title')
-      .addSelect((sq) => {
-        return sq
-          .select('COUNT(*)')
-          .from('playlist_music', 'pmc')
-          .where('pmc.playlist_id = p.playlist_id');
-      }, 'tracksCount')
-      .addSelect((sq) => {
-        return sq
-          .select('m.album_cover_url')
-          .from('playlist_music', 'pm1')
-          .innerJoin('music', 'm', 'm.music_id = pm1.music_id')
-          .where('pm1.playlist_id = p.playlist_id')
-          .orderBy('pm1.order_index', 'ASC')
-          .limit(1);
-      }, 'firstAlbumCoverUrl')
-      .where('p.owner_id = :userId', { userId })
-      .getRawMany<PlaylistBriefRow>();
+    return await repo.find({
+      where: { owner: { id: userId } },
+      relations: { playlistMusics: { music: true } },
+      order: { id: 'ASC' },
+    });
   }
 
   async getCountOfPlaylistOf(userId: string, manager?: EntityManager) {

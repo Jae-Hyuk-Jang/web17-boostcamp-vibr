@@ -2,7 +2,10 @@ import { NotiType, MusicProvider } from '@repo/dto';
 import { DeepPartial } from 'typeorm';
 import { Music } from '../music/entities/music.entity';
 import { Post } from '../post/entities/post.entity';
-import { PostMusic } from '../post/entities/post-music.entity';
+import { Playlist } from '../playlist/entities/playlist.entity';
+import { PlaylistMusic } from '../playlist/entities/playlist-music.entity';
+import { PlaylistVisibility } from '@repo/dto/values';
+import { toAutoPlaylistTitle } from '../playlist/playlist.rules';
 
 const user1Id = '019be163-4b37-76ad-aeb3-6986a3489de6';
 const user2Id = '019be163-4b3a-7619-a3cd-75302c5451e6';
@@ -15,6 +18,10 @@ const music6Id = '019be165-6364-75ba-88a6-6e4331ec10fb';
 const post1Id = '018f3b7a-b8f1-74ab-a6e2-3d9c0f1b8e45';
 const post2Id = '018f3b7a-a2d4-7f09-9c31-1e8b7a5d4c22';
 const post3Id = '018f3b7a-9c6e-7c21-8b4f-6a2d5e3c9f10';
+// 게시글(반응 기록)마다 연결되는 공개 플레이리스트
+const postPlaylist1Id = '019be16a-1000-7000-8000-000000000001';
+const postPlaylist2Id = '019be16a-1000-7000-8000-000000000002';
+const postPlaylist3Id = '019be16a-1000-7000-8000-000000000003';
 
 export const SEED_USERS = [
   {
@@ -140,34 +147,7 @@ export const SEED_MUSICS: DeepPartial<Music>[] = [
   },
 ];
 
-export const SEED_POSTS: DeepPartial<Post>[] = [
-  {
-    id: post1Id, // noti.relatedId
-    author: { id: user1Id },
-    coverImgUrl: SEED_MUSICS[0]!.albumCoverUrl!, // 커버 이미지: music 1 앨범커버
-    content: '요즘 이 곡 진짜 반복재생 중… 분위기 미쳤다. 너네도 들어봐.',
-    likeCount: 1,
-    commentCount: 1,
-  },
-  {
-    id: post2Id,
-    author: { id: user1Id },
-    coverImgUrl:
-      'https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/9a/fa/45/9afa45ec-7823-7e58-5580-27c01cdd709d/akmu_cover.jpg/600x600bb.jpg',
-    content: 'AKMU 노래 모음',
-    likeCount: 1,
-    commentCount: 0,
-  },
-  {
-    id: post3Id,
-    author: { id: user2Id },
-    coverImgUrl:
-      'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/12/31/63/12316366-55bb-065c-8ad9-47e107fa79b2/AKMU_NEXT_EPISODE.jpg/600x600bb.jpg',
-    content: 'AKMU 노래 추천',
-    likeCount: 1,
-    commentCount: 0,
-  },
-];
+const SEED_PUBLISHED_AT = new Date('2026-11-01T00:00:00.000Z');
 
 const pm1Id = '019be167-13a7-77e1-bbc7-d019dce35ba0';
 const pm2Id = '019be169-d510-737c-9ede-24fcf0243f68';
@@ -175,37 +155,100 @@ const pm3Id = '019be167-4952-714b-95c7-61999ca1c990';
 const pm4Id = '019be167-4953-740b-ad26-ccdb7bc00e1b';
 const pm5Id = '019be167-70e1-751a-84b5-39a8dd3ccf21';
 
-export const SEED_POST_MUSICS: DeepPartial<PostMusic>[] = [
+/** 게시글마다 하나씩 만드는 공개 플레이리스트. 기존 게시글 본문은 소개 글로, 첫 곡과 다른 커버는 직접 올린 커버로 옮겼다 */
+export const SEED_POST_PLAYLISTS: DeepPartial<Playlist>[] = [
+  {
+    id: postPlaylist1Id,
+    owner: { id: user1Id },
+    title: toAutoPlaylistTitle([
+      SEED_MUSICS[0]!.title!,
+      SEED_MUSICS[2]!.title!,
+    ]),
+    description: '요즘 이 곡 진짜 반복재생 중… 분위기 미쳤다. 너네도 들어봐.',
+    customCoverUrl: null,
+    visibility: PlaylistVisibility.PUBLIC,
+    publishedAt: SEED_PUBLISHED_AT,
+  },
+  {
+    id: postPlaylist2Id,
+    owner: { id: user1Id },
+    title: toAutoPlaylistTitle([
+      SEED_MUSICS[0]!.title!,
+      SEED_MUSICS[1]!.title!,
+    ]),
+    description: 'AKMU 노래 모음',
+    customCoverUrl:
+      'https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/9a/fa/45/9afa45ec-7823-7e58-5580-27c01cdd709d/akmu_cover.jpg/600x600bb.jpg',
+    visibility: PlaylistVisibility.PUBLIC,
+    publishedAt: SEED_PUBLISHED_AT,
+  },
+  {
+    id: postPlaylist3Id,
+    owner: { id: user2Id },
+    title: toAutoPlaylistTitle([SEED_MUSICS[2]!.title!]),
+    description: 'AKMU 노래 추천',
+    customCoverUrl:
+      'https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/12/31/63/12316366-55bb-065c-8ad9-47e107fa79b2/AKMU_NEXT_EPISODE.jpg/600x600bb.jpg',
+    visibility: PlaylistVisibility.PUBLIC,
+    publishedAt: SEED_PUBLISHED_AT,
+  },
+];
+
+export const SEED_POST_PLAYLIST_MUSICS: DeepPartial<PlaylistMusic>[] = [
+  {
+    id: pm4Id,
+    playlist: { id: postPlaylist1Id },
+    music: { id: music1Id },
+    orderIndex: 0,
+  },
+  {
+    id: pm5Id,
+    playlist: { id: postPlaylist1Id },
+    music: { id: music3Id },
+    orderIndex: 1,
+  },
   {
     id: pm1Id,
-    post: { id: post2Id },
+    playlist: { id: postPlaylist2Id },
     music: { id: music1Id },
     orderIndex: 0,
   },
   {
     id: pm2Id,
-    post: { id: post2Id },
+    playlist: { id: postPlaylist2Id },
     music: { id: music2Id },
     orderIndex: 1,
   },
-
   {
     id: pm3Id,
-    post: { id: post3Id },
+    playlist: { id: postPlaylist3Id },
     music: { id: music3Id },
     orderIndex: 0,
   },
+];
+
+/** 반응 기록(사용자에게는 보이지 않음). 좋아요·댓글·알림이 이 ID를 가리킨다 */
+export const SEED_POSTS: DeepPartial<Post>[] = [
   {
-    id: pm4Id,
-    post: { id: post1Id } as DeepPartial<Post>,
-    music: { id: SEED_MUSICS[0]!.id } as DeepPartial<Music>,
-    orderIndex: 0,
+    id: post1Id, // noti.relatedId
+    author: { id: user1Id },
+    playlist: { id: postPlaylist1Id },
+    likeCount: 1,
+    commentCount: 1,
   },
   {
-    id: pm5Id,
-    post: { id: post1Id } as DeepPartial<Post>,
-    music: { id: SEED_MUSICS[2]!.id } as DeepPartial<Music>,
-    orderIndex: 1,
+    id: post2Id,
+    author: { id: user1Id },
+    playlist: { id: postPlaylist2Id },
+    likeCount: 1,
+    commentCount: 0,
+  },
+  {
+    id: post3Id,
+    author: { id: user2Id },
+    playlist: { id: postPlaylist3Id },
+    likeCount: 1,
+    commentCount: 0,
   },
 ];
 
