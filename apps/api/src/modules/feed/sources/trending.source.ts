@@ -1,11 +1,37 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { isUUID } from 'class-validator';
 import { Post } from 'src/modules/post/entities/post.entity';
 import { TrendingService } from 'src/modules/trending/trending.service';
 import { Repository } from 'typeorm';
-import { FeedSource } from './feed-source.interface';
+import { FeedPage, FeedPageRequest, FeedSource } from './feed-source.interface';
 import { joinPublicPlaylistWithMusics } from './public-playlist.query';
 
+type RankedPost = { postId: string; score: number };
+
+const CURSOR_SEPARATOR = ':';
+
+/** 마지막으로 보여 준 항목의 점수와 id. 점수가 같은 항목이 페이지 경계에서 반복되지 않게 id도 함께 쓴다 */
+const toTrendingCursor = ({ score, postId }: RankedPost) =>
+  `${score}${CURSOR_SEPARATOR}${postId}`;
+
+const parseTrendingCursor = (cursor: string): RankedPost => {
+  const [scoreText = '', postId = ''] = cursor.split(CURSOR_SEPARATOR);
+  const score = Number(scoreText);
+  if (scoreText.trim() === '' || !Number.isFinite(score) || !isUUID(postId, 7))
+    throw new BadRequestException('잘못된 피드 커서입니다.');
+  return { score, postId };
+};
+
+/**
+ * Redis는 점수가 같으면 id 역순으로 준다. 커서 항목 다음부터 남긴다.
+ * (점수가 더 낮거나, 점수가 같고 id가 더 작은 것)
+ */
+const isRankedAfter = (member: RankedPost, last: RankedPost) =>
+  member.score < last.score ||
+  (member.score === last.score && member.postId < last.postId);
+
+/** 지금 인기: 인기 점수가 높은 순서. 비공개로 바뀐 것은 빠진다 */
 @Injectable()
 export class TrendingSource implements FeedSource {
   constructor(
@@ -13,63 +39,37 @@ export class TrendingSource implements FeedSource {
     private readonly trendingService: TrendingService,
   ) {}
 
-  async getPosts(
-    isInitialRequest: boolean,
-    requestUserId: string | null,
-    limit: number,
-    cursor?: string,
-  ): Promise<{ posts: Post[]; nextCursor?: string }> {
-    if (!isInitialRequest && !cursor) return { posts: [] };
+  async getPage({ limit, cursor }: FeedPageRequest): Promise<FeedPage> {
+    const last = cursor === undefined ? undefined : parseTrendingCursor(cursor);
 
-    // 인기 점수순으로 limit + 1개까지 조회 (마지막 1개는 다음 페이지 존재 여부 확인용)
-    const parsed = cursor ? Number(cursor) : undefined;
-    const maxScoreExclusive = Number.isFinite(parsed) ? parsed : undefined;
-    const members = await this.getTrendingPostIds(limit, maxScoreExclusive);
+    const candidates = await this.trendingService.getByMaxScore(last?.score);
+    const ranked = (
+      last
+        ? candidates.filter((member) => isRankedAfter(member, last))
+        : candidates
+    ).slice(0, limit + 1);
 
-    if (!members || members.length === 0) return { posts: [] };
+    // limit + 1번째가 있으면 다음 페이지가 있다
+    const shown = ranked.slice(0, limit);
+    const nextCursor =
+      ranked.length > limit
+        ? toTrendingCursor(shown[shown.length - 1]!)
+        : undefined;
 
-    // nextCursor
-    const hasNext = members.length > limit;
-    const nextCursor = hasNext ? members[members.length - 1]!.score : undefined;
+    if (shown.length === 0) return { posts: [] };
 
-    // 게시글 조회
-    const postIds = members.slice(0, limit).map((m) => m.postId);
-    const posts = await this.hydratePosts(requestUserId, postIds, limit);
-
-    return { posts, nextCursor: nextCursor?.toString() };
-  }
-
-  private async getTrendingPostIds(
-    limit: number,
-    maxScoreExclusive?: number,
-  ): Promise<{ postId: string; score: number }[]> {
-    // 전체 인기글 조회
-    const members = await this.trendingService.getByMaxScore(maxScoreExclusive);
-
-    return members.slice(0, limit + 1);
-  }
-
-  private async hydratePosts(
-    requestUserId: string | null,
-    postIds: string[],
-    limit: number,
-  ): Promise<Post[]> {
-    const query = joinPublicPlaylistWithMusics(
+    const postIds = shown.map((member) => member.postId);
+    const posts = await joinPublicPlaylistWithMusics(
       this.postRepository.createQueryBuilder('post'),
-    ).leftJoinAndSelect('post.author', 'author');
+    )
+      .andWhere('post.id IN (:...postIds)', { postIds })
+      .getMany();
 
-    // isLiked 확인용 조인
-    if (requestUserId) {
-      query.leftJoinAndSelect(
-        'post.likes',
-        'like',
-        'like.userId = :requestUserId',
-        { requestUserId },
-      );
-    }
-
-    query.andWhere('post.id IN (:...postIds)', { postIds });
-
-    return await query.take(limit + 1).getMany();
+    // id 목록으로 다시 조회하면 순서가 사라지므로 인기 점수 순서로 되돌린다
+    const rankOf = new Map(postIds.map((id, index) => [id, index]));
+    return {
+      posts: posts.toSorted((a, b) => rankOf.get(a.id)! - rankOf.get(b.id)!),
+      nextCursor,
+    };
   }
 }

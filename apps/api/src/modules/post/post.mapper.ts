@@ -1,7 +1,7 @@
 import type { PostResponseDto } from '@repo/dto';
 import {
-  toCoverImageUrlsOf,
   toOrderedMusicResponses,
+  toPlaylistSummary,
 } from '../playlist/playlist.mapper';
 import { Post } from './entities/post.entity';
 
@@ -19,7 +19,7 @@ export const toPostResponseDto = (
 ): PostResponseDto => {
   const { playlist } = post;
   const musics = toOrderedMusicResponses(playlist);
-  const coverImageUrls = toCoverImageUrlsOf(playlist, musics);
+  const playlistSummary = toPlaylistSummary(playlist, musics);
 
   return {
     id: post.id,
@@ -28,13 +28,8 @@ export const toPostResponseDto = (
       nickname: post.author.nickname,
       profileImgUrl: post.author.profileImgUrl,
     },
-    playlist: {
-      id: playlist.id,
-      title: playlist.title,
-      coverImageUrls,
-      tracksCount: musics.length,
-    },
-    coverImgUrl: coverImageUrls[0] ?? '',
+    playlist: playlistSummary,
+    coverImgUrl: playlistSummary.coverImageUrls[0] ?? '',
     musics,
     content: playlist.description ?? '',
     likeCount: post.likeCount,

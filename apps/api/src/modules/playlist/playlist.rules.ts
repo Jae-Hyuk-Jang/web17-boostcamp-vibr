@@ -1,7 +1,7 @@
-import { PLAYLIST_TITLE_MAX_LENGTH } from '@repo/dto/values';
-
-/** 2×2로 보여 줄 때 필요한 서로 다른 커버 수 */
-const MOSAIC_COVER_COUNT = 4;
+import {
+  PLAYLIST_COVER_MOSAIC_COUNT,
+  PLAYLIST_TITLE_MAX_LENGTH,
+} from '@repo/dto/values';
 
 /**
  * 플레이리스트 커버로 보여 줄 이미지를 고른다(0·1·4개).
@@ -20,7 +20,8 @@ export const toPlaylistCoverImageUrls = (
   for (const url of albumCoverUrlsInTrackOrder) {
     if (!url || distinctCovers.includes(url)) continue;
     distinctCovers.push(url);
-    if (distinctCovers.length === MOSAIC_COVER_COUNT) return distinctCovers;
+    if (distinctCovers.length === PLAYLIST_COVER_MOSAIC_COUNT)
+      return distinctCovers;
   }
 
   const [firstCover] = distinctCovers;

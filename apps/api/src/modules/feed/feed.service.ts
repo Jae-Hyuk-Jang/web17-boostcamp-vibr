@@ -1,102 +1,71 @@
 import { Injectable } from '@nestjs/common';
-import { toPostResponseDto } from '../post/post.mapper';
-import { Post } from '../post/entities/post.entity';
-import { PostResponseDto, FeedResponseDto, Cursor } from '@repo/dto';
+import type {
+  FeedShelfDto,
+  FeedShelfPageDto,
+  FeedShelvesResponseDto,
+} from '@repo/dto';
+import { FeedShelfKey } from '@repo/dto/values';
+import { FeedSource } from './sources/feed-source.interface';
 import { FollowingSource } from './sources/following.source';
 import { TrendingSource } from './sources/trending.source';
 import { RecentSource } from './sources/recent.source';
-import { SourceAllocationPolicy } from './policy/source-allocation.policy';
-import { FeedCompositionPolicy } from './policy/feed-composition.policy';
+import { toFeedShelfItemDto } from './feed-shelf.mapper';
+import { FEED_SHELF_MAX_SIZE } from './feed.constants';
+
+/** 홈에 보여 줄 선반 순서 */
+const SHELF_ORDER: readonly FeedShelfKey[] = [
+  FeedShelfKey.FOLLOWING,
+  FeedShelfKey.TRENDING,
+  FeedShelfKey.RECENT,
+];
+
+const toShelfSize = (limit: number) =>
+  Math.min(Math.max(limit, 1), FEED_SHELF_MAX_SIZE);
 
 @Injectable()
 export class FeedService {
+  private readonly sources: Record<FeedShelfKey, FeedSource>;
+
   constructor(
-    private readonly followingSource: FollowingSource,
-    private readonly trendingSource: TrendingSource,
-    private readonly recentSource: RecentSource,
-
-    private readonly sourceAllocationPolicy: SourceAllocationPolicy,
-    private readonly feedCompositionPolicy: FeedCompositionPolicy,
-  ) {}
-
-  async feed(
-    requestUserId: string | null,
-    limit: number,
-    cursor?: Cursor,
-  ): Promise<FeedResponseDto> {
-    const isInitialRequest = this.isInitialCursor(cursor);
-
-    const {
-      followingLimit,
-      trendingLimit,
-      recentLimit: initialRecentLimit,
-    } = this.sourceAllocationPolicy.allocate(limit);
-    let recentLimit = initialRecentLimit;
-
-    // 팔로잉 글 (+ 내 글)과 인기 게시글을 병렬로 조회
-    const [
-      { posts: followingPosts, nextCursor: nextFollowingCursor },
-      { posts: trendingPosts, nextCursor: nextTrendingCursor },
-    ] = await Promise.all([
-      this.followingSource.getPosts(
-        isInitialRequest,
-        requestUserId,
-        followingLimit,
-        cursor?.following,
-      ),
-      this.trendingSource.getPosts(
-        isInitialRequest,
-        requestUserId,
-        trendingLimit,
-        cursor?.trending,
-      ),
-    ]);
-
-    // 덜 조회된 팔로잉 글 수만큼 최신글을 더 조회
-    const followingShortage = followingLimit - followingPosts.length;
-    recentLimit += followingShortage;
-
-    // 최신글
-    const { posts: recentPosts, nextCursor: nextRecentCursor } =
-      await this.recentSource.getPosts(
-        isInitialRequest,
-        requestUserId,
-        recentLimit,
-        cursor?.recent,
-      );
-
-    // 합치기
-    const posts = this.feedCompositionPolicy.compose(
-      followingPosts,
-      trendingPosts,
-      recentPosts,
-    );
-
-    return {
-      hasNext:
-        !!nextFollowingCursor || !!nextTrendingCursor || !!nextRecentCursor,
-      nextCursor: {
-        following: nextFollowingCursor,
-        trending: nextTrendingCursor,
-        recent: nextRecentCursor,
-      },
-      posts: this.mapToFeedResponseDto(posts),
+    followingSource: FollowingSource,
+    trendingSource: TrendingSource,
+    recentSource: RecentSource,
+  ) {
+    this.sources = {
+      [FeedShelfKey.FOLLOWING]: followingSource,
+      [FeedShelfKey.TRENDING]: trendingSource,
+      [FeedShelfKey.RECENT]: recentSource,
     };
   }
 
-  private isInitialCursor(cursor?: Cursor) {
-    return (
-      !cursor ||
-      (cursor.following === undefined &&
-        cursor.trending === undefined &&
-        cursor.recent === undefined)
+  /** 홈 첫 화면: 선반마다 첫 페이지를 모으고, 비어 있는 선반은 뺀다 */
+  async getShelves(
+    requestUserId: string | null,
+    limit: number,
+  ): Promise<FeedShelvesResponseDto> {
+    const shelves: FeedShelfDto[] = await Promise.all(
+      SHELF_ORDER.map(async (key) => ({
+        key,
+        ...(await this.getShelfPage(key, requestUserId, limit)),
+      })),
     );
+
+    return { shelves: shelves.filter((shelf) => shelf.items.length > 0) };
   }
 
-  private mapToFeedResponseDto(posts: Post[]): PostResponseDto[] {
-    // isLiked: 요청자의 좋아요만 조인했으므로 결과가 있으면 true
-    return posts.map((post) =>
-      toPostResponseDto(post, !!(post.likes && post.likes.length > 0)),
-    );
+  /** 선반 하나를 커서 다음부터 이어서 불러온다 */
+  async getShelfPage(
+    key: FeedShelfKey,
+    requestUserId: string | null,
+    limit: number,
+    cursor?: string,
+  ): Promise<FeedShelfPageDto> {
+    const { posts, nextCursor } = await this.sources[key].getPage({
+      requestUserId,
+      limit: toShelfSize(limit),
+      cursor,
+    });
+
+    return { items: posts.map(toFeedShelfItemDto), nextCursor };
   }
 }

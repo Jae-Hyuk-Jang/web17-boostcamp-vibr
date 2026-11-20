@@ -2,46 +2,43 @@ import {
   Controller,
   DefaultValuePipe,
   Get,
-  InternalServerErrorException,
+  Param,
+  ParseEnumPipe,
   ParseIntPipe,
-  ParseUUIDPipe,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { FeedService } from './feed.service';
+import type { FeedShelfPageDto, FeedShelvesResponseDto } from '@repo/dto';
+import { FeedShelfKey } from '@repo/dto/values';
 import { AuthOptionalGuard } from 'src/common/guards/auth.optional-guard';
 import { UserId } from 'src/common/decorators/user-id.decorator';
-import { FeedResponseDto } from '@repo/dto';
+import { FeedService } from './feed.service';
+import { FEED_SHELF_DEFAULT_SIZE } from './feed.constants';
 
 @Controller('feed')
+@UseGuards(AuthOptionalGuard)
 export class FeedController {
   constructor(private readonly feedService: FeedService) {}
 
-  @Get()
-  @UseGuards(AuthOptionalGuard)
-  async feed(
+  /** 홈 첫 화면의 선반들. 로그인하면 "팔로우한 사람" 선반이 붙는다 */
+  @Get('shelves')
+  getShelves(
     @UserId() userId: string | null,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query(
-      'followingCursor',
-      new ParseUUIDPipe({ version: '7', optional: true }),
-    )
-    following?: string,
-    @Query('trendingCursor') trending?: string,
-    @Query('recentCursor', new ParseUUIDPipe({ version: '7', optional: true }))
-    recent?: string,
-  ): Promise<FeedResponseDto> {
-    try {
-      return await this.feedService.feed(userId, limit, {
-        following,
-        trending,
-        recent,
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new InternalServerErrorException(
-        `피드 데이터를 불러오는 데 실패했습니다. 에러 메시지: ${message}`,
-      );
-    }
+    @Query('limit', new DefaultValuePipe(FEED_SHELF_DEFAULT_SIZE), ParseIntPipe)
+    limit: number,
+  ): Promise<FeedShelvesResponseDto> {
+    return this.feedService.getShelves(userId, limit);
+  }
+
+  /** 선반 하나를 이어서 불러오기 */
+  @Get('shelves/:shelf')
+  getShelfPage(
+    @UserId() userId: string | null,
+    @Param('shelf', new ParseEnumPipe(FeedShelfKey)) shelf: FeedShelfKey,
+    @Query('limit', new DefaultValuePipe(FEED_SHELF_DEFAULT_SIZE), ParseIntPipe)
+    limit: number,
+    @Query('cursor') cursor?: string,
+  ): Promise<FeedShelfPageDto> {
+    return this.feedService.getShelfPage(shelf, userId, limit, cursor);
   }
 }

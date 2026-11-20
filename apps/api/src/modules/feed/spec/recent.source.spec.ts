@@ -1,159 +1,74 @@
-import { RecentSource } from '../sources/recent.source';
-import { Post } from 'src/modules/post/entities/post.entity';
+import { BadRequestException } from '@nestjs/common';
 import { Repository } from 'typeorm';
+import { Post } from 'src/modules/post/entities/post.entity';
+import { RecentSource } from '../sources/recent.source';
+import {
+  makeQueryBuilderMock,
+  postIdOf,
+  QueryBuilderMock,
+} from './query-builder.mock';
 
-type MockQueryBuilder = {
-  leftJoinAndSelect: jest.Mock;
-  innerJoinAndSelect: jest.Mock;
-  orderBy: jest.Mock;
-  andWhere: jest.Mock;
-  take: jest.Mock;
-  getMany: jest.Mock;
-};
-
-describe('RecentSource (mock only)', () => {
+describe('RecentSource', () => {
   const repo = { createQueryBuilder: jest.fn() };
-
-  const makeQb = (): MockQueryBuilder => ({
-    leftJoinAndSelect: jest.fn().mockReturnThis(),
-    innerJoinAndSelect: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    take: jest.fn().mockReturnThis(),
-    getMany: jest.fn(),
-  });
-
-  const makeMockPost = (id: string) => ({ id }) as unknown as Post;
-
+  let qb: QueryBuilderMock;
   let source: RecentSource;
 
   beforeEach(() => {
     jest.clearAllMocks();
-
+    qb = makeQueryBuilderMock();
+    qb.getMany.mockResolvedValue([]);
+    repo.createQueryBuilder.mockReturnValue(qb);
     source = new RecentSource(repo as unknown as Repository<Post>);
   });
 
-  it('공개 플레이리스트에 연결된 반응 기록만 조인한다', async () => {
-    // given
-    const qb = makeQb();
-    qb.getMany.mockResolvedValue([]);
-    repo.createQueryBuilder.mockReturnValue(qb);
+  it('공개 플레이리스트와 소유자를 조인하고 최신순으로 정렬한다', async () => {
+    await source.getPage({ requestUserId: null, limit: 10 });
 
-    // when
-    await source.getPosts(true, null, 10, undefined);
-
-    // then
     expect(qb.innerJoinAndSelect).toHaveBeenCalledWith(
       'post.playlist',
       'playlist',
       'playlist.visibility = :publicVisibility',
       { publicVisibility: 'public' },
     );
-  });
-
-  it('비초기 + cursor 없음이면 posts:[] 즉시 반환 + repo 호출 X', async () => {
-    // when
-    const res = await source.getPosts(false, 'u1', 10, undefined);
-
-    // then
-    expect(res).toEqual({ posts: [] });
-    expect(repo.createQueryBuilder).not.toHaveBeenCalled();
-  });
-
-  it('requestUserId=null이면 likes join을 하지 않는다', async () => {
-    // given
-    const qb = makeQb();
-    qb.getMany.mockResolvedValue([]);
-
-    repo.createQueryBuilder.mockReturnValue(qb);
-
-    // when
-    await source.getPosts(true, null, 10, undefined);
-
-    // then
-    const joinedRelations = qb.leftJoinAndSelect.mock.calls.map(
-      (c: string[]) => c[0],
+    expect(qb.innerJoinAndSelect).toHaveBeenCalledWith(
+      'playlist.owner',
+      'owner',
     );
-    expect(joinedRelations).not.toContain('post.likes');
+    expect(qb.orderBy).toHaveBeenCalledWith('post.id', 'DESC');
   });
 
-  it('requestUserId가 있으면 likes join을 한다', async () => {
-    // given
-    const qb = makeQb();
-    qb.getMany.mockResolvedValue([]);
+  it('커서가 있으면 그보다 먼저 만든 것만 조회한다', async () => {
+    const cursor = postIdOf(5);
 
-    repo.createQueryBuilder.mockReturnValue(qb);
+    await source.getPage({ requestUserId: null, limit: 10, cursor });
 
-    // when
-    await source.getPosts(true, 'u1', 10, undefined);
+    expect(qb.andWhere).toHaveBeenCalledWith('post.id < :cursor', { cursor });
+  });
 
-    // then
-    expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
-      'post.likes',
-      'like',
-      'like.userId = :requestUserId',
-      { requestUserId: 'u1' },
+  it('형식이 잘못된 커서는 400으로 거절한다', async () => {
+    await expect(
+      source.getPage({ requestUserId: null, limit: 10, cursor: 'abc' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(qb.getMany).not.toHaveBeenCalled();
+  });
+
+  it('limit + 1개를 조회해 limit개만 돌려주고 마지막 id를 다음 커서로 준다', async () => {
+    qb.getMany.mockResolvedValue(
+      [4, 3, 2, 1].map((n) => ({ id: postIdOf(n) }) as Post),
     );
-  });
 
-  it('cursor가 있으면 andWhere(post.id < :cursor)를 추가한다', async () => {
-    // given
-    const qb = makeQb();
-    qb.getMany.mockResolvedValue([]);
+    const page = await source.getPage({ requestUserId: null, limit: 3 });
 
-    repo.createQueryBuilder.mockReturnValue(qb);
-
-    // when
-    await source.getPosts(true, 'u1', 10, 'CURSOR');
-
-    // then
-    expect(qb.andWhere).toHaveBeenCalledWith('post.id < :cursor', {
-      cursor: 'CURSOR',
-    });
-  });
-
-  it('fetched.length > limit이면 slice 후 nextCursor를 마지막 id로 설정한다', async () => {
-    // given
-    const qb = makeQb();
-    // limit은 3, 조회된 최신글은 4개
-    qb.getMany.mockResolvedValue([
-      makeMockPost('d'),
-      makeMockPost('c'),
-      makeMockPost('b'),
-      makeMockPost('a'),
-    ]);
-
-    repo.createQueryBuilder.mockReturnValue(qb);
-
-    // when
-    const res = await source.getPosts(true, 'u1', 3, undefined);
-
-    // then
-    // limit + 1만큼 조회
     expect(qb.take).toHaveBeenCalledWith(4);
-
-    // 최신 limit 개수만큼 조회
-    expect(res.posts.map((p) => p.id)).toEqual(['d', 'c', 'b']);
-
-    // nextCursor는 마지막꺼 id
-    expect(res.nextCursor).toBe('b');
+    expect(page.posts.map((p) => p.id)).toEqual([4, 3, 2].map(postIdOf));
+    expect(page.nextCursor).toBe(postIdOf(2));
   });
 
-  it('fetched.length <= limit이면 nextCursor는 undefined', async () => {
-    // given
-    const qb = makeQb();
-    qb.getMany.mockResolvedValue([
-      makeMockPost('c'),
-      makeMockPost('b'),
-      makeMockPost('a'),
-    ]);
+  it('limit개 이하면 다음 커서가 없다', async () => {
+    qb.getMany.mockResolvedValue([{ id: postIdOf(1) } as Post]);
 
-    repo.createQueryBuilder.mockReturnValue(qb);
+    const page = await source.getPage({ requestUserId: null, limit: 3 });
 
-    // when
-    const res = await source.getPosts(true, 'u1', 3, undefined);
-
-    expect(res.posts.map((p) => p.id)).toEqual(['c', 'b', 'a']);
-    expect(res.nextCursor).toBeUndefined();
+    expect(page.nextCursor).toBeUndefined();
   });
 });
