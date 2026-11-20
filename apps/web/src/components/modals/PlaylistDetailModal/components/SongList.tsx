@@ -57,8 +57,8 @@ function SongItem({
       {/* Song Info (Click to play individual) */}
       <div className="flex items-center flex-1 min-w-0 cursor-pointer" onClick={() => playMusic(song)}>
         <div className="relative w-10 h-10 mr-3 shrink-0">
-          <Image src={song.albumCoverUrl} alt="cover" fill className="rounded border border-gray-200 object-cover" />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded flex items-center justify-center transition-colors">
+          <Image src={song.albumCoverUrl} alt="cover" fill className="object-cover" />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 flex items-center justify-center transition-colors">
             <Play className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 fill-current drop-shadow-md" />
           </div>
         </div>

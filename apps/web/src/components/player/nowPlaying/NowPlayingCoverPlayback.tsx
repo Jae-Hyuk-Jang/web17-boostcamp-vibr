@@ -15,7 +15,7 @@ function NowPlayingCoverPlaybackBase({ currentMusic, isYouTube }: Props) {
   const { containerRef } = usePlaybackRefs();
 
   return (
-    <div className="relative mx-auto w-full max-w-55 aspect-square rounded-2xl border-2 border-primary overflow-hidden bg-gray-4 mb-2 flex items-center justify-center">
+    <div className="relative mx-auto w-full max-w-55 aspect-square overflow-hidden bg-gray-4 mb-2 flex items-center justify-center">
       <div className={`w-full h-full ${isYouTube ? '' : 'hidden'}`}>
         <div ref={isYouTube ? (containerRef ?? undefined) : undefined} className="w-full h-full" />
       </div>

@@ -26,8 +26,8 @@ export function Header() {
       <div className="flex items-center space-x-6">
         {/* Cover */}
         <div className="relative w-28 h-28 shrink-0">
-          <div className="absolute inset-0 bg-primary translate-x-1 translate-y-1 rounded-xl"></div>
-          <Image src={coverImgUrl} alt={title} fill className="object-cover rounded-xl border-2 border-primary z-10" />
+          <div className="absolute inset-0 bg-primary translate-x-1 translate-y-1"></div>
+          <Image src={coverImgUrl} alt={title} fill className="object-cover z-10" />
           <div className="absolute -bottom-2 -right-2 z-20 bg-accent-pink text-white text-xs font-bold px-2 py-0.5 rounded-full border border-primary">
             {tracksCount}곡
           </div>

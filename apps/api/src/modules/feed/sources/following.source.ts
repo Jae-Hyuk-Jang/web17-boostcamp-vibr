@@ -2,96 +2,42 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from 'src/modules/post/entities/post.entity';
 import { Repository } from 'typeorm';
-import { FeedSource } from './feed-source.interface';
+import { FeedPage, FeedPageRequest, FeedSource } from './feed-source.interface';
+import { parsePostIdCursor, toFeedPage } from './feed-page';
 import { joinPublicPlaylistWithMusics } from './public-playlist.query';
 
+/** 팔로우한 사람: 내가 팔로우한 사람의 공개 플레이리스트, 최신 공개순. 비로그인이면 비어 있다 */
 @Injectable()
 export class FollowingSource implements FeedSource {
   constructor(
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
   ) {}
 
-  async getPosts(
-    isInitialRequest: boolean,
-    requestUserId: string | null,
-    limit: number,
-    cursor?: string,
-  ): Promise<{ posts: Post[]; nextCursor?: string }> {
-    if (!isInitialRequest && !cursor) return { posts: [] };
-
-    const myPosts = await this.getMyPosts(requestUserId, limit, cursor);
-    const followingPosts = await this.getPostsOfFollowings(
-      requestUserId,
-      limit,
-      cursor,
-    );
-
-    const fetched = [...myPosts, ...followingPosts].toSorted((a, b) =>
-      b.id.localeCompare(a.id),
-    );
-    const hasNext = fetched.length > limit;
-    const posts = hasNext ? fetched.slice(0, limit) : fetched;
-    const nextCursor = hasNext ? posts[posts.length - 1]!.id : undefined;
-
-    return { posts, nextCursor };
-  }
-
-  private async getMyPosts(
-    myId: string | null,
-    limit: number,
-    cursor?: string,
-  ) {
-    if (!myId) return [];
+  async getPage({
+    requestUserId,
+    limit,
+    cursor,
+  }: FeedPageRequest): Promise<FeedPage> {
+    if (!requestUserId) return { posts: [] };
 
     const query = joinPublicPlaylistWithMusics(
       this.postRepository.createQueryBuilder('post'),
     )
-      .leftJoinAndSelect('post.author', 'author')
-      .orderBy('post.id', 'DESC')
-      .where('author.id = :myId', { myId });
-
-    query.leftJoinAndSelect('post.likes', 'like', 'like.userId = :myId', {
-      myId,
-    });
-
-    if (cursor) {
-      query.andWhere('post.id < :cursor', { cursor });
-    }
-
-    return await query.take(limit + 1).getMany();
-  }
-
-  private async getPostsOfFollowings(
-    userId: string | null,
-    limit: number,
-    cursor?: string,
-  ) {
-    if (!userId) return [];
-
-    const query = joinPublicPlaylistWithMusics(
-      this.postRepository.createQueryBuilder('post'),
-    )
-      .leftJoinAndSelect('post.author', 'author')
+      .innerJoin(
+        'follow',
+        'f',
+        'f.followingUserId = :requestUserId AND f.followedUserId = owner.id',
+        { requestUserId },
+      )
       .orderBy('post.id', 'DESC');
 
-    //  좋아요 여부 확인
-    query.leftJoinAndSelect('post.likes', 'like', 'like.userId = :userId', {
-      userId,
-    });
-
-    // 팔로잉한 사용자의 게시글만 조회
-    query.innerJoin(
-      'follow',
-      'f',
-      'f.followingUserId = :userId AND f.followedUserId = author.id',
-      { userId },
-    );
-
-    // 커서 페이지네이션 조건 추가
     if (cursor) {
-      query.andWhere('post.id < :cursor', { cursor });
+      query.andWhere('post.id < :cursor', {
+        cursor: parsePostIdCursor(cursor),
+      });
     }
 
-    return await query.take(limit + 1).getMany();
+    const fetched = await query.take(limit + 1).getMany();
+    return toFeedPage(fetched, limit, (post) => post.id);
   }
 }

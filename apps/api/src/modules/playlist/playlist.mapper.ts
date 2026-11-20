@@ -1,4 +1,4 @@
-import type { MusicResponseDto } from '@repo/dto';
+import type { MusicResponseDto, PostPlaylistDto } from '@repo/dto';
 import { Playlist } from './entities/playlist.entity';
 import { toPlaylistCoverImageUrls } from './playlist.rules';
 
@@ -27,3 +27,14 @@ export const toCoverImageUrlsOf = (
     playlist.customCoverUrl,
     musicsInOrder.map((music) => music.albumCoverUrl),
   );
+
+/** 카드·응답에 쓰는 플레이리스트 요약(제목, 커버, 곡 수) */
+export const toPlaylistSummary = (
+  playlist: Playlist,
+  musicsInOrder: MusicResponseDto[],
+): PostPlaylistDto => ({
+  id: playlist.id,
+  title: playlist.title,
+  coverImageUrls: toCoverImageUrlsOf(playlist, musicsInOrder),
+  tracksCount: musicsInOrder.length,
+});

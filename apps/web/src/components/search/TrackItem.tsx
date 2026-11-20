@@ -45,9 +45,7 @@ export default function TrackItem({ mode, item, isAuthenticated }: TrackItemProp
 
   return (
     <div onClick={handlePlayClick} title="재생" className="w-full flex items-center p-3 rounded-xl cursor-pointer hover:bg-gray-4 transition-colors">
-      <div
-        className={`relative ${isVideo ? 'h-14 aspect-video' : 'h-12 aspect-square'} mr-4 shrink-0 rounded-lg overflow-hidden border border-gray-3 bg-gray-4`}
-      >
+      <div className={`relative ${isVideo ? 'h-14 aspect-video' : 'h-12 aspect-square'} mr-4 shrink-0 overflow-hidden bg-gray-4`}>
         <Image src={item.albumCoverUrl} alt={item.title} fill className="object-cover" />
       </div>
 

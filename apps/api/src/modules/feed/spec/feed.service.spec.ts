@@ -1,309 +1,132 @@
-import { Test } from '@nestjs/testing';
+import { FeedShelfKey } from '@repo/dto/values';
+import { Post } from 'src/modules/post/entities/post.entity';
 import { FeedService } from '../feed.service';
 import { FollowingSource } from '../sources/following.source';
 import { TrendingSource } from '../sources/trending.source';
 import { RecentSource } from '../sources/recent.source';
-import { SourceAllocationPolicy } from '../policy/source-allocation.policy';
-import { FeedCompositionPolicy } from '../policy/feed-composition.policy';
+import { FEED_SHELF_MAX_SIZE } from '../feed.constants';
+
+const makePost = (id: string, coverUrls: string[] = ['cover-a']) =>
+  ({
+    id,
+    playlist: {
+      id: `playlist-${id}`,
+      title: `제목 ${id}`,
+      customCoverUrl: null,
+      owner: { id: 'owner-1', nickname: '주인', profileImgUrl: 'profile' },
+      playlistMusics: coverUrls
+        .map((albumCoverUrl, orderIndex) => ({
+          orderIndex,
+          music: {
+            id: `m${orderIndex}`,
+            title: `곡 ${orderIndex}`,
+            artistName: 'a',
+            albumCoverUrl,
+            trackUri: 'uri',
+            provider: 'itunes',
+            durationMs: 1000,
+          },
+        }))
+        .reverse(), // 조인 결과 순서에 기대지 않는지 확인
+    },
+  }) as unknown as Post;
 
 describe('FeedService', () => {
+  const following = { getPage: jest.fn() };
+  const trending = { getPage: jest.fn() };
+  const recent = { getPage: jest.fn() };
   let service: FeedService;
 
-  const followingSource = {
-    getPosts: jest.fn(),
-  };
-  const trendingSource = {
-    getPosts: jest.fn(),
-  };
-  const recentSource = {
-    getPosts: jest.fn(),
-  };
-  const sourceAllocationPolicy = {
-    allocate: jest.fn(),
-  };
-  const feedCompositionPolicy = {
-    compose: jest.fn(),
-  };
-
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.clearAllMocks();
-
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        FeedService,
-        { provide: FollowingSource, useValue: followingSource },
-        { provide: TrendingSource, useValue: trendingSource },
-        { provide: RecentSource, useValue: recentSource },
-        { provide: SourceAllocationPolicy, useValue: sourceAllocationPolicy },
-        { provide: FeedCompositionPolicy, useValue: feedCompositionPolicy },
-      ],
-    }).compile();
-
-    service = moduleRef.get(FeedService);
-  });
-
-  const makePost = (
-    overrides: Partial<any> = {},
-    playlistOverrides: Partial<any> = {},
-  ) => {
-    const createdAt = new Date('2026-02-01T00:00:00.000Z');
-    const base = {
-      id: 'post-1',
-      likeCount: 0,
-      commentCount: 0,
-      createdAt,
-      updatedAt: createdAt,
-      author: { id: 'u1', nickname: 'n', profileImgUrl: null },
-      likes: [],
-      playlist: {
-        id: 'pl-1',
-        title: '플레이리스트',
-        description: 'c',
-        customCoverUrl: null,
-        updatedAt: createdAt,
-        playlistMusics: [
-          {
-            orderIndex: 0,
-            music: {
-              id: 'm1',
-              title: 't',
-              artistName: 'a',
-              albumCoverUrl: 'img',
-              trackUri: 'uri',
-              provider: 'itunes',
-              durationMs: 123000,
-            },
-          },
-        ],
-        ...playlistOverrides,
-      },
-    };
-    return { ...base, ...overrides };
-  };
-
-  it('초기 요청: cursor 없으면 isInitialRequest=true로 소스 호출', async () => {
-    // given
-    const followingLimit = 2;
-    const trendingLimit = 3;
-    const recentLimit = 5;
-
-    sourceAllocationPolicy.allocate.mockReturnValue({
-      followingLimit,
-      trendingLimit,
-      recentLimit,
-    });
-
-    followingSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
-    trendingSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
-    recentSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
-
-    feedCompositionPolicy.compose.mockReturnValue([]);
-
-    // when
-    await service.feed('u1', 10);
-
-    // then
-    expect(followingSource.getPosts).toHaveBeenCalledWith(
-      true,
-      'u1',
-      followingLimit,
-      undefined,
-    );
-    expect(trendingSource.getPosts).toHaveBeenCalledWith(
-      true,
-      'u1',
-      trendingLimit,
-      undefined,
-    );
-    expect(recentSource.getPosts).toHaveBeenCalledWith(
-      true,
-      'u1',
-      followingLimit + recentLimit,
-      undefined,
+    following.getPage.mockResolvedValue({ posts: [] });
+    trending.getPage.mockResolvedValue({ posts: [] });
+    recent.getPage.mockResolvedValue({ posts: [] });
+    service = new FeedService(
+      following as unknown as FollowingSource,
+      trending as unknown as TrendingSource,
+      recent as unknown as RecentSource,
     );
   });
 
-  it('초기 이후 요청: cursor 일부라도 있으면 isInitialRequest=false', async () => {
-    // given
-    const followingLimit = 2;
-    const trendingLimit = 3;
-    const recentLimit = 5;
-
-    sourceAllocationPolicy.allocate.mockReturnValue({
-      followingLimit,
-      trendingLimit,
-      recentLimit,
+  it('선반을 팔로우한 사람, 지금 인기, 새로 올라온 순서로 돌려준다', async () => {
+    following.getPage.mockResolvedValue({ posts: [makePost('f')] });
+    trending.getPage.mockResolvedValue({
+      posts: [makePost('t')],
+      nextCursor: 'tc',
     });
+    recent.getPage.mockResolvedValue({ posts: [makePost('r')] });
 
-    followingSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
-    trendingSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
-    recentSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
+    const { shelves } = await service.getShelves('me', 12);
 
-    feedCompositionPolicy.compose.mockReturnValue([]);
-
-    // when
-    await service.feed('u1', 3, { following: 'f1' });
-
-    // then
-    expect(followingSource.getPosts).toHaveBeenCalledWith(
-      false,
-      'u1',
-      followingLimit,
-      'f1',
-    );
-    expect(trendingSource.getPosts).toHaveBeenCalledWith(
-      false,
-      'u1',
-      trendingLimit,
-      undefined,
-    );
-    expect(recentSource.getPosts).toHaveBeenCalledWith(
-      false,
-      'u1',
-      followingLimit + recentLimit,
-      undefined,
-    );
-  });
-
-  it('compose에 3 소스 결과를 그대로 넘기고, compose 결과를 posts로 리턴한다', async () => {
-    const followingLimit = 2;
-    const trendingLimit = 3;
-    const recentLimit = 5;
-
-    sourceAllocationPolicy.allocate.mockReturnValue({
-      followingLimit,
-      trendingLimit,
-      recentLimit,
-    });
-
-    const followingPosts = [makePost({ id: 'f' })];
-    const trendingPosts = [makePost({ id: 't' })];
-    const recentPosts = [makePost({ id: 'r' })];
-
-    followingSource.getPosts.mockResolvedValue({
-      posts: followingPosts,
-      nextCursor: undefined,
-    });
-    trendingSource.getPosts.mockResolvedValue({
-      posts: trendingPosts,
-      nextCursor: undefined,
-    });
-    recentSource.getPosts.mockResolvedValue({
-      posts: recentPosts,
-      nextCursor: undefined,
-    });
-
-    const composed = [makePost({ id: 'c1' }), makePost({ id: 'c2' })];
-    feedCompositionPolicy.compose.mockReturnValue(composed);
-
-    const res = await service.feed('u1', 3);
-
-    expect(feedCompositionPolicy.compose).toHaveBeenCalledWith(
-      followingPosts,
-      trendingPosts,
-      recentPosts,
-    );
-    expect(res.posts).toHaveLength(2);
-    expect(res.posts.map((p) => p.id)).toEqual(['c1', 'c2']);
-  });
-
-  it('hasNext/nextCursor는 각 소스의 nextCursor OR 로 결정', async () => {
-    // given
-    sourceAllocationPolicy.allocate.mockReturnValue({
-      followingLimit: 0,
-      trendingLimit: 0,
-      recentLimit: 0,
-    });
-
-    followingSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
-    trendingSource.getPosts.mockResolvedValue({ posts: [], nextCursor: 'tc' });
-    recentSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
-
-    feedCompositionPolicy.compose.mockReturnValue([]);
-
-    // when
-    const res = await service.feed(null, 0);
-
-    expect(res.hasNext).toBe(true);
-    expect(res.nextCursor).toEqual({
-      following: undefined,
-      trending: 'tc',
-      recent: undefined,
+    expect(shelves.map((s) => s.key)).toEqual([
+      FeedShelfKey.FOLLOWING,
+      FeedShelfKey.TRENDING,
+      FeedShelfKey.RECENT,
+    ]);
+    expect(shelves[1]!.nextCursor).toBe('tc');
+    expect(following.getPage).toHaveBeenCalledWith({
+      requestUserId: 'me',
+      limit: 12,
+      cursor: undefined,
     });
   });
 
-  it('mapToFeedResponseDto: isLiked/isEdited/musics 매핑', async () => {
-    // given
-    sourceAllocationPolicy.allocate.mockReturnValue({
-      followingLimit: 1,
-      trendingLimit: 0,
-      recentLimit: 0,
+  it('비어 있는 선반은 뺀다', async () => {
+    recent.getPage.mockResolvedValue({ posts: [makePost('r')] });
+
+    const { shelves } = await service.getShelves(null, 12);
+
+    expect(shelves.map((s) => s.key)).toEqual([FeedShelfKey.RECENT]);
+  });
+
+  it('카드에 플레이리스트 요약, 소유자, 곡 순서대로의 곡 목록, 반응 기록 id를 담는다', async () => {
+    recent.getPage.mockResolvedValue({
+      posts: [makePost('p1', ['a', 'b', 'c', 'd'])],
     });
 
-    const p = makePost(
-      {
-        id: 'p1',
-        likes: [{ userId: 'u1' }], // join 결과 있다고 가정
-        createdAt: new Date('2026-02-01T00:00:00.000Z'),
-      },
-      // 공개 이후 플레이리스트를 정확히 1000ms 뒤에 고침
-      { updatedAt: new Date('2026-02-01T00:00:01.000Z') },
+    const { items } = await service.getShelfPage(FeedShelfKey.RECENT, null, 12);
+
+    expect(items).toHaveLength(1);
+    const [item] = items;
+    expect(item!.reactionId).toBe('p1');
+    expect(item!.playlist).toEqual({
+      id: 'playlist-p1',
+      title: '제목 p1',
+      coverImageUrls: ['a', 'b', 'c', 'd'],
+      tracksCount: 4,
+    });
+    expect(item!.owner).toEqual({
+      id: 'owner-1',
+      nickname: '주인',
+      profileImgUrl: 'profile',
+    });
+    expect(item!.musics.map((m) => m.title)).toEqual([
+      '곡 0',
+      '곡 1',
+      '곡 2',
+      '곡 3',
+    ]);
+  });
+
+  it('선반 하나를 이어서 불러올 때 커서를 그대로 넘긴다', async () => {
+    await service.getShelfPage(FeedShelfKey.TRENDING, 'me', 12, 'c1');
+
+    expect(trending.getPage).toHaveBeenCalledWith({
+      requestUserId: 'me',
+      limit: 12,
+      cursor: 'c1',
+    });
+  });
+
+  it.each([
+    [0, 1],
+    [999, FEED_SHELF_MAX_SIZE],
+  ])('요청한 개수 %d는 %d로 맞춘다', async (requested, expected) => {
+    await service.getShelfPage(FeedShelfKey.RECENT, null, requested);
+
+    expect(recent.getPage).toHaveBeenCalledWith(
+      expect.objectContaining({ limit: expected }),
     );
-
-    followingSource.getPosts.mockResolvedValue({
-      posts: [p],
-      nextCursor: undefined,
-    });
-    trendingSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
-    recentSource.getPosts.mockResolvedValue({
-      posts: [],
-      nextCursor: undefined,
-    });
-
-    feedCompositionPolicy.compose.mockReturnValue([p]);
-
-    // when
-    const res = await service.feed('u1', 1);
-
-    // then
-    const post = res.posts[0]!;
-    expect(post.isLiked).toBe(true);
-    expect(post.isEdited).toBe(true);
-    expect(post.musics[0]!.title).toBe('t');
-    expect(post.content).toBe('c');
-    expect(post.coverImgUrl).toBe('img');
-    expect(post.playlist).toEqual({
-      id: 'pl-1',
-      title: '플레이리스트',
-      coverImageUrls: ['img'],
-      tracksCount: 1,
-    });
   });
 });

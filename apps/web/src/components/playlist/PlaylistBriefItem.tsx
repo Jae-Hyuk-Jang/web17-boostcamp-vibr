@@ -21,19 +21,13 @@ export const PlaylistBriefItem = ({ brief, isLoading, onSelect }: Props) => {
       className="w-full flex items-center px-4 py-3 hover:bg-gray-4 transition-colors text-left group disabled:opacity-60 disabled:cursor-not-allowed"
     >
       <div className="relative mr-4">
-        <div className="absolute top-1 -right-1 w-10 h-10 bg-gray-2 border border-gray-3 rounded-lg rotate-6" />
-        <div className="absolute top-0.5 -right-0.5 w-10 h-10 bg-gray-3 border border-gray-3 rounded-lg rotate-3" />
+        <div className="absolute top-1 -right-1 w-10 h-10 bg-gray-2 rotate-6" />
+        <div className="absolute top-0.5 -right-0.5 w-10 h-10 bg-gray-3 rotate-3" />
 
         {coverUrl ? (
-          <Image
-            src={coverUrl}
-            alt="playlist-cover"
-            width={40}
-            height={40}
-            className="relative w-10 h-10 rounded-lg border border-gray-3 object-cover z-10"
-          />
+          <Image src={coverUrl} alt="playlist-cover" width={40} height={40} className="relative w-10 h-10 object-cover z-10" />
         ) : (
-          <div className="relative w-10 h-10 rounded-lg border border-gray-3 bg-white z-10 flex items-center justify-center">
+          <div className="relative w-10 h-10 bg-white z-10 flex items-center justify-center">
             <Library className="w-4 h-4 text-gray-1" />
           </div>
         )}

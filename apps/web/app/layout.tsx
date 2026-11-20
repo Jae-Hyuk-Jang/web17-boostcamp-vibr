@@ -66,8 +66,8 @@ export default function RootLayout({
                 <Sidebar />
               </div>
 
-              {/* 모바일: flex-col(위→아래), 데스크탑: flex-row(좌→우) */}
-              <div className="flex flex-1 flex-col lg:flex-row min-h-0">
+              {/* 모바일: flex-col(위→아래), 데스크탑: flex-row(좌→우). min-w-0: 가로로 긴 콘텐츠(피드 선반)가 이 영역을 넓혀 우측 패널을 밀어내지 않게 한다 */}
+              <div className="flex flex-1 flex-col lg:flex-row min-h-0 min-w-0">
                 {/* 중앙 컨텐츠 */}
                 <div className="flex-1 flex flex-col min-h-0 min-w-0">
                   <Header />

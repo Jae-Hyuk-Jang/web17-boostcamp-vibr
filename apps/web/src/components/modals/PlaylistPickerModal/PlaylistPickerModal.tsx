@@ -196,7 +196,7 @@ export default function PlaylistPickerModal() {
                           alt={pl.title}
                           width={40}
                           height={40}
-                          className="w-10 h-10 rounded-lg border border-gray-3 object-cover shrink-0"
+                          className="w-10 h-10 object-cover shrink-0"
                         />
                         <div className="ml-3 min-w-0 text-left">
                           <p className="font-bold text-primary truncate">{pl.title}</p>

@@ -1,170 +1,62 @@
-import { FollowingSource } from '../sources/following.source';
-import { Post } from 'src/modules/post/entities/post.entity';
 import { Repository } from 'typeorm';
+import { Post } from 'src/modules/post/entities/post.entity';
+import { FollowingSource } from '../sources/following.source';
+import {
+  makeQueryBuilderMock,
+  postIdOf,
+  QueryBuilderMock,
+} from './query-builder.mock';
 
-type MockQueryBuilder = {
-  leftJoinAndSelect: jest.Mock;
-  innerJoinAndSelect: jest.Mock;
-  orderBy: jest.Mock;
-  where: jest.Mock;
-  andWhere: jest.Mock;
-  innerJoin: jest.Mock;
-  take: jest.Mock;
-  getMany: jest.Mock;
-};
-
-describe('FollowingSource (mock only)', () => {
-  const postRepository = { createQueryBuilder: jest.fn() };
-
-  const makeQb = (): MockQueryBuilder => ({
-    leftJoinAndSelect: jest.fn().mockReturnThis(),
-    innerJoinAndSelect: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    innerJoin: jest.fn().mockReturnThis(),
-    take: jest.fn().mockReturnThis(),
-    getMany: jest.fn(),
-  });
-
-  const makeMockPost = (id: string) => ({ id }) as unknown as Post;
-
+describe('FollowingSource', () => {
+  const repo = { createQueryBuilder: jest.fn() };
+  let qb: QueryBuilderMock;
   let source: FollowingSource;
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    source = new FollowingSource(postRepository as unknown as Repository<Post>);
+    qb = makeQueryBuilderMock();
+    qb.getMany.mockResolvedValue([]);
+    repo.createQueryBuilder.mockReturnValue(qb);
+    source = new FollowingSource(repo as unknown as Repository<Post>);
   });
 
-  it('비초기 + cursor 없으면 posts: [] 즉시 반환', async () => {
-    // when
-    const res = await source.getPosts(false, 'u1', 10, undefined);
+  it('비로그인이면 조회하지 않고 빈 페이지를 돌려준다', async () => {
+    const page = await source.getPage({ requestUserId: null, limit: 10 });
 
-    // then
-    expect(res).toEqual({ posts: [] });
-    expect(postRepository.createQueryBuilder).not.toHaveBeenCalled();
+    expect(page).toEqual({ posts: [] });
+    expect(repo.createQueryBuilder).not.toHaveBeenCalled();
   });
 
-  it('비로그인 사용자 요청인 경우 myPosts=[], followingPosts=[]', async () => {
-    const res = await source.getPosts(true, null, 10, undefined);
-    expect(res).toEqual({ posts: [], nextCursor: undefined });
-    expect(postRepository.createQueryBuilder).not.toHaveBeenCalled();
-  });
+  it('내가 팔로우한 사람이 소유한 공개 플레이리스트만 조회한다(내 것은 넣지 않는다)', async () => {
+    await source.getPage({ requestUserId: 'me', limit: 10 });
 
-  it('팔로잉 쿼리는 innerJoin(follow ...)가 정확히 들어간다', async () => {
-    // given
-    const qbMy = makeQb();
-    const qbFollow = makeQb();
-
-    qbMy.getMany.mockResolvedValue([makeMockPost('c')]);
-    qbFollow.getMany.mockResolvedValue([makeMockPost('b')]);
-
-    postRepository.createQueryBuilder
-      .mockReturnValueOnce(qbMy)
-      .mockReturnValueOnce(qbFollow);
-
-    // when
-    await source.getPosts(true, 'u1', 10, undefined);
-
-    // then
-    expect(qbFollow.innerJoin).toHaveBeenCalledWith(
+    expect(repo.createQueryBuilder).toHaveBeenCalledTimes(1);
+    expect(qb.innerJoin).toHaveBeenCalledWith(
       'follow',
       'f',
-      'f.followingUserId = :userId AND f.followedUserId = author.id',
-      { userId: 'u1' },
+      'f.followingUserId = :requestUserId AND f.followedUserId = owner.id',
+      { requestUserId: 'me' },
     );
+    expect(qb.orderBy).toHaveBeenCalledWith('post.id', 'DESC');
   });
 
-  it('cursor가 있으면 쿼리에 andWhere로 커서조건 추가', async () => {
-    // given
-    const qbMy = makeQb();
-    const qbFollow = makeQb();
+  it('커서가 있으면 그보다 먼저 만든 것만 조회한다', async () => {
+    const cursor = postIdOf(7);
 
-    qbMy.getMany.mockResolvedValue([]);
-    qbFollow.getMany.mockResolvedValue([]);
+    await source.getPage({ requestUserId: 'me', limit: 10, cursor });
 
-    postRepository.createQueryBuilder
-      .mockReturnValueOnce(qbMy)
-      .mockReturnValueOnce(qbFollow);
-
-    // when
-    await source.getPosts(true, 'u1', 10, 'CURSOR_ID');
-
-    // then
-    expect(qbMy.andWhere).toHaveBeenCalledWith('post.id < :cursor', {
-      cursor: 'CURSOR_ID',
-    });
-    expect(qbFollow.andWhere).toHaveBeenCalledWith('post.id < :cursor', {
-      cursor: 'CURSOR_ID',
-    });
+    expect(qb.andWhere).toHaveBeenCalledWith('post.id < :cursor', { cursor });
   });
 
-  it('myPosts 쿼리는 where + like join 조건에 요청 사용자 아이디가 들어간다', async () => {
-    // given
-    const qbMy = makeQb();
-    const qbFollow = makeQb();
-
-    qbMy.getMany.mockResolvedValue([]);
-    qbFollow.getMany.mockResolvedValue([]);
-
-    postRepository.createQueryBuilder
-      .mockReturnValueOnce(qbMy)
-      .mockReturnValueOnce(qbFollow);
-
-    // when
-    await source.getPosts(true, 'me', 10, undefined);
-
-    // then
-    expect(qbMy.where).toHaveBeenCalledWith('author.id = :myId', {
-      myId: 'me',
-    });
-    expect(qbMy.leftJoinAndSelect).toHaveBeenCalledWith(
-      'post.likes',
-      'like',
-      'like.userId = :myId',
-      { myId: 'me' },
+  it('limit보다 많으면 잘라서 마지막 id를 다음 커서로 준다', async () => {
+    qb.getMany.mockResolvedValue(
+      [3, 2, 1].map((n) => ({ id: postIdOf(n) }) as Post),
     );
-  });
 
-  it('두 쿼리 모두 take(limit+1)을 호출한다', async () => {
-    // given
-    const qbMy = makeQb();
-    const qbFollow = makeQb();
+    const page = await source.getPage({ requestUserId: 'me', limit: 2 });
 
-    qbMy.getMany.mockResolvedValue([]);
-    qbFollow.getMany.mockResolvedValue([]);
-
-    postRepository.createQueryBuilder
-      .mockReturnValueOnce(qbMy)
-      .mockReturnValueOnce(qbFollow);
-
-    // when
-    await source.getPosts(true, 'u1', 7, undefined);
-
-    // then
-    expect(qbMy.take).toHaveBeenCalledWith(8);
-    expect(qbFollow.take).toHaveBeenCalledWith(8);
-  });
-
-  it('myPosts+followingsPosts가 limit보다 많으면 id desc 정렬 후 slice + nextCursor 마지막 id', async () => {
-    // given
-    const qbMy = makeQb();
-    const qbFollow = makeQb();
-
-    qbMy.getMany.mockResolvedValue([makeMockPost('c'), makeMockPost('a')]);
-    qbFollow.getMany.mockResolvedValue([makeMockPost('d'), makeMockPost('b')]);
-
-    postRepository.createQueryBuilder
-      .mockReturnValueOnce(qbMy)
-      .mockReturnValueOnce(qbFollow);
-
-    // when
-    const res = await source.getPosts(true, 'u1', 3, undefined);
-
-    // then
-    // [c,a,d,b] -> sort desc => [d,c,b,a]
-    expect(res.posts.map((p) => p.id)).toEqual(['d', 'c', 'b']);
-    expect(res.nextCursor).toBe('b');
+    expect(qb.take).toHaveBeenCalledWith(3);
+    expect(page.posts.map((p) => p.id)).toEqual([3, 2].map(postIdOf));
+    expect(page.nextCursor).toBe(postIdOf(2));
   });
 });

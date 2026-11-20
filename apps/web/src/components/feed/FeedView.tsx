@@ -1,82 +1,40 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useInfiniteScrollTrigger } from '@/hooks';
-import { getFeedPosts } from '@/api';
+import { useFeedShelves } from '@/hooks';
 import { FeedSkeleton } from '../skeleton';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import FeedList from './FeedList';
-import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
-import { feedQueryKey } from '@/query-keys';
-import { PostResponseDto as Post, Cursor } from '@repo/dto';
+import FeedShelf from './FeedShelf';
 
-interface FeedViewProps {
-  initialPost?: Post;
-}
+/** 홈 피드: 서버가 정한 순서대로 출처별 선반을 보여 준다 */
+export default function FeedView() {
+  const { data, isPending, isError, refetch } = useFeedShelves();
 
-export type FeedPage = {
-  posts: Post[];
-  hasNext: boolean;
-  nextCursor?: Cursor;
-};
+  if (isPending) return <FeedSkeleton />;
 
-/** postId 기반 게시글 목록 중복 제거 함수 */
-const dedupePosts = (posts: Post[]) => Array.from(new Map(posts.map((post) => [post.id, post])).values());
+  if (isError) {
+    return (
+      <div className="py-16 text-center">
+        <p className="font-bold text-primary">피드를 불러오지 못했습니다.</p>
+        <button type="button" onClick={() => void refetch()} className="mt-3 text-sm font-bold text-primary underline">
+          다시 시도
+        </button>
+      </div>
+    );
+  }
 
-export default function FeedView({ initialPost }: FeedViewProps) {
-  const openModal = useModalStore((s) => s.openModal);
-
-  useEffect(() => {
-    if (initialPost) {
-      openModal(MODAL_TYPES.POST_DETAIL, { postId: initialPost.id, initialPost });
-    }
-  }, [initialPost, openModal]);
-
-  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: feedQueryKey,
-    queryFn: async ({ pageParam }: { pageParam: Cursor | undefined }): Promise<FeedPage> => {
-      if (pageParam !== undefined) await new Promise((resolve) => setTimeout(resolve, 300)); // 로딩 스피너 짧게 노출
-      return getFeedPosts(pageParam);
-    },
-    initialPageParam: undefined as Cursor | undefined,
-    getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.nextCursor : undefined),
-  });
-
-  const ref = useInfiniteScrollTrigger({
-    hasNextPage: Boolean(hasNextPage),
-    isFetchingNextPage,
-    fetchNextPage: () => {
-      void fetchNextPage();
-    },
-  });
-
-  // 공유 라우트로 진입한 특정 글을 목록 맨 앞에 시딩 — 실제 피드 페이지에도 같은 글이 있으면 dedupe로 하나만 남는다.
-  const posts = useMemo(() => {
-    const fetched = data?.pages.flatMap((p) => p.posts) ?? [];
-    return dedupePosts(initialPost ? [initialPost, ...fetched] : fetched);
-  }, [data, initialPost]);
-
-  const isInitialLoading = isPending;
-  const errorMsg = isError ? '오류가 발생했습니다.' : null;
-  const hasNext = Boolean(hasNextPage);
-
-  if (isInitialLoading && !initialPost) return <FeedSkeleton />;
+  if (data.shelves.length === 0) {
+    return (
+      <div className="py-16 text-center">
+        <p className="font-bold text-primary">아직 공개된 플레이리스트가 없어요.</p>
+        <p className="mt-2 text-sm text-gray-500">첫 플레이리스트를 공유해 보세요.</p>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <FeedList posts={posts} />
-      {errorMsg && (
-        <div className="text-center">
-          <p>{errorMsg}</p>
-          <p className="text-sm mt-2">다시 시도해주세요.</p>
-        </div>
-      )}
-      {hasNext && (
-        <div ref={ref}>
-          <LoadingSpinner hStyle="py-6" />
-        </div>
-      )}
-    </>
+    <div className="space-y-8 md:space-y-10 py-6 md:py-8">
+      {data.shelves.map((shelf) => (
+        <FeedShelf key={shelf.key} shelf={shelf} />
+      ))}
+    </div>
   );
 }

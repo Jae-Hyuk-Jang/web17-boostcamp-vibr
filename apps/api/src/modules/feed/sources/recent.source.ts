@@ -2,49 +2,30 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from 'src/modules/post/entities/post.entity';
 import { Repository } from 'typeorm';
-import { FeedSource } from './feed-source.interface';
+import { FeedPage, FeedPageRequest, FeedSource } from './feed-source.interface';
+import { parsePostIdCursor, toFeedPage } from './feed-page';
 import { joinPublicPlaylistWithMusics } from './public-playlist.query';
 
+/** 새로 올라온: 모든 공개 플레이리스트, 처음 공개한 순서의 역순 */
 @Injectable()
 export class RecentSource implements FeedSource {
   constructor(
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
   ) {}
 
-  async getPosts(
-    isInitialRequest: boolean,
-    requestUserId: string | null,
-    limit: number,
-    cursor?: string,
-  ): Promise<{ posts: Post[]; nextCursor?: string }> {
-    if (!isInitialRequest && !cursor) return { posts: [] };
-
+  async getPage({ limit, cursor }: FeedPageRequest): Promise<FeedPage> {
+    // 반응 기록은 처음 공개할 때 만들어지고 id(UUIDv7)가 만든 순서를 따른다
     const query = joinPublicPlaylistWithMusics(
       this.postRepository.createQueryBuilder('post'),
-    )
-      .leftJoinAndSelect('post.author', 'author')
-      .orderBy('post.id', 'DESC');
-
-    if (requestUserId) {
-      query.leftJoinAndSelect(
-        'post.likes',
-        'like',
-        'like.userId = :requestUserId',
-        {
-          requestUserId,
-        },
-      );
-    }
+    ).orderBy('post.id', 'DESC');
 
     if (cursor) {
-      query.andWhere('post.id < :cursor', { cursor });
+      query.andWhere('post.id < :cursor', {
+        cursor: parsePostIdCursor(cursor),
+      });
     }
 
     const fetched = await query.take(limit + 1).getMany();
-    const hasNext = fetched.length > limit;
-    const posts = hasNext ? fetched.slice(0, limit) : fetched;
-    const nextCursor = hasNext ? posts[posts.length - 1]!.id : undefined;
-
-    return { posts, nextCursor };
+    return toFeedPage(fetched, limit, (post) => post.id);
   }
 }

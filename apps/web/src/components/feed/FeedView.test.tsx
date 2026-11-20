@@ -1,149 +1,194 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { act } from 'react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useInView } from 'react-intersection-observer';
-import type { InfiniteData } from '@tanstack/react-query';
-import type { PostResponseDto as Post, Cursor } from '@repo/dto';
+import type { FeedShelfDto, FeedShelfItemDto, MusicResponseDto } from '@repo/dto';
+import { FeedShelfKey, MusicProvider } from '@repo/dto/values';
 
-import FeedView, { type FeedPage } from './FeedView';
+import FeedView from './FeedView';
 import { feedQueryKey } from '@/query-keys';
-import { useModalStore } from '@/stores';
+import { MODAL_TYPES, useModalStore, usePlayerStore } from '@/stores';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({
   useInView: jest.fn(),
 }));
-
 const mockUseInView = useInView as jest.Mock;
 
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 jest.mock('@/api', () => ({
-  getFeedPosts: jest.fn(),
+  getFeedShelves: jest.fn(),
+  getFeedShelfPage: jest.fn(),
 }));
+const { getFeedShelves, getFeedShelfPage } = jest.requireMock('@/api') as {
+  getFeedShelves: jest.Mock;
+  getFeedShelfPage: jest.Mock;
+};
 
-jest.mock('./FeedList', () => ({
-  __esModule: true,
-  default: ({ posts }: { posts: Post[] }) => (
-    <ul data-testid="feed-list">
-      {posts.map((p) => (
-        <li key={p.id}>{p.id}</li>
-      ))}
-    </ul>
-  ),
-}));
+const music = (id: string): MusicResponseDto => ({
+  id,
+  title: `곡 ${id}`,
+  artistName: '가수',
+  albumCoverUrl: `https://is1-ssl.mzstatic.com/${id}.jpg`,
+  trackUri: `uri-${id}`,
+  provider: MusicProvider.ITUNES,
+  durationMs: 1000,
+});
 
-const { getFeedPosts } = jest.requireMock('@/api') as { getFeedPosts: jest.Mock };
-
-const mockPost = (overrides: Partial<Post> = {}): Post => ({
-  id: 'post-1',
-  author: { id: 'author-1', nickname: 'author', profileImgUrl: null },
-  playlist: { id: 'playlist-test', title: '테스트 플레이리스트', coverImageUrls: [], tracksCount: 0 },
-  coverImgUrl: '',
-  musics: [],
-  content: 'content',
-  likeCount: 0,
-  commentCount: 0,
-  createdAt: new Date().toISOString(),
-  isEdited: false,
-  isLiked: false,
+const item = (id: string, overrides: Partial<FeedShelfItemDto> = {}): FeedShelfItemDto => ({
+  reactionId: `reaction-${id}`,
+  playlist: { id: `playlist-${id}`, title: `플리 ${id}`, coverImageUrls: [`https://is1-ssl.mzstatic.com/${id}.jpg`], tracksCount: 1 },
+  owner: { id: `owner-${id}`, nickname: `주인 ${id}`, profileImgUrl: null },
+  musics: [music(`${id}-1`), music(`${id}-2`)],
   ...overrides,
 });
 
-const renderFeedView = (props: { initialPost?: Post } = {}, queryClient = createTestQueryClient()) =>
-  render(<FeedView {...props} />, { wrapper: createQueryClientWrapper(queryClient) });
+const shelf = (key: FeedShelfKey, items: FeedShelfItemDto[], nextCursor?: string): FeedShelfDto => ({ key, items, nextCursor });
 
-describe('FeedView — 무한스크롤/쿼리 무효화/삭제 반영 특성화(#166)', () => {
+const renderFeedView = (queryClient = createTestQueryClient()) => render(<FeedView />, { wrapper: createQueryClientWrapper(queryClient) });
+
+const shelfSection = (title: string) => screen.getByRole('region', { name: title });
+
+describe('FeedView — 출처별 선반', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
     useModalStore.setState({ isOpen: false, modalType: null, modalProps: {} });
   });
 
-  it('초기 로드 시 getFeedPosts 결과를 렌더링한다', async () => {
-    const postA = mockPost({ id: 'a' });
-    getFeedPosts.mockResolvedValue({ posts: [postA], hasNext: false, nextCursor: undefined });
+  it('서버가 준 순서대로 선반 제목과 카드를 그린다', async () => {
+    getFeedShelves.mockResolvedValue({
+      shelves: [shelf(FeedShelfKey.TRENDING, [item('t1')]), shelf(FeedShelfKey.RECENT, [item('r1'), item('r2')])],
+    });
 
     renderFeedView();
 
-    await waitFor(() => expect(screen.getByTestId('feed-list')).toHaveTextContent('a'));
-    expect(getFeedPosts).toHaveBeenCalledWith(undefined);
+    const headings = await screen.findAllByRole('heading', { level: 2 });
+    expect(headings.map((h) => h.textContent)).toEqual(['지금 인기', '새로 올라온']);
+    expect(screen.queryByText('팔로우한 사람')).not.toBeInTheDocument();
+    expect(
+      within(shelfSection('새로 올라온'))
+        .getAllByRole('heading', { level: 3 })
+        .map((h) => h.textContent),
+    ).toEqual(['플리 r1', '플리 r2']);
+    expect(within(shelfSection('지금 인기')).getByText('주인 t1')).toBeInTheDocument();
   });
 
-  it('다음 페이지 로드 시 이전 nextCursor(다중 소스 커서)를 그대로 넘기고, 중복 postId는 dedupe한다', async () => {
-    const postA = mockPost({ id: 'a' });
-    const postADuplicate = mockPost({ id: 'a', content: 'updated' });
-    const postB = mockPost({ id: 'b' });
-    const cursor1: Cursor = { following: 'f1', trending: 't1', recent: 'r1' };
+  it('보여 줄 선반이 없으면 빈 상태를 보여 준다', async () => {
+    getFeedShelves.mockResolvedValue({ shelves: [] });
 
-    getFeedPosts
-      .mockResolvedValueOnce({ posts: [postA], hasNext: true, nextCursor: cursor1 })
-      .mockResolvedValueOnce({ posts: [postADuplicate, postB], hasNext: false, nextCursor: undefined });
+    renderFeedView();
 
-    const { rerender } = renderFeedView();
-    await waitFor(() => expect(screen.getByTestId('feed-list')).toHaveTextContent('a'));
+    expect(await screen.findByText('아직 공개된 플레이리스트가 없어요.')).toBeInTheDocument();
+  });
 
+  it('불러오지 못하면 다시 시도할 수 있다', async () => {
+    getFeedShelves.mockRejectedValueOnce(new Error('fail')).mockResolvedValue({ shelves: [shelf(FeedShelfKey.RECENT, [item('r1')])] });
+
+    renderFeedView();
+
+    fireEvent.click(await screen.findByRole('button', { name: '다시 시도' }));
+    expect(await screen.findByText('플리 r1')).toBeInTheDocument();
+  });
+
+  it('커버를 누르면 반응 기록 id로 상세 모달을 연다', async () => {
+    getFeedShelves.mockResolvedValue({ shelves: [shelf(FeedShelfKey.RECENT, [item('r1')])] });
+
+    renderFeedView();
+    fireEvent.click(await screen.findByRole('button', { name: '플리 r1 열기' }));
+
+    expect(useModalStore.getState().modalType).toBe(MODAL_TYPES.POST_DETAIL);
+    expect(useModalStore.getState().modalProps).toEqual({ postId: 'reaction-r1' });
+  });
+
+  it('재생 버튼은 플레이리스트 전체를 큐에 넣고 첫 곡을 고른다', async () => {
+    const addToQueue = jest.fn();
+    const selectMusic = jest.fn();
+    usePlayerStore.setState({ addToQueue, selectMusic });
+    const target = item('r1');
+    getFeedShelves.mockResolvedValue({ shelves: [shelf(FeedShelfKey.RECENT, [target])] });
+
+    renderFeedView();
+    fireEvent.click(await screen.findByRole('button', { name: '플리 r1 전체 재생' }));
+
+    expect(addToQueue).toHaveBeenCalledWith(target.musics);
+    expect(selectMusic).toHaveBeenCalledWith(target.musics[0]);
+  });
+
+  it('곡이 없는 플레이리스트에는 재생 버튼이 없다', async () => {
+    getFeedShelves.mockResolvedValue({ shelves: [shelf(FeedShelfKey.RECENT, [item('r1', { musics: [] })])] });
+
+    renderFeedView();
+
+    expect(await screen.findByText('플리 r1')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '플리 r1 전체 재생' })).not.toBeInTheDocument();
+  });
+
+  it('만든 사람을 누르면 프로필로 간다', async () => {
+    getFeedShelves.mockResolvedValue({ shelves: [shelf(FeedShelfKey.RECENT, [item('r1')])] });
+
+    renderFeedView();
+    fireEvent.click(await screen.findByRole('button', { name: '주인 r1' }));
+
+    expect(mockPush).toHaveBeenCalledWith('/profile/owner-r1');
+  });
+
+  it('선반 끝까지 넘기면 다음 커서부터 이어 불러와 뒤에 붙인다', async () => {
+    getFeedShelves.mockResolvedValue({ shelves: [shelf(FeedShelfKey.RECENT, [item('r1')], 'cursor-1')] });
+    getFeedShelfPage.mockResolvedValue({ items: [item('r2')], nextCursor: undefined });
     mockUseInView.mockReturnValue({ ref: jest.fn(), inView: true });
-    rerender(<FeedView />);
-
-    await waitFor(() => expect(getFeedPosts).toHaveBeenCalledTimes(2), { timeout: 2000 });
-    expect(getFeedPosts).toHaveBeenNthCalledWith(2, cursor1);
-    await waitFor(() => expect(screen.getByTestId('feed-list')).toHaveTextContent('b'));
-    expect(screen.getByTestId('feed-list').textContent).toBe('ab');
-  });
-
-  it('에러 발생 시 에러 메시지를 표시한다', async () => {
-    getFeedPosts.mockRejectedValue(new Error('network error'));
 
     renderFeedView();
 
-    await waitFor(() => expect(screen.getByText('오류가 발생했습니다.')).toBeInTheDocument());
+    expect(await screen.findByText('플리 r2')).toBeInTheDocument();
+    expect(getFeedShelfPage).toHaveBeenCalledTimes(1);
+    expect(getFeedShelfPage).toHaveBeenCalledWith(FeedShelfKey.RECENT, 'cursor-1');
+    const titles = within(shelfSection('새로 올라온'))
+      .getAllByRole('heading', { level: 3 })
+      .map((h) => h.textContent);
+    expect(titles).toEqual(['플리 r1', '플리 r2']);
   });
 
-  it('feedQueryKey를 invalidateQueries하면(글 작성/로고 클릭 대체 메커니즘) 피드를 재조회한다', async () => {
-    const postA = mockPost({ id: 'a' });
-    const postX = mockPost({ id: 'x' });
-    getFeedPosts.mockResolvedValueOnce({ posts: [postA], hasNext: false, nextCursor: undefined });
+  it('다음 커서가 없으면 이어 불러오지 않는다', async () => {
+    getFeedShelves.mockResolvedValue({ shelves: [shelf(FeedShelfKey.RECENT, [item('r1')])] });
+    mockUseInView.mockReturnValue({ ref: jest.fn(), inView: true });
 
+    renderFeedView();
+
+    expect(await screen.findByText('플리 r1')).toBeInTheDocument();
+    expect(getFeedShelfPage).not.toHaveBeenCalled();
+  });
+
+  it('이어 불러오기에 실패하면 반복해서 부르지 않고 다시 시도 버튼을 보여 준다', async () => {
+    getFeedShelves.mockResolvedValue({ shelves: [shelf(FeedShelfKey.RECENT, [item('r1')], 'cursor-1')] });
+    getFeedShelfPage.mockRejectedValueOnce(new Error('fail')).mockResolvedValue({ items: [item('r2')] });
+    mockUseInView.mockReturnValue({ ref: jest.fn(), inView: true });
+
+    renderFeedView();
+
+    const retry = await screen.findByRole('button', { name: '다시 시도' });
+    expect(getFeedShelfPage).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(retry);
+    expect(await screen.findByText('플리 r2')).toBeInTheDocument();
+  });
+
+  it('피드 쿼리를 무효화하면 선반을 다시 받아 온다(글쓰기·삭제 후)', async () => {
+    getFeedShelves.mockResolvedValueOnce({ shelves: [shelf(FeedShelfKey.RECENT, [item('r1')])] }).mockResolvedValue({
+      shelves: [shelf(FeedShelfKey.RECENT, [item('r2')])],
+    });
     const queryClient = createTestQueryClient();
-    renderFeedView({}, queryClient);
-    await waitFor(() => expect(screen.getByTestId('feed-list')).toHaveTextContent('a'));
 
-    getFeedPosts.mockResolvedValueOnce({ posts: [postX], hasNext: false, nextCursor: undefined });
+    renderFeedView(queryClient);
+    expect(await screen.findByText('플리 r1')).toBeInTheDocument();
+
     await act(async () => {
       await queryClient.invalidateQueries({ queryKey: feedQueryKey });
     });
 
-    await waitFor(() => expect(screen.getByTestId('feed-list')).toHaveTextContent('x'), { timeout: 2000 });
-    expect(getFeedPosts).toHaveBeenCalledTimes(2);
-  });
-
-  it('feedQueryKey 캐시에서 setQueriesData로 항목을 제거하면(삭제 대체 메커니즘) 피드에서 해당 게시글이 사라진다', async () => {
-    const postA = mockPost({ id: 'a' });
-    const postB = mockPost({ id: 'b' });
-    getFeedPosts.mockResolvedValue({ posts: [postA, postB], hasNext: false, nextCursor: undefined });
-
-    const queryClient = createTestQueryClient();
-    renderFeedView({}, queryClient);
-    await waitFor(() => expect(screen.getByTestId('feed-list')).toHaveTextContent('a'));
-    expect(screen.getByTestId('feed-list')).toHaveTextContent('b');
-
-    act(() => {
-      queryClient.setQueriesData({ queryKey: feedQueryKey }, (old: InfiniteData<FeedPage> | undefined) => {
-        if (!old) return old;
-        return { ...old, pages: old.pages.map((page) => ({ ...page, posts: page.posts.filter((p) => p.id !== 'a') })) };
-      });
-    });
-
-    await waitFor(() => expect(screen.getByTestId('feed-list')).not.toHaveTextContent('a'));
-    expect(screen.getByTestId('feed-list')).toHaveTextContent('b');
-  });
-
-  it('initialPost가 있으면 목록 맨 앞에 시딩되고, 게시글 상세 모달이 자동으로 열린다', async () => {
-    const initialPost = mockPost({ id: 'shared-post' });
-    getFeedPosts.mockResolvedValue({ posts: [], hasNext: false, nextCursor: undefined });
-
-    renderFeedView({ initialPost });
-
-    expect(screen.getByTestId('feed-list')).toHaveTextContent('shared-post');
-    expect(useModalStore.getState().isOpen).toBe(true);
-    expect(useModalStore.getState().modalProps).toMatchObject({ postId: 'shared-post' });
+    expect(await screen.findByText('플리 r2')).toBeInTheDocument();
+    expect(screen.queryByText('플리 r1')).not.toBeInTheDocument();
   });
 });
