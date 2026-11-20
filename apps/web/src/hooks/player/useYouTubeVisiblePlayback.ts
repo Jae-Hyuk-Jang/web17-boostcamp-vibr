@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
 import { MusicProvider } from '@repo/dto/values';
 

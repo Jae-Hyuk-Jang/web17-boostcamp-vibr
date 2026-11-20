@@ -12,7 +12,7 @@ import PwaInstallBanner from '@/components/ui/PwaInstallBanner';
 import PwaRegister from '@/components/ui/PwaRegister';
 import ToastProvider from '@/components/ui/ToastContainer';
 import QueryProvider from '@/components/providers/QueryProvider';
-import { PrivacyConsentGate } from '@/hooks';
+import { PrivacyConsentGate } from '@/hooks/privacy/PrivacyConsentGate';
 import AuthLoginQueryHandler from '@/hooks/auth/client/AuthLoginQueryHandler';
 
 export const metadata: Metadata = {
