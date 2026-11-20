@@ -7,3 +7,6 @@ export * from './res/get-all-playlists.dto';
 export * from './res/get-playlist-detail.dto';
 export * from './res/playlist.dto';
 export * from './res/add-musics-to-playlist.dto';
+
+export * from './playlist-visibility.enum';
+export * from './playlist.constants';
