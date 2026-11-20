@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PlaylistBriefRow, PlaylistRepository } from './playlist.repository';
+import { PlaylistRepository } from './playlist.repository';
 import {
   GetAllPlaylistsResDto,
   GetPlaylistDetailResDto,
@@ -7,6 +7,7 @@ import {
   MusicResponseDto,
   PlaylistBriefResDto,
 } from '@repo/dto';
+import { toCoverImageUrlsOf, toOrderedMusicResponses } from './playlist.mapper';
 import { Playlist } from './entities/playlist.entity';
 import { MusicService } from '../music/music.service';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -26,18 +27,21 @@ export class PlaylistService {
 
   async getAllPlaylists(userId: string): Promise<GetAllPlaylistsResDto> {
     const playlists = (await this.playlistRepo.getAllPlaylists(userId)).map(
-      (row) => this.toPlaylistBriefResDto(row),
+      (playlist) => this.toPlaylistBriefResDto(playlist),
     );
 
     return { playlists };
   }
 
-  private toPlaylistBriefResDto(row: PlaylistBriefRow): PlaylistBriefResDto {
+  private toPlaylistBriefResDto(playlist: Playlist): PlaylistBriefResDto {
+    const musics = toOrderedMusicResponses(playlist);
     return {
-      id: row.id,
-      title: row.title,
-      tracksCount: Number(row.tracksCount ?? 0),
-      firstAlbumCoverUrl: row.firstAlbumCoverUrl ?? '',
+      id: playlist.id,
+      title: playlist.title,
+      tracksCount: musics.length,
+      firstAlbumCoverUrl: musics[0]?.albumCoverUrl ?? '',
+      coverImageUrls: toCoverImageUrlsOf(playlist, musics),
+      visibility: playlist.visibility,
     };
   }
 
@@ -68,22 +72,16 @@ export class PlaylistService {
     return this.toGetPlaylistDetailResDto(playlist);
   }
 
-  private toGetPlaylistDetailResDto(playlist: Playlist) {
-    const musics: MusicResponseDto[] = (playlist.playlistMusics ?? [])
-      .map((pm) => pm.music)
-      .map((m) => ({
-        id: m.id,
-        title: m.title,
-        artistName: m.artistName,
-        trackUri: m.trackUri,
-        albumCoverUrl: m.albumCoverUrl,
-        provider: m.provider,
-        durationMs: m.durationMs,
-      }));
-
+  private toGetPlaylistDetailResDto(
+    playlist: Playlist,
+  ): GetPlaylistDetailResDto {
+    const musics = toOrderedMusicResponses(playlist);
     return {
       id: playlist.id,
       title: playlist.title,
+      description: playlist.description,
+      coverImageUrls: toCoverImageUrlsOf(playlist, musics),
+      visibility: playlist.visibility,
       musics,
     };
   }
