@@ -53,3 +53,6 @@ yarn-error.log*
 
 # skill-creator eval 실행용 격리 worktree (에이전트 임시 산출물, 커밋 대상 아님)
 .claude/worktrees/
+
+# 문서는 로컬에서만 관리한다(공개 저장소에 올리지 않음)
+docs/
