@@ -61,8 +61,7 @@ export function usePlaylistDetailModal(playlistId: string): UsePlaylistDetailMod
   const { closeModal } = useModalStore();
   const queryClient = useQueryClient();
 
-  const addToQueue = usePlayerStore((s) => s.addToQueue);
-  const selectMusic = usePlayerStore((s) => s.selectMusic);
+  const playAll = usePlayerStore((s) => s.playAll);
   const bumpPlaylistRefresh = () => queryClient.invalidateQueries({ queryKey: PLAYLISTS_QUERY_KEY });
 
   // usePlaylistRecommendations(#194)와 캐시를 공유하는 조회 경로. usePostDetail과 동일하게 캐시(data)가
@@ -85,10 +84,7 @@ export function usePlaylistDetailModal(playlistId: string): UsePlaylistDetailMod
   }, [isPlaylistDetailError]);
 
   const onPlayTotalSongs = () => {
-    if (songs.length > 0) {
-      addToQueue(songs);
-      selectMusic(songs[0]!);
-    }
+    playAll(songs);
   };
 
   const toggleSelectSong = (songId: string) => {

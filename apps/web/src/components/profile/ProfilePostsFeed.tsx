@@ -30,8 +30,7 @@ export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
   const queryClient = useQueryClient();
   const openModal = useModalStore((s) => s.openModal);
   const playMusic = usePlayerStore((s) => s.playMusic);
-  const addToQueue = usePlayerStore((s) => s.addToQueue);
-  const selectMusic = usePlayerStore((s) => s.selectMusic);
+  const playAll = usePlayerStore((s) => s.playAll);
 
   const isMobile = useIsMobile();
   const isMobileInitializedRef = useRef(false);
@@ -104,14 +103,7 @@ export default function ProfilePostsFeed({ userId, initialPostId }: Props) {
   }, [isMobile, userId, initialPostId, openModal, router]);
 
   const handlePlay = (music: Music) => playMusic(music);
-  const handlePlayAll = (post: Post) => {
-    const musics = post.musics;
-    if (!musics.length) return;
-    const firstMusic = musics[0];
-    if (!firstMusic) return;
-    addToQueue(musics);
-    selectMusic(firstMusic);
-  };
+  const handlePlayAll = (post: Post) => playAll(post.musics);
   const handleUserClick = (uid: string) => router.push(`/profile/${uid}`);
   const handleOpenDetail = (post: Post) => openModal(MODAL_TYPES.POST_DETAIL, { postId: post.id, post });
 
