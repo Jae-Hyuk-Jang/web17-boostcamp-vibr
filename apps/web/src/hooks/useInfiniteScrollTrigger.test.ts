@@ -58,4 +58,15 @@ describe('useInfiniteScrollTrigger', () => {
 
     expect(result.current).toBe(mockRef);
   });
+
+  it('보여야 하는 비율은 기본 0.8이고, threshold로 바꿀 수 있다', () => {
+    mockUseInView.mockReturnValue({ ref: jest.fn(), inView: false });
+    const fetchNextPage = jest.fn();
+
+    renderHook(() => useInfiniteScrollTrigger({ hasNextPage: true, isFetchingNextPage: false, fetchNextPage }));
+    renderHook(() => useInfiniteScrollTrigger({ hasNextPage: true, isFetchingNextPage: false, fetchNextPage, threshold: 0 }));
+
+    expect(mockUseInView).toHaveBeenNthCalledWith(1, expect.objectContaining({ threshold: 0.8 }));
+    expect(mockUseInView).toHaveBeenNthCalledWith(2, expect.objectContaining({ threshold: 0 }));
+  });
 });

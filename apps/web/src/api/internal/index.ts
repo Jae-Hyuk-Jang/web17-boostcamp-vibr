@@ -1,4 +1,5 @@
 export * from './post';
+export * from './feed';
 export * from './nowPlaylist';
 export * from './auth';
 export * from './follow';

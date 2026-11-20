@@ -1,18 +1,10 @@
-import type { FeedResponseDto as Feed, PostResponseDto as Post, FindByUserDto, Cursor } from '@repo/dto';
+import type { PostResponseDto as Post, FindByUserDto } from '@repo/dto';
 import { internalClient } from './client';
 
-const DEFAULT_FEED_LIMIT = 12;
-
-/** [GET] 피드 데이터 조회 함수 (커서 페이지네이션) */
-export const getFeedPosts = async (cursors?: Cursor, limit = DEFAULT_FEED_LIMIT) => {
-  const { data } = await internalClient.get<Feed>('/feed', {
-    params: { limit, followingCursor: cursors?.following, trendingCursor: cursors?.trending, recentCursor: cursors?.recent },
-  });
-  return data;
-};
+const DEFAULT_PROFILE_POSTS_LIMIT = 12;
 
 /** [GET] 특정 사용자 게시물 목록 조회 함수 (커서 페이지네이션) */
-export const getUserProfilePosts = async (userId: string, cursor?: string, limit = DEFAULT_FEED_LIMIT) => {
+export const getUserProfilePosts = async (userId: string, cursor?: string, limit = DEFAULT_PROFILE_POSTS_LIMIT) => {
   const { data } = await internalClient.get<FindByUserDto>(`/post/user/${userId}`, { params: { limit, cursor } });
   return { items: data.posts, hasNext: data.hasNext, nextCursor: data.nextCursor };
 };

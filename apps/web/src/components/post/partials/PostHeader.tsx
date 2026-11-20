@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { MoreHorizontal } from 'lucide-react';
-import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { coalesceImageSrc, formatRelativeTime } from '@/utils';
 import type { PostResponseDto } from '@repo/dto';
 import { DEFAULT_IMAGES } from '@/constants';
-import { type FeedPage } from '@/components/feed/FeedView';
 import { feedQueryKey } from '@/query-keys';
 import { showConfirmToast } from '@/components/ui/ConfirmToast';
 import { deletePost } from '@/api';
@@ -69,11 +68,9 @@ export default function PostHeader({ post, isOwner, onUserClick, onEditPost, onD
         await deletePost(post.id);
         toast.success('삭제했습니다.');
         onDeletePost?.();
-        // 피드 목록 캐시에서 직접 항목을 제거한다(프로필 그리드는 기존에도 삭제 신호를 받지 않았음 — 그대로 유지).
-        queryClient.setQueriesData({ queryKey: feedQueryKey }, (old: InfiniteData<FeedPage> | undefined) => {
-          if (!old) return old;
-          return { ...old, pages: old.pages.map((page) => ({ ...page, posts: page.posts.filter((p) => p.id !== post.id) })) };
-        });
+        // 삭제는 플레이리스트를 비공개로 바꾸므로 피드 선반에서 빠진다. 선반 구성은 서버가 정하니 다시 받아 온다
+        // (프로필 그리드는 기존에도 삭제 신호를 받지 않았음 — 그대로 유지)
+        void queryClient.invalidateQueries({ queryKey: feedQueryKey });
       } catch {
         toast.error('삭제 실패! 다시 시도해주세요.');
       }

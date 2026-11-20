@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { PostResponseDto as Post } from '@repo/dto';
 
 import PostHeader from './PostHeader';
-import { type FeedPage } from '@/components/feed/FeedView';
 import { feedQueryKey } from '@/query-keys';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
@@ -35,23 +34,17 @@ const mockPost = (overrides: Partial<Post> = {}): Post => ({
   ...overrides,
 });
 
-const seedFeedCache = (queryClient: ReturnType<typeof createTestQueryClient>, posts: Post[]) => {
-  const page: FeedPage = { posts, hasNext: false, nextCursor: undefined };
-  queryClient.setQueryData(feedQueryKey, { pages: [page], pageParams: [undefined] });
-};
-
-describe('PostHeader — 삭제 동기화 특성화(#166)', () => {
+describe('PostHeader — 삭제 동기화', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('삭제 성공 시 deletePost를 호출하고 feedQueryKey 캐시에서 해당 게시글을 제거한다', async () => {
+  it('삭제 성공 시 deletePost를 호출하고 피드 쿼리를 무효화해 선반을 다시 받아 온다', async () => {
     deletePost.mockResolvedValue(undefined);
     const post = mockPost();
-    const other = mockPost({ id: 'post-2' });
     const onDeletePost = jest.fn();
     const queryClient = createTestQueryClient();
-    seedFeedCache(queryClient, [post, other]);
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
 
     render(<PostHeader post={post} isOwner onUserClick={jest.fn()} onDeletePost={onDeletePost} />, {
       wrapper: createQueryClientWrapper(queryClient),
@@ -61,19 +54,16 @@ describe('PostHeader — 삭제 동기화 특성화(#166)', () => {
     fireEvent.click(screen.getByText('삭제하기'));
 
     await waitFor(() => expect(deletePost).toHaveBeenCalledWith('post-1'));
-    await waitFor(() => {
-      const cached = queryClient.getQueryData<{ pages: FeedPage[] }>(feedQueryKey);
-      expect(cached?.pages[0]?.posts.map((p) => p.id)).toEqual(['post-2']);
-    });
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: feedQueryKey }));
     expect(onDeletePost).toHaveBeenCalled();
   });
 
-  it('삭제 실패 시 캐시를 그대로 유지한다', async () => {
+  it('삭제 실패 시 피드를 다시 받아 오지 않는다', async () => {
     deletePost.mockRejectedValue(new Error('fail'));
     const post = mockPost();
     const onDeletePost = jest.fn();
     const queryClient = createTestQueryClient();
-    seedFeedCache(queryClient, [post]);
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
 
     render(<PostHeader post={post} isOwner onUserClick={jest.fn()} onDeletePost={onDeletePost} />, {
       wrapper: createQueryClientWrapper(queryClient),
@@ -83,8 +73,7 @@ describe('PostHeader — 삭제 동기화 특성화(#166)', () => {
     fireEvent.click(screen.getByText('삭제하기'));
 
     await waitFor(() => expect(deletePost).toHaveBeenCalledWith('post-1'));
-    const cached = queryClient.getQueryData<{ pages: FeedPage[] }>(feedQueryKey);
-    expect(cached?.pages[0]?.posts.map((p) => p.id)).toEqual(['post-1']);
+    expect(invalidateSpy).not.toHaveBeenCalled();
     expect(onDeletePost).not.toHaveBeenCalled();
   });
 

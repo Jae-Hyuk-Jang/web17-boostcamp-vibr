@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { FeedView } from '@/components/feed';
+import { SharedPostDetailOpener } from '@/components/post';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -42,5 +43,10 @@ export default async function PostPage({ params }: Props) {
     notFound();
   }
 
-  return <FeedView initialPost={post} />;
+  return (
+    <>
+      <SharedPostDetailOpener post={post} />
+      <FeedView />
+    </>
+  );
 }
