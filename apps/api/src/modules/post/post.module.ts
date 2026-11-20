@@ -5,11 +5,10 @@ import { memoryStorage } from 'multer';
 
 import { Like } from '../like/entities/like.entity';
 import { Post } from './entities/post.entity';
-import { PostMusic } from './entities/post-music.entity';
+import { Playlist } from '../playlist/entities/playlist.entity';
 import { PostController } from './post.controller';
 import { PostService } from './post.service';
 import { PostRepository } from './post.repository';
-import { PostMusicRepository } from './post-music.repository';
 
 import { MusicModule } from '../music/music.module';
 import { UploadModule } from '../upload/upload.module';
@@ -18,7 +17,7 @@ import { UploadModule } from '../upload/upload.module';
   imports: [
     MusicModule,
     UploadModule,
-    TypeOrmModule.forFeature([Post, PostMusic, Like]),
+    TypeOrmModule.forFeature([Post, Like, Playlist]),
 
     MulterModule.register({
       storage: memoryStorage(),
@@ -36,6 +35,6 @@ import { UploadModule } from '../upload/upload.module';
   ],
   controllers: [PostController],
   exports: [PostRepository],
-  providers: [PostService, PostRepository, PostMusicRepository],
+  providers: [PostService, PostRepository],
 })
 export class PostModule {}

@@ -42,30 +42,41 @@ describe('FeedService', () => {
     service = moduleRef.get(FeedService);
   });
 
-  const makePost = (overrides: Partial<any> = {}) => {
+  const makePost = (
+    overrides: Partial<any> = {},
+    playlistOverrides: Partial<any> = {},
+  ) => {
+    const createdAt = new Date('2026-02-01T00:00:00.000Z');
     const base = {
       id: 'post-1',
-      content: 'c',
-      coverImgUrl: null,
       likeCount: 0,
       commentCount: 0,
-      createdAt: new Date('2026-02-01T00:00:00.000Z'),
-      updatedAt: new Date('2026-02-01T00:00:00.000Z'),
+      createdAt,
+      updatedAt: createdAt,
       author: { id: 'u1', nickname: 'n', profileImgUrl: null },
       likes: [],
-      postMusics: [
-        {
-          music: {
-            id: 'm1',
-            title: 't',
-            artistName: 'a',
-            albumCoverUrl: 'img',
-            trackUri: 'uri',
-            provider: 'itunes',
-            durationMs: 123000,
+      playlist: {
+        id: 'pl-1',
+        title: '플레이리스트',
+        description: 'c',
+        customCoverUrl: null,
+        updatedAt: createdAt,
+        playlistMusics: [
+          {
+            orderIndex: 0,
+            music: {
+              id: 'm1',
+              title: 't',
+              artistName: 'a',
+              albumCoverUrl: 'img',
+              trackUri: 'uri',
+              provider: 'itunes',
+              durationMs: 123000,
+            },
           },
-        },
-      ],
+        ],
+        ...playlistOverrides,
+      },
     };
     return { ...base, ...overrides };
   };
@@ -253,12 +264,15 @@ describe('FeedService', () => {
       recentLimit: 0,
     });
 
-    const p = makePost({
-      id: 'p1',
-      likes: [{ userId: 'u1' }], // join 결과 있다고 가정
-      createdAt: new Date('2026-02-01T00:00:00.000Z'),
-      updatedAt: new Date('2026-02-01T00:00:01.000Z'), // 정확히 1000ms
-    });
+    const p = makePost(
+      {
+        id: 'p1',
+        likes: [{ userId: 'u1' }], // join 결과 있다고 가정
+        createdAt: new Date('2026-02-01T00:00:00.000Z'),
+      },
+      // 공개 이후 플레이리스트를 정확히 1000ms 뒤에 고침
+      { updatedAt: new Date('2026-02-01T00:00:01.000Z') },
+    );
 
     followingSource.getPosts.mockResolvedValue({
       posts: [p],
@@ -283,5 +297,13 @@ describe('FeedService', () => {
     expect(post.isLiked).toBe(true);
     expect(post.isEdited).toBe(true);
     expect(post.musics[0]!.title).toBe('t');
+    expect(post.content).toBe('c');
+    expect(post.coverImgUrl).toBe('img');
+    expect(post.playlist).toEqual({
+      id: 'pl-1',
+      title: '플레이리스트',
+      coverImageUrls: ['img'],
+      tracksCount: 1,
+    });
   });
 });

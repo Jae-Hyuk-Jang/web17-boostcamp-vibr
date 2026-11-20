@@ -1,4 +1,8 @@
 import {
+  toCoverImageUrlsOf,
+  toOrderedMusicResponses,
+} from '../playlist/playlist.mapper';
+import {
   BadRequestException,
   ForbiddenException,
   Injectable,
@@ -168,11 +172,16 @@ export class NotiService {
     if (noti.type === NotiType.LIKE || noti.type === NotiType.COMMENT) {
       const post = await this.postRepo.findOne({
         where: { id: noti.relatedId },
-        select: { coverImgUrl: true },
+        relations: { playlist: { playlistMusics: { music: true } } },
       });
 
       relatedType = NotiRelatedType.POST;
-      thumbnailUrl = post?.coverImgUrl ?? '';
+      thumbnailUrl = post
+        ? (toCoverImageUrlsOf(
+            post.playlist,
+            toOrderedMusicResponses(post.playlist),
+          )[0] ?? '')
+        : '';
       thumbnailShape = NotiThumbnailShapeType.SQUARE;
     } else {
       relatedType = NotiRelatedType.USER;

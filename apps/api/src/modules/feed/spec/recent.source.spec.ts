@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 type MockQueryBuilder = {
   leftJoinAndSelect: jest.Mock;
+  innerJoinAndSelect: jest.Mock;
   orderBy: jest.Mock;
   andWhere: jest.Mock;
   take: jest.Mock;
@@ -15,6 +16,7 @@ describe('RecentSource (mock only)', () => {
 
   const makeQb = (): MockQueryBuilder => ({
     leftJoinAndSelect: jest.fn().mockReturnThis(),
+    innerJoinAndSelect: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     take: jest.fn().mockReturnThis(),
@@ -29,6 +31,24 @@ describe('RecentSource (mock only)', () => {
     jest.clearAllMocks();
 
     source = new RecentSource(repo as unknown as Repository<Post>);
+  });
+
+  it('공개 플레이리스트에 연결된 반응 기록만 조인한다', async () => {
+    // given
+    const qb = makeQb();
+    qb.getMany.mockResolvedValue([]);
+    repo.createQueryBuilder.mockReturnValue(qb);
+
+    // when
+    await source.getPosts(true, null, 10, undefined);
+
+    // then
+    expect(qb.innerJoinAndSelect).toHaveBeenCalledWith(
+      'post.playlist',
+      'playlist',
+      'playlist.visibility = :publicVisibility',
+      { publicVisibility: 'public' },
+    );
   });
 
   it('비초기 + cursor 없음이면 posts:[] 즉시 반환 + repo 호출 X', async () => {
@@ -51,12 +71,10 @@ describe('RecentSource (mock only)', () => {
     await source.getPosts(true, null, 10, undefined);
 
     // then
-    const calls = qb.leftJoinAndSelect.mock.calls.map((c: string[]) => c[0]);
-    expect(calls).toEqual([
-      'post.author',
-      'post.postMusics',
-      'postMusic.music',
-    ]);
+    const joinedRelations = qb.leftJoinAndSelect.mock.calls.map(
+      (c: string[]) => c[0],
+    );
+    expect(joinedRelations).not.toContain('post.likes');
   });
 
   it('requestUserId가 있으면 likes join을 한다', async () => {

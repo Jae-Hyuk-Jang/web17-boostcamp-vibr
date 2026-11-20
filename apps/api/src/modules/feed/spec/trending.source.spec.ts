@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 
 type MockQueryBuilder = {
   leftJoinAndSelect: jest.Mock;
+  innerJoinAndSelect: jest.Mock;
   andWhere: jest.Mock;
   take: jest.Mock;
   getMany: jest.Mock;
@@ -16,6 +17,7 @@ describe('TrendingSource (mock only)', () => {
 
   const makeQb = (): MockQueryBuilder => ({
     leftJoinAndSelect: jest.fn().mockReturnThis(),
+    innerJoinAndSelect: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     take: jest.fn().mockReturnThis(),
     getMany: jest.fn().mockReturnThis(),

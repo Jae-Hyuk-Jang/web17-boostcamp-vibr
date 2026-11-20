@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { toPostResponseDto } from '../post/post.mapper';
 import { Post } from '../post/entities/post.entity';
-import {
-  PostResponseDto,
-  MusicResponseDto,
-  FeedResponseDto,
-  Cursor,
-} from '@repo/dto';
+import { PostResponseDto, FeedResponseDto, Cursor } from '@repo/dto';
 import { FollowingSource } from './sources/following.source';
 import { TrendingSource } from './sources/trending.source';
 import { RecentSource } from './sources/recent.source';
@@ -98,37 +94,9 @@ export class FeedService {
   }
 
   private mapToFeedResponseDto(posts: Post[]): PostResponseDto[] {
-    return posts.map((post: Post): PostResponseDto => {
-      const isLiked = !!(post.likes && post.likes.length > 0); // isLiked 판별 -> 조인 결과 있으면 true, 없으면 false
-      const isEdited =
-        post.updatedAt.getTime() - post.createdAt.getTime() >= 1000;
-
-      return {
-        id: post.id,
-        content: post.content,
-        coverImgUrl: post.coverImgUrl,
-        likeCount: post.likeCount,
-        commentCount: post.commentCount,
-        createdAt: post.createdAt.toISOString(),
-        isEdited,
-        isLiked,
-        author: {
-          id: post.author.id,
-          nickname: post.author.nickname,
-          profileImgUrl: post.author.profileImgUrl,
-        },
-        musics: post.postMusics.map(
-          ({ music }): MusicResponseDto => ({
-            id: music.id,
-            title: music.title,
-            artistName: music.artistName,
-            albumCoverUrl: music.albumCoverUrl,
-            trackUri: music.trackUri,
-            provider: music.provider,
-            durationMs: music.durationMs,
-          }),
-        ),
-      };
-    });
+    // isLiked: 요청자의 좋아요만 조인했으므로 결과가 있으면 true
+    return posts.map((post) =>
+      toPostResponseDto(post, !!(post.likes && post.likes.length > 0)),
+    );
   }
 }
