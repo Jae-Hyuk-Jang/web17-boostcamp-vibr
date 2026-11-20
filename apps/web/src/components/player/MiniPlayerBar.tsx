@@ -87,7 +87,7 @@ export default function MiniPlayerBar({ onOpenQueue, onOpenFullPlayer }: MiniPla
   return (
     <section className="relative z-20 flex lg:hidden h-full items-center gap-3 px-4 bg-white">
       <button type="button" onClick={onOpenFullPlayer} className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="relative w-10 h-10 rounded border border-gray-3 overflow-hidden bg-gray-4 shrink-0">
+        <div className="relative w-10 h-10 overflow-hidden bg-gray-4 shrink-0">
           {currentMusic ? <Image src={currentMusic.albumCoverUrl} alt={currentMusic.title} fill className="object-cover" /> : null}
         </div>
 

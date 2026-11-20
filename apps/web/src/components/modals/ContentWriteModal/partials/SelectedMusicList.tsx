@@ -22,13 +22,7 @@ export const SelectedMusicList = () => {
         ) : (
           musics.map((music, idx) => (
             <div key={music.id} className="flex items-center bg-white p-2 rounded-lg border border-primary/10 shadow-sm">
-              <Image
-                src={music.albumCoverUrl}
-                alt="art"
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded border border-gray-3 object-cover shrink-0"
-              />
+              <Image src={music.albumCoverUrl} alt="art" width={40} height={40} className="w-10 h-10 object-cover shrink-0" />
 
               <div className="ml-3 flex-1 min-w-0">
                 <TickerText text={music.title} className="text-sm font-bold text-primary" />

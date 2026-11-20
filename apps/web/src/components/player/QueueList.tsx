@@ -185,13 +185,7 @@ export default function QueueList() {
                 <span className={`w-6 text-center text-sm font-bold ${isCurrent ? 'text-accent-pink' : 'text-gray-2'}`}>{index + 1}</span>
 
                 <button type="button" onClick={handleSelectClick} className="flex items-center gap-3 min-w-0 flex-1 text-left">
-                  <Image
-                    src={music.albumCoverUrl}
-                    alt={music.title}
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 rounded border border-gray-3 object-cover"
-                  />
+                  <Image src={music.albumCoverUrl} alt={music.title} width={40} height={40} className="w-10 h-10 object-cover" />
                   <div className="min-w-0 flex-1">
                     <TickerText
                       text={music.title}

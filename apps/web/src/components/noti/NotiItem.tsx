@@ -16,7 +16,8 @@ function NotiItem({ noti, onClick, onMarkRead }: { noti: NotiView; onClick: (not
   // 읽음/안읽음 차이를 확실히
   const containerStyle = noti.isRead ? 'bg-gray-100/70 opacity-55 hover:opacity-100 hover:bg-gray-100' : 'bg-white hover:bg-gray-100';
 
-  const thumbShape = noti.thumbnailShape === 'circle' ? 'rounded-full' : 'rounded-md';
+  // 사람(프로필)은 원형 테두리, 플레이리스트 커버는 테두리 없는 정사각형
+  const thumbShape = noti.thumbnailShape === 'circle' ? 'rounded-full border border-gray-200' : '';
 
   return (
     <div className={`${containerBase} ${containerStyle}`} onClick={() => onClick(noti)}>
@@ -26,12 +27,7 @@ function NotiItem({ noti, onClick, onMarkRead }: { noti: NotiView; onClick: (not
       {/* 썸네일 */}
       <div className="relative shrink-0">
         <div className="relative w-12 h-12">
-          <Image
-            src={coalesceImageSrc(noti.thumbnailUrl, DEFAULT_IMAGES.ALBUM)}
-            alt="noti"
-            fill
-            className={`object-cover border border-gray-200 ${thumbShape}`}
-          />
+          <Image src={coalesceImageSrc(noti.thumbnailUrl, DEFAULT_IMAGES.ALBUM)} alt="noti" fill className={`object-cover ${thumbShape}`} />
         </div>
       </div>
 

@@ -77,13 +77,7 @@ export default function MusicPickerSearch({
             onClick={() => onSelect(music)}
             className="w-full flex items-center p-2 hover:bg-gray-4 text-left border-b border-gray-100 last:border-0"
           >
-            <Image
-              src={music.albumCoverUrl}
-              alt={music.title}
-              width={32}
-              height={32}
-              className="w-8 h-8 rounded border border-gray-200 mr-2 object-cover shrink-0"
-            />
+            <Image src={music.albumCoverUrl} alt={music.title} width={32} height={32} className="w-8 h-8 mr-2 object-cover shrink-0" />
             <div className="flex-1 min-w-0">
               <TickerText text={music.title} className="font-bold text-sm" />
               <TickerText text={music.artistName} className="text-xs text-gray-500" />

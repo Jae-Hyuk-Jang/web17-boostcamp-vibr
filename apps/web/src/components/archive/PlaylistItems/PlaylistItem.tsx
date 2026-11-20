@@ -140,14 +140,9 @@ export default function PlaylistItem(playlist: Props) {
     >
       {/* 플리 첫 곡 앨범 커버 이미지 부분 */}
       <div className="relative w-12 md:w-16 aspect-square shrink-0">
-        <div className="absolute top-0 right-0 w-full h-full bg-primary/20 rounded-lg transform rotate-6 border border-primary/20 transition-transform group-hover:rotate-12"></div>
-        <div className="absolute top-0 right-0 w-full h-full bg-white rounded-lg border border-primary/20 transform rotate-3"></div>
-        <PlaylistCover
-          title={playlist.title}
-          coverImageUrls={playlist.coverImageUrls}
-          sizes="64px"
-          className="absolute inset-0 z-10 rounded-lg border-2 border-primary"
-        />
+        <div className="absolute top-0 right-0 w-full h-full bg-primary/20 transform rotate-6 transition-transform group-hover:rotate-12"></div>
+        <div className="absolute top-0 right-0 w-full h-full bg-primary/10 transform rotate-3"></div>
+        <PlaylistCover title={playlist.title} coverImageUrls={playlist.coverImageUrls} sizes="64px" className="absolute inset-0 z-10" />
       </div>
 
       {/* 플리 정보 */}

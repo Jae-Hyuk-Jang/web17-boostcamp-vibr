@@ -35,14 +35,14 @@ export default function ProfilePosts({ posts, isMyProfile, userId }: { posts: Po
           <article key={`${post.postId}-${idx}`} className="group relative cursor-pointer" onClick={() => handleOpenDetail(post.postId)}>
             {post.isMoreThanOneMusic && (
               <>
-                <div className="absolute inset-0 bg-gray-4 border-2 border-primary rounded-xl z-0 transform translate-x-1 translate-y-1 transition-transform duration-200"></div>
-                <div className="absolute inset-0 bg-primary/10 border-2 border-primary rounded-xl z-0 transform translate-x-2 translate-y-2 group-hover:translate-x-3 group-hover:translate-y-3 transition-transform duration-200"></div>
+                <div className="absolute inset-0 bg-gray-3 z-0 transform translate-x-1 translate-y-1 transition-transform duration-200"></div>
+                <div className="absolute inset-0 bg-primary/20 z-0 transform translate-x-2 translate-y-2 group-hover:translate-x-3 group-hover:translate-y-3 transition-transform duration-200"></div>
               </>
             )}
 
             <div
               className={`
-                    relative z-10 aspect-square rounded-xl overflow-hidden border-2 border-primary bg-gray-4 shadow-sm
+                    relative z-10 aspect-square overflow-hidden bg-gray-4
                     group-hover:-translate-y-1 transition-transform duration-200
                     ${post.isMoreThanOneMusic ? 'group-hover:-translate-x-1' : ''} 
                 `}

@@ -23,7 +23,7 @@ type Props = {
 
 const stylesByVariant: Record<Variant, { container: string; playBtn: string; infoBox: string; navBtn: string }> = {
   card: {
-    container: 'relative group w-full aspect-square overflow-hidden xs:rounded-md mb-4 bg-gray-100',
+    container: 'relative group w-full aspect-square overflow-hidden mb-4 bg-gray-100',
     playBtn:
       'w-12 aspect-square rounded-full bg-primary text-white flex items-center justify-center transition-all hover:shadow-[2px_2px_0px_0px_#00ebc7]',
     infoBox:
