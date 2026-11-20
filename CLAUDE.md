@@ -33,7 +33,7 @@ src
 └── modules
     ├── auth/           # Google OAuth, JWT 발급 (dto/, types.ts)
     ├── comment/        # controller/service/repository + entities/
-    ├── feed/           # 홈 피드 조합 (policy/, sources/, spec/)
+    ├── feed/           # 홈 피드 선반 (sources/, spec/)
     ├── follow/
     ├── like/
     ├── log/            # 클라이언트 로그 수집
@@ -41,7 +41,7 @@ src
     ├── noti/           # 알림
     ├── now-playlist/   # 현재 재생 큐
     ├── playlist/
-    ├── post/           # post-music.repository.ts로 곡-게시글 연결
+    ├── post/           # 반응 기록: 공개 플레이리스트와 1:1, 좋아요·댓글·알림이 가리키는 키
     ├── privacy/        # 약관 동의
     ├── seed/           # 개발용 시드 데이터
     ├── trending/       # internal/, jobs/, rank/, stream/ (Redis 기반 랭킹)
@@ -142,7 +142,7 @@ NestJS, `src/modules/*` 아래 도메인별 모듈 구조 (auth, user, post, com
 
 주목할 만한 모듈:
 
-- `modules/feed` — 여러 소스(`sources/{following,recent,trending}.source.ts`, 모두 `feed-source.interface.ts` 구현)를 `policy/source-allocation.policy.ts`, `policy/feed-composition.policy.ts`로 조합해 홈 피드를 구성합니다. 새 피드 입력을 추가할 때는 서비스에 분기를 추가하지 말고 source 인터페이스를 구현한 뒤 allocation policy를 갱신하는 방식을 따르세요.
+- `modules/feed` — 홈 피드를 출처별 선반(팔로우한 사람, 지금 인기, 새로 올라온)으로 구성합니다. 선반마다 `sources/{following,trending,recent}.source.ts`(모두 `feed-source.interface.ts`의 `FeedSource` 구현)가 대상·순서·커서를 정하고, `FeedService`가 선반 순서(`SHELF_ORDER`)대로 모읍니다. 새 선반을 추가할 때는 서비스에 분기를 넣지 말고 `FeedSource`를 구현해 선반 목록에 등록하세요. 피드에는 공개 플레이리스트만 나오며, 그 조건은 `sources/public-playlist.query.ts` 한 곳에 있습니다.
 - `modules/trending` — Redis 스트림 기반 랭킹(`stream/`, `rank/trending-rank.store.ts`)과 `@nestjs/schedule`을 이용한 스케줄 감쇠(`jobs/trending-decay.job.ts`)로 구성됩니다.
 
 인증: 커스텀 JWT(`@nestjs/jwt`, 30분 만료)를 `AuthGuard`(`common/guards/auth.guard.ts`, `Authorization: Bearer <token>` 헤더 필요)로 검증하며, 인증이 선택적인 엔드포인트는 `auth.optional-guard.ts`를 사용합니다(헤더가 없거나 토큰이 만료·위조돼 검증에 실패하면 401 대신 비로그인 요청으로 통과하고, `Bearer` 형식이 아닌 헤더만 401로 거부). 유저 id는 `common/decorators/userId.decorator.ts`로 추출합니다. OAuth는 Google(`modules/auth`)이며 토큰 교환은 서버 사이드에서 이뤄집니다. 업로드는 `modules/upload`를 거쳐 NCP(네이버 클라우드) 오브젝트 스토리지로 전송됩니다(`@aws-sdk/client-s3`, S3 호환 엔드포인트). 전역 예외 응답 형식은 `common/filter/all-exception.filter.ts`에서 정의합니다.
@@ -185,7 +185,7 @@ Next.js App Router 구조로, `app/`에는 라우트/레이아웃만 두고 나�
 
 ### API 호출 패턴
 
-- `src/api/internal/{domain}.ts`마다 `internalClient`(`api/internal/client.ts`의 axios 인스턴스)를 감싼 함수를 export합니다. 함수명은 `get/create/update/delete/add/remove` 등 동사 접두사 + 도메인 명사(`getFeedPosts`, `createPost`, `addFollow`, `removeFollow`)로 짓고, 요청/응답 타입은 항상 `@repo/dto`에서 import하세요. 새 백엔드 엔드포인트를 연동할 때 이 패턴을 그대로 따르면 됩니다.
+- `src/api/internal/{domain}.ts`마다 `internalClient`(`api/internal/client.ts`의 axios 인스턴스)를 감싼 함수를 export합니다. 함수명은 `get/create/update/delete/add/remove` 등 동사 접두사 + 도메인 명사(`getFeedShelves`, `createPost`, `addFollow`, `removeFollow`)로 짓고, 요청/응답 타입은 항상 `@repo/dto`에서 import하세요. 새 백엔드 엔드포인트를 연동할 때 이 패턴을 그대로 따르면 됩니다.
 - 데이터 페칭이 로딩/에러 상태 관리나 여러 컴포넌트 재사용을 필요로 하면 `hooks/{domain}/use{Domain}{Action}.ts` 커스텀 훅으로 감싸세요(예: `hooks/post/usePostDetail.ts`). 다만 단순한 액션 호출(좋아요 토글 등)은 컴포넌트에서 `api/internal` 함수를 직접 호출하는 경우도 많습니다(`components/post/PostCard.tsx`의 `addLike`/`removeLike` 등) — "반드시 훅을 거쳐야 한다"는 강제 규칙은 아닙니다.
 - 외부 API 실패 시 그레이스풀 폴백이 필요하면 mock 데이터로 대체하는 패턴을 씁니다(`hooks/playlist/usePlaylistRecommendations.ts`의 `MOCK_PLAYLIST_BRIEFS` 폴백 참고).
 
@@ -201,7 +201,7 @@ Next.js App Router 구조로, `app/`에는 라우트/레이아웃만 두고 나�
 
 ## 컨벤션
 
-- **파일명과 폴더명은 kebab-case**입니다 (`check-file/filename-naming-convention`, `folder-naming-convention` lint 규칙이 error로 강제), 예: `user.controller.ts`, `feed-source.interface.ts`. Next.js 예약 파일(`app/**/{page,layout,loading,error,...}.tsx`)은 예외입니다. 단, 이 kebab-case 규칙은 `packages/eslint-config/base.mjs`에서 `"**/*.{ts,js,json}"`에만 적용되고 **`.tsx` 파일은 대상에서 빠져 있어** `apps/web/src/components` 아래 컴포넌트 파일은 `PostCard.tsx`, `FeedList.tsx`처럼 컴포넌트명 그대로 PascalCase로 짓는 것이 실제 관례입니다.
+- **파일명과 폴더명은 kebab-case**입니다 (`check-file/filename-naming-convention`, `folder-naming-convention` lint 규칙이 error로 강제), 예: `user.controller.ts`, `feed-source.interface.ts`. Next.js 예약 파일(`app/**/{page,layout,loading,error,...}.tsx`)은 예외입니다. 단, 이 kebab-case 규칙은 `packages/eslint-config/base.mjs`에서 `"**/*.{ts,js,json}"`에만 적용되고 **`.tsx` 파일은 대상에서 빠져 있어** `apps/web/src/components` 아래 컴포넌트 파일은 `PostCard.tsx`, `FeedShelf.tsx`처럼 컴포넌트명 그대로 PascalCase로 짓는 것이 실제 관례입니다.
 - TypeScript 네이밍은 `packages/eslint-config/base.mjs`의 `@typescript-eslint/naming-convention`으로 강제됩니다: 변수는 `camelCase`/`PascalCase`/`UPPER_CASE`, 타입/클래스/인터페이스는 `PascalCase`(`I` 접두사 금지), boolean 변수는 `is`/`has`/`should` 접두사 필수.
 - 커스텀 훅은 `use{도메인}{동작}.ts`로 명명하고 `hooks/{domain}/` 아래 둡니다(`hooks/post/usePostDetail.ts`, `hooks/playlist/usePlaylistRecommendations.ts`, `hooks/queue/useQueueSync.ts`). 이벤트 핸들러는 예외 없이 `handleXxx` 접두사를 씁니다(`handleToggleLike`, `handleOpenDetail` 등).
 - 타입은 여러 컴포넌트가 공유하면 전역 `src/types/{domain}.ts`에(`types/sidebar.ts`, `types/player.ts`), 특정 도메인 컴포넌트 묶음 전용이면 그 옆에 `{domain}.types.ts`로 둡니다(`components/noti/noti.types.ts`). 상수는 `UPPER_SNAKE_CASE`로 `constants/{domain}.ts` + `constants/index.ts` 배럴에 두고, mock 데이터는 `constants/mock/` 하위에 별도로 둡니다.
