@@ -32,3 +32,7 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      # 서버/클라이언트 컴포넌트 경계 오류는 lint·tsc·jest로 잡히지 않아 프로덕션 빌드로 확인한다
+      - name: Build web
+        run: pnpm --filter web build
