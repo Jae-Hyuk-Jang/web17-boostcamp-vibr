@@ -1,10 +1,12 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
-import type { PostResponseDto as Post } from '@repo/dto';
+import type { MusicResponseDto, PostResponseDto as Post } from '@repo/dto';
+import { MusicProvider } from '@repo/dto/values';
 
 import type { QueryClient } from '@tanstack/react-query';
 
 import { usePostDetailModal } from './usePostDetailModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
+import { usePlayerStore } from '@/stores/usePlayerStore';
 import { seedAuthMe } from '@/test-utils/authMeTestUtils';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
@@ -35,14 +37,28 @@ jest.mock('@/hooks', () => {
     usePostDetail: jest.fn(),
     useLikedUsers: jest.fn(),
     usePostReactions: jest.fn(),
+    usePostDetailUxLog: jest.fn(),
   };
 });
 
-const { usePostDetail, useLikedUsers, usePostReactions } = jest.requireMock('@/hooks') as {
+const { usePostDetail, useLikedUsers, usePostReactions, usePostDetailUxLog } = jest.requireMock('@/hooks') as {
   usePostDetail: jest.Mock;
   useLikedUsers: jest.Mock;
   usePostReactions: jest.Mock;
+  usePostDetailUxLog: jest.Mock;
 };
+const mockRecordPlayedMusic = jest.fn();
+const initialPlayerState = usePlayerStore.getState();
+
+const music = (id: string): MusicResponseDto => ({
+  id,
+  title: `곡 ${id}`,
+  artistName: '가수',
+  albumCoverUrl: 'cover',
+  trackUri: `uri-${id}`,
+  provider: MusicProvider.ITUNES,
+  durationMs: 1000,
+});
 const { updatePost } = jest.requireMock('@/api') as { updatePost: jest.Mock };
 
 const mockPost = (overrides: Partial<Post> = {}): Post => ({
@@ -89,8 +105,46 @@ describe('usePostDetailModal', () => {
       commentCount: 0,
       refetchComments: jest.fn(),
     });
+    usePostDetailUxLog.mockReturnValue({ recordPlayedMusic: mockRecordPlayedMusic, emit: jest.fn() });
+    mockRecordPlayedMusic.mockClear();
     updatePost.mockReset();
     mockPush.mockClear();
+  });
+
+  afterEach(() => {
+    usePlayerStore.setState(initialPlayerState, true);
+  });
+
+  it('전체 재생은 플레이어의 playAll로 곡 전체를 재생하고, 모달 사용 기록에 첫 곡을 남긴다', () => {
+    const playAll = jest.fn();
+    usePlayerStore.setState({ playAll });
+    const post = mockPost({ musics: [music('a'), music('b')] });
+    usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
+    openModalFor(post);
+
+    const { result } = renderHook(() => usePostDetailModal(), { wrapper: createQueryClientWrapper(queryClient) });
+    act(() => {
+      result.current.player.handlePlayAll();
+    });
+
+    expect(playAll).toHaveBeenCalledWith(post.musics);
+    expect(mockRecordPlayedMusic).toHaveBeenCalledWith('a');
+  });
+
+  it('곡이 없으면 전체 재생과 사용 기록을 하지 않는다', () => {
+    const playAll = jest.fn();
+    usePlayerStore.setState({ playAll });
+    const post = mockPost({ musics: [] });
+    usePostDetail.mockReturnValue({ post, isLoading: false, error: null, updatePostContent: jest.fn() });
+    openModalFor(post);
+
+    const { result } = renderHook(() => usePostDetailModal(), { wrapper: createQueryClientWrapper(queryClient) });
+    act(() => {
+      result.current.player.handlePlayAll();
+    });
+
+    expect(playAll).not.toHaveBeenCalled();
+    expect(mockRecordPlayedMusic).not.toHaveBeenCalled();
   });
 
   it('usePostReactions에 post(캐시 반영값) > passedPost 순으로 우선한 초기 좋아요 상태를 넘긴다', () => {

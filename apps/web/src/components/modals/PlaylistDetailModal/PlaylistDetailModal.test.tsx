@@ -4,6 +4,7 @@ import { render, fireEvent, screen, waitFor, within } from '@testing-library/rea
 
 import PlaylistDetailModal from './PlaylistDetailModal';
 import { useModalStore, MODAL_TYPES } from '@/stores/useModalStore';
+import { usePlayerStore } from '@/stores/usePlayerStore';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 import { playlistDetailQueryKey } from '@/query-keys';
 import type { MusicResponseDto, GetPlaylistDetailResDto } from '@repo/dto';
@@ -93,6 +94,19 @@ describe('PlaylistDetailModal — 특성화 테스트 (playlist-detail-caching #
     fireEvent.mouseDown(container.firstChild as HTMLElement);
 
     expect(useModalStore.getState().isOpen).toBe(false);
+  });
+
+  it('재생 버튼은 플레이리스트 곡 전체로 전체 재생을 한다', async () => {
+    const initialPlayerState = usePlayerStore.getState();
+    const playAll = jest.fn();
+    usePlayerStore.setState({ playAll });
+    renderModal();
+
+    await screen.findByText('내 플레이리스트');
+    fireEvent.click(screen.getByRole('button', { name: '재생' }));
+
+    expect(playAll).toHaveBeenCalledWith(basePlaylist.musics);
+    usePlayerStore.setState(initialPlayerState, true);
   });
 
   it('최초 마운트 시 getPlaylistDetail을 1회 호출하고 곡 목록을 렌더링한다', async () => {

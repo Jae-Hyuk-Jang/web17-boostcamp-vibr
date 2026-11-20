@@ -20,6 +20,7 @@ interface PlayerState {
 /**
  * 전역 플레이어 액션(Action)
  * - playMusic: 곡 선택(같은 곡이면 토글, 다른 곡이면 교체 + 큐에 없으면 맨 앞 삽입)
+ * - playAll: 곡 목록 전체를 큐 뒤에 붙이고 첫 곡을 고른다("전체 재생")
  * - pause: 재생 중일 때만 일시정지(토글과 달리 멱등)
  * - add/remove/reorder/clear: 큐 편집
  * - set volume/playError : 볼륨 조절  및 에러 정보
@@ -27,6 +28,7 @@ interface PlayerState {
 interface PlayerActions {
   playMusic: (music: Music) => void;
   selectMusic: (music: Music) => void;
+  playAll: (musics: Music[]) => void;
   togglePlay: () => void;
   pause: () => void;
 
@@ -173,6 +175,17 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       isPlaying: true,
       queue: appendIfMissing(queue, music),
     });
+  },
+
+  /**
+   * 전체 재생: 곡 목록을 큐 뒤에 붙이고(이미 있던 곡은 뒤로 옮김) 첫 곡을 고른다. 곡이 없으면 아무것도 하지 않는다.
+   * 첫 곡 선택은 selectMusic 규칙을 따르므로, 첫 곡이 이미 현재 곡이면 재생/일시정지가 토글된다.
+   */
+  playAll: (musics) => {
+    const [firstMusic] = musics;
+    if (!firstMusic) return;
+    get().addToQueue(musics);
+    get().selectMusic(firstMusic);
   },
 
   /** 재생/일시정지 UI 상태만 토글 (실제 재생 프로바이더 호출은 비범위) */

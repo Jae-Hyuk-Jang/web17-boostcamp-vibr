@@ -94,8 +94,7 @@ export function usePostDetailModal(): UsePostDetailModalResult {
   });
 
   const playMusic = usePlayerStore((s) => s.playMusic);
-  const addToQueue = usePlayerStore((s) => s.addToQueue);
-  const selectMusic = usePlayerStore((s) => s.selectMusic);
+  const playAll = usePlayerStore((s) => s.playAll);
   const currentMusicId = usePlayerStore((s) => s.currentMusic?.id ?? null);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
 
@@ -160,14 +159,12 @@ export function usePostDetailModal(): UsePostDetailModalResult {
   );
 
   const handlePlayAll = useCallback(() => {
-    const musics = safePost.musics;
-    if (!musics.length) return;
-    const firstMusic = musics[0];
+    const [firstMusic] = safePost.musics;
     if (!firstMusic) return;
-    addToQueue(musics);
+    playAll(safePost.musics);
+    // 모달이 열린 동안의 사용 기록(모달 전용이라 공통 전체 재생 동작에 넣지 않는다)
     recordPlayedMusic(firstMusic.id);
-    selectMusic(firstMusic);
-  }, [safePost.musics, addToQueue, selectMusic, recordPlayedMusic]);
+  }, [safePost.musics, playAll, recordPlayedMusic]);
 
   const handleClose = useCallback(() => {
     emit();

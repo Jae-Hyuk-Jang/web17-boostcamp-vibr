@@ -1,9 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useInView } from 'react-intersection-observer';
-import type { PostResponseDto as Post } from '@repo/dto';
+import type { MusicResponseDto, PostResponseDto as Post } from '@repo/dto';
+import { MusicProvider } from '@repo/dto/values';
 
 import ProfilePostsFeed from './ProfilePostsFeed';
 import { postDetailQueryKey } from '@/query-keys';
+import { usePlayerStore } from '@/stores/usePlayerStore';
 import { createTestQueryClient, createQueryClientWrapper } from '@/test-utils/QueryClientWrapper';
 
 jest.mock('react-intersection-observer', () => ({
@@ -27,7 +29,14 @@ jest.mock('@/api', () => ({
 }));
 
 jest.mock('@/components/post', () => ({
-  PostCard: ({ post }: { post: Post }) => <div data-testid={`post-${post.id}`}>{post.id}</div>,
+  PostCard: ({ post, onPlayAll }: { post: Post; onPlayAll: () => void }) => (
+    <div data-testid={`post-${post.id}`}>
+      {post.id}
+      <button type="button" onClick={onPlayAll}>
+        전체 재생 {post.id}
+      </button>
+    </div>
+  ),
 }));
 
 const { getUserProfilePosts, getPostDetail } = jest.requireMock('@/api') as { getUserProfilePosts: jest.Mock; getPostDetail: jest.Mock };
@@ -67,6 +76,23 @@ describe('ProfilePostsFeed — N+1 상세조회 + 캐시 시딩 특성화(#166)'
     expect(getPostDetail).toHaveBeenCalledWith('b');
     expect(queryClient.getQueryData(postDetailQueryKey('a'))).toMatchObject({ id: 'a' });
     expect(queryClient.getQueryData(postDetailQueryKey('b'))).toMatchObject({ id: 'b' });
+  });
+
+  it('게시글의 전체 재생은 그 곡 목록으로 playAll을 부른다', async () => {
+    const initialPlayerState = usePlayerStore.getState();
+    const playAll = jest.fn();
+    usePlayerStore.setState({ playAll });
+    const musics: MusicResponseDto[] = [
+      { id: 'm1', title: '곡', artistName: '가수', albumCoverUrl: 'c', trackUri: 'u', provider: MusicProvider.ITUNES, durationMs: 1 },
+    ];
+    getUserProfilePosts.mockResolvedValue({ items: [{ postId: 'a' }], hasNext: false, nextCursor: undefined });
+    getPostDetail.mockResolvedValue(mockPost({ id: 'a', musics }));
+
+    render(<ProfilePostsFeed userId="user-1" />, { wrapper: createQueryClientWrapper(createTestQueryClient()) });
+    fireEvent.click(await screen.findByRole('button', { name: '전체 재생 a' }));
+
+    expect(playAll).toHaveBeenCalledWith(musics);
+    usePlayerStore.setState(initialPlayerState, true);
   });
 
   it('에러 발생 시 에러 메시지를 표시한다', async () => {

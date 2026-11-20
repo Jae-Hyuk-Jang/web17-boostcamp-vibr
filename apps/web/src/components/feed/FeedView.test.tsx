@@ -103,18 +103,16 @@ describe('FeedView — 출처별 선반', () => {
     expect(useModalStore.getState().modalProps).toEqual({ postId: 'reaction-r1' });
   });
 
-  it('재생 버튼은 플레이리스트 전체를 큐에 넣고 첫 곡을 고른다', async () => {
-    const addToQueue = jest.fn();
-    const selectMusic = jest.fn();
-    usePlayerStore.setState({ addToQueue, selectMusic });
+  it('재생 버튼은 플레이리스트 곡 전체로 전체 재생을 한다', async () => {
+    const playAll = jest.fn();
+    usePlayerStore.setState({ playAll });
     const target = item('r1');
     getFeedShelves.mockResolvedValue({ shelves: [shelf(FeedShelfKey.RECENT, [target])] });
 
     renderFeedView();
     fireEvent.click(await screen.findByRole('button', { name: '플리 r1 전체 재생' }));
 
-    expect(addToQueue).toHaveBeenCalledWith(target.musics);
-    expect(selectMusic).toHaveBeenCalledWith(target.musics[0]);
+    expect(playAll).toHaveBeenCalledWith(target.musics);
   });
 
   it('곡이 없는 플레이리스트에는 재생 버튼이 없다', async () => {

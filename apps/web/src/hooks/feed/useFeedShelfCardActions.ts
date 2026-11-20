@@ -8,8 +8,7 @@ import { MODAL_TYPES, useModalStore, usePlayerStore } from '@/stores';
 export const useFeedShelfCardActions = () => {
   const router = useRouter();
   const openModal = useModalStore((s) => s.openModal);
-  const addToQueue = usePlayerStore((s) => s.addToQueue);
-  const selectMusic = usePlayerStore((s) => s.selectMusic);
+  const playAll = usePlayerStore((s) => s.playAll);
 
   const handleOpen = (item: FeedShelfItemDto) => {
     // 플레이리스트 페이지가 생기기 전까지는 반응 기록 상세 모달로 연다
@@ -17,10 +16,7 @@ export const useFeedShelfCardActions = () => {
   };
 
   const handlePlayAll = (item: FeedShelfItemDto) => {
-    const [firstMusic] = item.musics;
-    if (!firstMusic) return;
-    addToQueue(item.musics);
-    selectMusic(firstMusic);
+    playAll(item.musics);
   };
 
   const handleOwnerClick = (ownerId: string) => {
