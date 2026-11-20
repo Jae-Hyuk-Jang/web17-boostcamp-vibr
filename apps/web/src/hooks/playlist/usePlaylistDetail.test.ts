@@ -1,3 +1,4 @@
+import { PlaylistVisibility } from '@repo/dto/values';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { GetPlaylistDetailResDto } from '@repo/dto';
 
@@ -14,6 +15,9 @@ const { getPlaylistDetail } = jest.requireMock('@/api/internal') as { getPlaylis
 const mockDetail = (overrides: Partial<GetPlaylistDetailResDto> = {}): GetPlaylistDetailResDto => ({
   id: 'pl-1',
   title: '내 플레이리스트',
+  description: null,
+  coverImageUrls: [],
+  visibility: PlaylistVisibility.PRIVATE,
   musics: [],
   ...overrides,
 });

@@ -1,4 +1,5 @@
 import { MAX_PLAYLIST_TITLE_LENGTH } from '@/constants';
+import { PlaylistVisibility } from '@repo/dto/values';
 import { render, fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import PlaylistDetailModal from './PlaylistDetailModal';
@@ -66,6 +67,9 @@ const song = (id: string, title: string): MusicResponseDto => ({
 const basePlaylist: GetPlaylistDetailResDto = {
   id: 'pl-1',
   title: '내 플레이리스트',
+  description: null,
+  coverImageUrls: [],
+  visibility: PlaylistVisibility.PRIVATE,
   musics: [song('s1', 'Song1'), song('s2', 'Song2'), song('s3', 'Song3')],
 };
 
